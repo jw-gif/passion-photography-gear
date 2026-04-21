@@ -79,6 +79,7 @@ interface GearRow {
   id: number;
   name: string;
   current_location: string;
+  sub_location: string | null;
   last_note: string | null;
   last_updated: string;
   moved_by: string | null;
