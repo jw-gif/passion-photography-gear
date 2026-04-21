@@ -297,7 +297,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
             <div className="md:hidden space-y-3">
               {filtered.map((h) => (
                 <Card key={h.id} className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span
                       className={cn(
                         "px-2.5 py-1 rounded-full text-xs font-bold",
@@ -306,6 +306,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                     >
                       {h.location}
                     </span>
+                    {h.sub_location && (
+                      <span className="text-xs font-medium text-foreground/80">
+                        {h.sub_location}
+                      </span>
+                    )}
                     <span
                       className="text-xs text-muted-foreground ml-auto"
                       title={new Date(h.timestamp).toLocaleString()}
