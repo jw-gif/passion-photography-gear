@@ -59,13 +59,18 @@ function Landing() {
             Photography Gear Tracking
           </h1>
           <p className="mt-4 text-muted-foreground text-lg">
-            Scan a gear tag's QR code to view or update its location.
+            Scan a gear tag's QR code to view or update its location, or request gear ahead of a shoot.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Link to="/admin">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link to="/request">
               <Button size="lg">
-                Open admin dashboard
+                Request gear
                 <ArrowRight className="size-4" />
+              </Button>
+            </Link>
+            <Link to="/admin">
+              <Button size="lg" variant="outline">
+                Admin dashboard
               </Button>
             </Link>
           </div>
