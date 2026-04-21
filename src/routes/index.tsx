@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Camera, Check, ArrowRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Search {
   gear?: number;
@@ -246,44 +253,28 @@ function PublicGearView({ gearId }: { gearId: number }) {
             </div>
 
             <div>
-              <div className="text-sm font-semibold mb-3">
+              <label className="text-sm font-semibold block mb-2" htmlFor="mover">
                 Your name <span className="text-destructive">*</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {MOVERS.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => {
-                      setMoverChoice(m);
-                      setNameError("");
-                    }}
-                    className={cn(
-                      "py-2.5 rounded-lg text-sm font-semibold border-2 transition-all",
-                      moverChoice === m
-                        ? "bg-primary text-primary-foreground border-transparent"
-                        : "bg-background border-border text-foreground hover:border-foreground/30",
-                    )}
-                  >
-                    {m}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMoverChoice("Other");
-                    setNameError("");
-                  }}
-                  className={cn(
-                    "py-2.5 rounded-lg text-sm font-semibold border-2 transition-all col-span-3",
-                    moverChoice === "Other"
-                      ? "bg-primary text-primary-foreground border-transparent"
-                      : "bg-background border-border text-foreground hover:border-foreground/30",
-                  )}
-                >
-                  Other
-                </button>
-              </div>
+              </label>
+              <Select
+                value={moverChoice}
+                onValueChange={(v) => {
+                  setMoverChoice(v);
+                  setNameError("");
+                }}
+              >
+                <SelectTrigger id="mover" className="w-full">
+                  <SelectValue placeholder="Select your name" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOVERS.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
               {moverChoice === "Other" && (
                 <Input
                   className="mt-2"
