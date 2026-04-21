@@ -421,7 +421,7 @@ function GearCard({
           ) : history.length === 0 ? (
             <div className="text-sm text-muted-foreground">No history yet</div>
           ) : (
-            <ol className="space-y-3">
+            <ol className="space-y-3 max-h-64 overflow-y-auto pr-2 -mr-2">
               {history.map((h) => (
                 <li key={h.id} className="text-sm">
                   <div className="flex items-center gap-2 flex-wrap">
