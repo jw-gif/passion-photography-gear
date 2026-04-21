@@ -286,6 +286,8 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     }
     toast.success(next ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
   }
+
+  async function handleAdd(name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
       toast.error("Name can't be empty");
