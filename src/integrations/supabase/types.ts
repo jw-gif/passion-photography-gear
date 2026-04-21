@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           current_location: string
+          icon_kind: string | null
           id: number
           last_note: string | null
           last_updated: string
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           created_at?: string
           current_location?: string
+          icon_kind?: string | null
           id: number
           last_note?: string | null
           last_updated?: string
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           created_at?: string
           current_location?: string
+          icon_kind?: string | null
           id?: number
           last_note?: string | null
           last_updated?: string
