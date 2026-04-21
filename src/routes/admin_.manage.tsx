@@ -27,6 +27,8 @@ import {
   Printer,
   History,
   Inbox,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
@@ -71,6 +73,7 @@ interface GearRow {
   current_location: string;
   status: GearStatus;
   icon_kind: string | null;
+  requestable: boolean;
 }
 
 const STATUS_OPTIONS: { value: GearStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -169,7 +172,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     const { data, error } = await supabase
       .from("gear")
-      .select("id, name, current_location, status, icon_kind")
+      .select("id, name, current_location, status, icon_kind, requestable")
       .order("id", { ascending: true });
     if (error) {
       toast.error("Couldn't load gear", { description: error.message });
