@@ -19,8 +19,9 @@ import {
   CircleCheck,
   CircleSlash,
   Wrench,
+  Sparkles,
 } from "lucide-react";
-import { GearIcon } from "@/lib/gear-icons";
+import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +62,7 @@ interface GearRow {
   name: string;
   current_location: string;
   status: GearStatus;
+  icon_kind: string | null;
 }
 
 const STATUS_OPTIONS: { value: GearStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -156,7 +159,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     const { data, error } = await supabase
       .from("gear")
-      .select("id, name, current_location, status")
+      .select("id, name, current_location, status, icon_kind")
       .order("id", { ascending: true });
     if (error) {
       toast.error("Couldn't load gear", { description: error.message });
@@ -237,6 +240,26 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
       return;
     }
     toast.success(`Deleted ${g.name}`);
+  }
+
+  async function handleIconChange(g: GearRow, iconKind: string | null) {
+    if ((g.icon_kind ?? null) === iconKind) return;
+    const previous = g.icon_kind;
+    setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, icon_kind: iconKind } : x)));
+    const { error } = await supabase
+      .from("gear")
+      .update({ icon_kind: iconKind })
+      .eq("id", g.id);
+    if (error) {
+      setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, icon_kind: previous } : x)));
+      toast.error(`Couldn't update icon for ${g.name}`, { description: error.message });
+      return;
+    }
+    toast.success(
+      iconKind === null
+        ? `${g.name} icon set to auto`
+        : `${g.name} icon updated`,
+    );
   }
 
   async function handleAdd(name: string) {
@@ -364,7 +387,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                       g.status !== "active" && "bg-muted/20",
                     )}
                   >
-                    <GearIcon name={g.name} className="size-5 text-foreground/70 shrink-0" />
+                    <IconPickerButton gear={g} onChange={(k) => handleIconChange(g, k)} />
                     <div className="min-w-0 flex-1">
                       {isEditing ? (
                         <div className="flex items-center gap-2">
@@ -540,5 +563,93 @@ function AddGearDialog({
         </form>
       </Card>
     </div>
+  );
+}
+
+function IconPickerButton({
+  gear,
+  onChange,
+}: {
+  gear: GearRow;
+  onChange: (kind: string | null) => void;
+}) {
+  const autoKind = autoIconKindFor(gear.name);
+  const isAuto = !gear.icon_kind;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "shrink-0 rounded-md p-1.5 -m-1.5 hover:bg-muted transition-colors group relative",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+          aria-label={`Change icon for ${gear.name}`}
+          title="Click to change icon"
+        >
+          <GearIcon
+            name={gear.name}
+            iconKind={gear.icon_kind}
+            className="size-6 text-foreground/80"
+          />
+          <Pencil className="size-2.5 text-muted-foreground absolute -bottom-0.5 -right-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-px" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3" align="start">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+          Icon
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className={cn(
+            "w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm text-left transition-colors",
+            isAuto ? "bg-muted font-medium" : "hover:bg-muted",
+          )}
+        >
+          <span className="size-8 rounded-md border border-border flex items-center justify-center bg-background">
+            <Sparkles className="size-3.5 text-muted-foreground" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div>Auto</div>
+            <div className="text-xs text-muted-foreground truncate">
+              {ICON_LABELS[autoKind]} (from name)
+            </div>
+          </div>
+          {isAuto && <Check className="size-4 text-foreground" />}
+        </button>
+
+        <div className="h-px bg-border my-2" />
+
+        <div className="grid grid-cols-4 gap-1.5">
+          {ICON_KINDS.map((kind) => {
+            const selected = gear.icon_kind === kind;
+            return (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => onChange(kind)}
+                title={ICON_LABELS[kind]}
+                className={cn(
+                  "aspect-square rounded-md border flex items-center justify-center transition-colors",
+                  selected
+                    ? "border-foreground bg-foreground/5"
+                    : "border-border hover:border-foreground/40 hover:bg-muted",
+                )}
+                aria-label={ICON_LABELS[kind]}
+                aria-pressed={selected}
+              >
+                <GearIcon
+                  name=""
+                  iconKind={kind}
+                  className="size-7 text-foreground/80"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

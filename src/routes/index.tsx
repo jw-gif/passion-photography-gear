@@ -86,6 +86,7 @@ interface GearRow {
   last_updated: string;
   moved_by: string | null;
   status: GearStatus;
+  icon_kind: string | null;
 }
 
 function PublicGearView({ gearId }: { gearId: number }) {
@@ -224,7 +225,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
           <span className="text-sm font-semibold tracking-tight">Passion Photography Gear</span>
         </div>
 
-        <GearIcon name={gear.name} className="size-12 text-foreground/80 mb-4" />
+        <GearIcon name={gear.name} iconKind={gear.icon_kind} className="size-12 text-foreground/80 mb-4" />
 
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
           {gear.name}

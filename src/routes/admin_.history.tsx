@@ -40,6 +40,7 @@ interface HistoryRow {
 interface GearRow {
   id: number;
   name: string;
+  icon_kind: string | null;
 }
 
 const PAGE_SIZE = 200;
@@ -120,7 +121,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
         .select("*")
         .order("timestamp", { ascending: false })
         .limit(currentLimit + 1),
-      supabase.from("gear").select("id, name").order("id", { ascending: true }),
+      supabase.from("gear").select("id, name, icon_kind").order("id", { ascending: true }),
     ]);
     const rows = (h || []) as HistoryRow[];
     setHasMore(rows.length > currentLimit);
@@ -146,8 +147,8 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
   }, [limit]);
 
   const gearMap = useMemo(() => {
-    const m = new Map<number, string>();
-    for (const g of gear) m.set(g.id, g.name);
+    const m = new Map<number, { name: string; icon_kind: string | null }>();
+    for (const g of gear) m.set(g.id, { name: g.name, icon_kind: g.icon_kind });
     return m;
   }, [gear]);
 
@@ -262,10 +263,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                             className="font-medium hover:underline inline-flex items-center gap-2"
                           >
                             <GearIcon
-                              name={gearMap.get(h.gear_id) ?? ""}
+                              name={gearMap.get(h.gear_id)?.name ?? ""}
+                              iconKind={gearMap.get(h.gear_id)?.icon_kind}
                               className="size-4 text-muted-foreground"
                             />
-                            {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
+                            {gearMap.get(h.gear_id)?.name ?? `Gear #${h.gear_id}`}
                           </Link>
                         </td>
                         <td className="px-4 py-3">
@@ -329,10 +331,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                     className="font-semibold hover:underline inline-flex items-center gap-2"
                   >
                     <GearIcon
-                      name={gearMap.get(h.gear_id) ?? ""}
+                      name={gearMap.get(h.gear_id)?.name ?? ""}
+                      iconKind={gearMap.get(h.gear_id)?.icon_kind}
                       className="size-4 text-muted-foreground"
                     />
-                    {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
+                    {gearMap.get(h.gear_id)?.name ?? `Gear #${h.gear_id}`}
                   </Link>
                   {h.moved_by && (
                     <div className="text-xs text-muted-foreground mt-1">

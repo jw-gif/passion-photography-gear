@@ -31,6 +31,7 @@ interface GearRow {
   last_note: string | null;
   last_updated: string;
   status: GearStatus;
+  icon_kind: string | null;
 }
 
 interface HistoryRow {
@@ -366,7 +367,7 @@ function GearCard({
       <button onClick={onToggle} className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
           <GripVertical className="size-4 text-muted-foreground/60 shrink-0 mt-0.5" />
-          <GearIcon name={gear.name} className="size-5 text-foreground/80 mt-0.5" />
+          <GearIcon name={gear.name} iconKind={gear.icon_kind} className="size-5 text-foreground/80 mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold truncate">{gear.name}</div>
             <div className="text-xs text-muted-foreground mt-1">
