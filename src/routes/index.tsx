@@ -139,12 +139,25 @@ function PublicGearView({ gearId }: { gearId: number }) {
     }
     setNameError("");
 
+    const subLocation =
+      subLocChoice === "Other" ? otherSubLoc.trim() : subLocChoice;
+    if (!subLocation) {
+      setSubLocError(
+        subLocChoice === "Other"
+          ? "Please enter the spot"
+          : "Please select a spot",
+      );
+      return;
+    }
+    setSubLocError("");
+
     setSubmitting(true);
     const trimmedNote = note.trim() || null;
     const { error: updateErr } = await supabase
       .from("gear")
       .update({
         current_location: selectedLoc,
+        sub_location: subLocation,
         last_note: trimmedNote,
         last_updated: new Date().toISOString(),
         moved_by: movedBy,
@@ -154,6 +167,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
       await supabase.from("gear_history").insert({
         gear_id: gear.id,
         location: selectedLoc,
+        sub_location: subLocation,
         note: trimmedNote,
         moved_by: movedBy,
       });
