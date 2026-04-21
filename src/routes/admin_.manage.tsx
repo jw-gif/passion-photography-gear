@@ -158,6 +158,8 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
   const [editName, setEditName] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<GearRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [exporting, setExporting] = useState(false);
 
   async function loadGear() {
     setLoading(true);
