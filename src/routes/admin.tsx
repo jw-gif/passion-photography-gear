@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ADMIN_PASSWORD, isAdmin, setAdmin } from "@/lib/admin-auth";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -150,9 +150,16 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               <div className="text-xs text-muted-foreground">Admin dashboard</div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onLogout}>
-            <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/history">
+                <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onLogout}>
+              <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
+            </Button>
+          </div>
         </div>
       </header>
 
