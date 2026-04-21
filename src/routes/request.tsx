@@ -87,7 +87,7 @@ function RequestPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const requestor = nameChoice === "Other" ? otherName.trim() : nameChoice;
+    const requestor = name.trim();
     const newErrors: Record<string, string> = {};
     if (!requestor) newErrors.name = "Please enter your name";
     if (selectedGear.size === 0) newErrors.gear = "Please select at least one gear item";
@@ -131,8 +131,7 @@ function RequestPage() {
     setNotes("");
     setDate(undefined);
     setLocation("");
-    setNameChoice("");
-    setOtherName("");
+    setName("");
     setQuery("");
   }
 
