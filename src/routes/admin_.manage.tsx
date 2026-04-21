@@ -496,6 +496,11 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                 <ArrowLeft className="size-4" /> <span className="hidden sm:inline">Dashboard</span>
               </Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/history">
+                <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>
               <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
             </Button>
