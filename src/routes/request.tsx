@@ -184,6 +184,7 @@ function RequestPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <Card className="p-5">
+            {/* Requestor name */}
             <label className="text-sm font-semibold block mb-3" htmlFor="requestor-name">
               Your name <span className="text-destructive">*</span>
             </label>
