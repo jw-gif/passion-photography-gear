@@ -41,6 +41,13 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -165,8 +172,10 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
   const [editName, setEditName] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<GearRow | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   async function loadGear() {
     setLoading(true);
@@ -286,6 +295,58 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     }
     toast.success(nextValue ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
   };
+
+  async function handleBulkStatus(status: GearStatus) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const previous = gear;
+    setGear((prev) => prev.map((x) => (selectedIds.has(x.id) ? { ...x, status } : x)));
+    const { error } = await supabase.from("gear").update({ status }).in("id", ids);
+    setBulkBusy(false);
+    if (error) {
+      setGear(previous);
+      toast.error("Couldn't update status", { description: error.message });
+      return;
+    }
+    toast.success(`Updated ${ids.length} item${ids.length === 1 ? "" : "s"} → ${statusMeta(status).label}`);
+  }
+
+  async function handleBulkRequestable(requestable: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const previous = gear;
+    setGear((prev) => prev.map((x) => (selectedIds.has(x.id) ? { ...x, requestable } : x)));
+    const { error } = await supabase.from("gear").update({ requestable }).in("id", ids);
+    setBulkBusy(false);
+    if (error) {
+      setGear(previous);
+      toast.error("Couldn't update visibility", { description: error.message });
+      return;
+    }
+    toast.success(
+      `${ids.length} item${ids.length === 1 ? "" : "s"} ${requestable ? "shown on" : "hidden from"} request page`,
+    );
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    setBulkDeleteOpen(false);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const previous = gear;
+    setGear((prev) => prev.filter((x) => !selectedIds.has(x.id)));
+    const { error } = await supabase.from("gear").delete().in("id", ids);
+    setBulkBusy(false);
+    if (error) {
+      setGear(previous);
+      toast.error("Couldn't delete gear", { description: error.message });
+      return;
+    }
+    clearSelection();
+    toast.success(`Deleted ${ids.length} item${ids.length === 1 ? "" : "s"}`);
+  }
 
   async function handleAdd(name: string) {
     const trimmed = name.trim();
@@ -582,7 +643,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
         </div>
 
         {/* Bulk selection bar */}
-        <div className="flex items-center gap-3 flex-wrap mb-3 px-1">
+        <div className="flex items-center gap-2 flex-wrap mb-3 px-1">
           <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
             <Checkbox
               checked={
@@ -594,7 +655,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
             />
             <span>
               {selectedIds.size === 0
-                ? "Select gear to export QR codes"
+                ? "Select gear for bulk actions"
                 : `${selectedIds.size} selected`}
             </span>
           </label>
@@ -603,20 +664,59 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
               Clear
             </Button>
           )}
-          <Button
-            variant="default"
-            size="sm"
-            onClick={exportSelectedQrSheet}
-            disabled={selectedIds.size === 0 || exporting}
-            className="ml-auto"
-          >
-            <Printer className="size-4" />
-            {exporting
-              ? "Generating…"
-              : selectedIds.size === 0
-                ? "Export QR sheet"
-                : `Export ${selectedIds.size} QR${selectedIds.size === 1 ? "" : "s"}`}
-          </Button>
+
+          <div className="ml-auto flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={selectedIds.size === 0 || bulkBusy}>
+                  <CircleCheck className="size-4" /> Status
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {STATUS_OPTIONS.map((s) => (
+                  <DropdownMenuItem key={s.value} onClick={() => handleBulkStatus(s.value)}>
+                    <s.icon className="size-4" /> {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={selectedIds.size === 0 || bulkBusy}>
+                  <Eye className="size-4" /> Visibility
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleBulkRequestable(true)}>
+                  <Eye className="size-4" /> Show on request page
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkRequestable(false)}>
+                  <EyeOff className="size-4" /> Hide from request page
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportSelectedQrSheet}
+              disabled={selectedIds.size === 0 || exporting}
+            >
+              <Printer className="size-4" />
+              {exporting ? "Generating…" : `QR sheet${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}`}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              disabled={selectedIds.size === 0 || bulkBusy}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            >
+              <Trash2 className="size-4" /> Delete
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -768,6 +868,29 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedIds.size} gear item{selectedIds.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected gear and all of their activity history.
+              Any printed QR codes pointing to them will stop working. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete {selectedIds.size}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
