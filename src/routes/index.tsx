@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, locationClasses, formatDate, type Location } from "@/lib/locations";
+import { LOCATIONS, MOVERS, locationClasses, formatDate, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -73,6 +73,7 @@ interface GearRow {
   current_location: string;
   last_note: string | null;
   last_updated: string;
+  moved_by: string | null;
 }
 
 function PublicGearView({ gearId }: { gearId: number }) {
@@ -81,6 +82,9 @@ function PublicGearView({ gearId }: { gearId: number }) {
   const [notFound, setNotFound] = useState(false);
   const [selectedLoc, setSelectedLoc] = useState<Location>("515");
   const [note, setNote] = useState("");
+  const [moverChoice, setMoverChoice] = useState<string>("");
+  const [otherName, setOtherName] = useState("");
+  const [nameError, setNameError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -110,6 +114,19 @@ function PublicGearView({ gearId }: { gearId: number }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!gear) return;
+
+    const movedBy =
+      moverChoice === "Other" ? otherName.trim() : moverChoice;
+    if (!movedBy) {
+      setNameError(
+        moverChoice === "Other"
+          ? "Please enter your name"
+          : "Please select your name",
+      );
+      return;
+    }
+    setNameError("");
+
     setSubmitting(true);
     const trimmedNote = note.trim() || null;
     const { error: updateErr } = await supabase
@@ -118,6 +135,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
         current_location: selectedLoc,
         last_note: trimmedNote,
         last_updated: new Date().toISOString(),
+        moved_by: movedBy,
       })
       .eq("id", gear.id);
     if (!updateErr) {
@@ -125,6 +143,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
         gear_id: gear.id,
         location: selectedLoc,
         note: trimmedNote,
+        moved_by: movedBy,
       });
       // refresh
       const { data } = await supabase
