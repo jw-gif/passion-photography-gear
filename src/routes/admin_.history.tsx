@@ -263,10 +263,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                             className="font-medium hover:underline inline-flex items-center gap-2"
                           >
                             <GearIcon
-                              name={gearMap.get(h.gear_id) ?? ""}
+                              name={gearMap.get(h.gear_id)?.name ?? ""}
+                              iconKind={gearMap.get(h.gear_id)?.icon_kind}
                               className="size-4 text-muted-foreground"
                             />
-                            {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
+                            {gearMap.get(h.gear_id)?.name ?? `Gear #${h.gear_id}`}
                           </Link>
                         </td>
                         <td className="px-4 py-3">
@@ -330,10 +331,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                     className="font-semibold hover:underline inline-flex items-center gap-2"
                   >
                     <GearIcon
-                      name={gearMap.get(h.gear_id) ?? ""}
+                      name={gearMap.get(h.gear_id)?.name ?? ""}
+                      iconKind={gearMap.get(h.gear_id)?.icon_kind}
                       className="size-4 text-muted-foreground"
                     />
-                    {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
+                    {gearMap.get(h.gear_id)?.name ?? `Gear #${h.gear_id}`}
                   </Link>
                   {h.moved_by && (
                     <div className="text-xs text-muted-foreground mt-1">
