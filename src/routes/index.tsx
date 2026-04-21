@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, MOVERS, locationClasses, formatDate, getSubLocations, type Location } from "@/lib/locations";
+import { LOCATIONS, MOVERS, locationClasses, locationLabel, formatDate, getSubLocations, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -241,7 +241,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
               locationClasses(gear.current_location),
             )}
           >
-            {gear.current_location}
+            {locationLabel(gear.current_location)}
           </div>
           {gear.sub_location && (
             <div className="mt-2 text-base font-medium text-foreground/80">
@@ -315,7 +315,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
                         : "bg-background border-border text-foreground hover:border-foreground/30",
                     )}
                   >
-                    {loc}
+                    {locationLabel(loc)}
                   </button>
                 ))}
               </div>

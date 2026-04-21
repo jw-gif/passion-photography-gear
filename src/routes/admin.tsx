@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, locationClasses, formatDate } from "@/lib/locations";
+import { LOCATIONS, locationClasses, locationLabel, formatDate } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -271,7 +271,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                         locationClasses(loc),
                       )}
                     >
-                      {loc}
+                      {locationLabel(loc)}
                     </span>
                     <span className="text-sm text-muted-foreground">
                       {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
@@ -394,7 +394,7 @@ function GearCard({
             locationClasses(gear.current_location),
           )}
         >
-          {gear.current_location}
+          {locationLabel(gear.current_location)}
         </span>
         {gear.sub_location && (
           <span className="text-xs font-medium text-muted-foreground">
@@ -449,7 +449,7 @@ function GearCard({
                         locationClasses(h.location),
                       )}
                     >
-                      {h.location}
+                      {locationLabel(h.location)}
                     </span>
                     {h.sub_location && (
                       <span className="text-xs font-medium text-foreground/80">

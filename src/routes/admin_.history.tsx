@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, locationClasses, formatDate } from "@/lib/locations";
+import { LOCATIONS, locationClasses, locationLabel, formatDate } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -206,7 +206,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
               <SelectContent>
                 <SelectItem value="all">All locations</SelectItem>
                 {LOCATIONS.map((loc) => (
-                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  <SelectItem key={loc} value={loc}>{locationLabel(loc)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -280,7 +280,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                                 locationClasses(h.location),
                               )}
                             >
-                              {h.location}
+                              {locationLabel(h.location)}
                             </span>
                             {h.sub_location && (
                               <span className="text-xs font-medium text-foreground/80">
@@ -313,7 +313,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                         locationClasses(h.location),
                       )}
                     >
-                      {h.location}
+                      {locationLabel(h.location)}
                     </span>
                     {h.sub_location && (
                       <span className="text-xs font-medium text-foreground/80">
