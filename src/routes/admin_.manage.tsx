@@ -275,17 +275,17 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     );
   }
 
-  async function handleRequestableToggle(g: GearRow) {
-    const next = !g.requestable;
-    setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: next } : x)));
-    const { error } = await supabase.from("gear").update({ requestable: next }).eq("id", g.id);
+  const handleRequestableToggle = async (g: GearRow) => {
+    const nextValue = !g.requestable;
+    setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: nextValue } : x)));
+    const { error } = await supabase.from("gear").update({ requestable: nextValue }).eq("id", g.id);
     if (error) {
-      setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: !next } : x)));
+      setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: !nextValue } : x)));
       toast.error(`Couldn't update ${g.name}`, { description: error.message });
       return;
     }
-    toast.success(next ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
-  }
+    toast.success(nextValue ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
+  };
 
   async function handleAdd(name: string) {
     const trimmed = name.trim();
