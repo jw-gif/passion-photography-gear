@@ -103,6 +103,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [qrGearId, setQrGearId] = useState<number | null>(null);
+  const [dragGearId, setDragGearId] = useState<number | null>(null);
+  const [dragOverLoc, setDragOverLoc] = useState<string | null>(null);
 
   async function loadGear() {
     setLoading(true);
@@ -139,6 +141,44 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     }
     return map;
   }, [filtered]);
+
+  async function handleDropOnLocation(targetLoc: string) {
+    const id = dragGearId;
+    setDragGearId(null);
+    setDragOverLoc(null);
+    if (id === null) return;
+    const item = gear.find((g) => g.id === id);
+    if (!item || item.current_location === targetLoc) return;
+
+    const previous = item.current_location;
+    // Optimistic UI update
+    setGear((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, current_location: targetLoc } : g)),
+    );
+
+    const { error: updateErr } = await supabase
+      .from("gear")
+      .update({ current_location: targetLoc, moved_by: "Admin", last_note: "Moved via admin drag" })
+      .eq("id", id);
+
+    if (updateErr) {
+      // revert
+      setGear((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, current_location: previous } : g)),
+      );
+      toast.error(`Couldn't move ${item.name}`, { description: updateErr.message });
+      return;
+    }
+
+    await supabase.from("gear_history").insert({
+      gear_id: id,
+      location: targetLoc,
+      moved_by: "Admin",
+      note: "Moved via admin drag",
+    });
+
+    toast.success(`${item.name} → ${targetLoc}`);
+  }
 
   return (
     <main className="min-h-screen">
