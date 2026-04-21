@@ -209,7 +209,12 @@ function PublicGearView({ gearId }: { gearId: number }) {
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
             Last updated
           </div>
-          <div className="text-sm">{formatDate(gear.last_updated)}</div>
+          <div className="text-sm">
+            {formatDate(gear.last_updated)}
+            {gear.moved_by && (
+              <span className="text-muted-foreground"> · by {gear.moved_by}</span>
+            )}
+          </div>
           {gear.last_note && (
             <div className="text-sm text-muted-foreground italic pt-1">
               "{gear.last_note}"
@@ -238,6 +243,63 @@ function PublicGearView({ gearId }: { gearId: number }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <div className="text-sm font-semibold mb-3">
+                Your name <span className="text-destructive">*</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {MOVERS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setMoverChoice(m);
+                      setNameError("");
+                    }}
+                    className={cn(
+                      "py-2.5 rounded-lg text-sm font-semibold border-2 transition-all",
+                      moverChoice === m
+                        ? "bg-primary text-primary-foreground border-transparent"
+                        : "bg-background border-border text-foreground hover:border-foreground/30",
+                    )}
+                  >
+                    {m}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoverChoice("Other");
+                    setNameError("");
+                  }}
+                  className={cn(
+                    "py-2.5 rounded-lg text-sm font-semibold border-2 transition-all col-span-3",
+                    moverChoice === "Other"
+                      ? "bg-primary text-primary-foreground border-transparent"
+                      : "bg-background border-border text-foreground hover:border-foreground/30",
+                  )}
+                >
+                  Other
+                </button>
+              </div>
+              {moverChoice === "Other" && (
+                <Input
+                  className="mt-2"
+                  value={otherName}
+                  onChange={(e) => {
+                    setOtherName(e.target.value);
+                    setNameError("");
+                  }}
+                  placeholder="Enter your name"
+                  maxLength={50}
+                  autoFocus
+                />
+              )}
+              {nameError && (
+                <p className="text-destructive text-sm mt-2">{nameError}</p>
+              )}
             </div>
 
             <div>
