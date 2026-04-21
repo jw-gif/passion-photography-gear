@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, MOVERS, locationLabel } from "@/lib/locations";
+import { LOCATIONS, locationLabel } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -48,8 +48,7 @@ function RequestPage() {
   const [query, setQuery] = useState("");
   const [selectedGear, setSelectedGear] = useState<Set<number>>(new Set());
 
-  const [nameChoice, setNameChoice] = useState<string>("");
-  const [otherName, setOtherName] = useState("");
+  const [name, setName] = useState("");
   const [location, setLocation] = useState<string>("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
@@ -88,7 +87,7 @@ function RequestPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const requestor = nameChoice === "Other" ? otherName.trim() : nameChoice;
+    const requestor = name.trim();
     const newErrors: Record<string, string> = {};
     if (!requestor) newErrors.name = "Please enter your name";
     if (selectedGear.size === 0) newErrors.gear = "Please select at least one gear item";
@@ -132,8 +131,7 @@ function RequestPage() {
     setNotes("");
     setDate(undefined);
     setLocation("");
-    setNameChoice("");
-    setOtherName("");
+    setName("");
     setQuery("");
   }
 
@@ -186,37 +184,19 @@ function RequestPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <Card className="p-5">
-            <label className="text-sm font-semibold block mb-3">
+            <label className="text-sm font-semibold block mb-3" htmlFor="requestor-name">
               Your name <span className="text-destructive">*</span>
             </label>
-            <Select
-              value={nameChoice}
-              onValueChange={(v) => {
-                setNameChoice(v);
-                setErrors((e) => ({ ...e, name: "" }));
+            <Input
+              id="requestor-name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setErrors((er) => ({ ...er, name: "" }));
               }}
-            >
-              <SelectTrigger><SelectValue placeholder="Select your name" /></SelectTrigger>
-              <SelectContent>
-                {MOVERS.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            {nameChoice === "Other" && (
-              <Input
-                className="mt-2"
-                value={otherName}
-                onChange={(e) => {
-                  setOtherName(e.target.value);
-                  setErrors((er) => ({ ...er, name: "" }));
-                }}
-                placeholder="Enter your name"
-                maxLength={50}
-                autoFocus
-              />
-            )}
+              placeholder="Enter your name"
+              maxLength={50}
+            />
             {errors.name && <p className="text-destructive text-sm mt-2">{errors.name}</p>}
           </Card>
 
