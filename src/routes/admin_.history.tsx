@@ -253,8 +253,12 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                           <Link
                             to="/"
                             search={{ gear: h.gear_id }}
-                            className="font-medium hover:underline"
+                            className="font-medium hover:underline inline-flex items-center gap-2"
                           >
+                            <GearIcon
+                              name={gearMap.get(h.gear_id) ?? ""}
+                              className="size-4 text-muted-foreground"
+                            />
                             {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
                           </Link>
                         </td>
@@ -304,8 +308,12 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                   <Link
                     to="/"
                     search={{ gear: h.gear_id }}
-                    className="font-semibold hover:underline"
+                    className="font-semibold hover:underline inline-flex items-center gap-2"
                   >
+                    <GearIcon
+                      name={gearMap.get(h.gear_id) ?? ""}
+                      className="size-4 text-muted-foreground"
+                    />
                     {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
                   </Link>
                   {h.moved_by && (
