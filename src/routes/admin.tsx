@@ -302,11 +302,17 @@ function GearCard({
   expanded,
   onToggle,
   onShowQr,
+  isDragging,
+  onDragStart,
+  onDragEnd,
 }: {
   gear: GearRow;
   expanded: boolean;
   onToggle: () => void;
   onShowQr: () => void;
+  isDragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -330,9 +336,24 @@ function GearCard({
   }, [expanded, gear.id, gear.last_updated]);
 
   return (
-    <Card className="p-4">
+    <Card
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        // Some browsers require data to be set
+        e.dataTransfer.setData("text/plain", String(gear.id));
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "p-4 transition-all cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-50 ring-2 ring-foreground shadow-lg",
+      )}
+    >
       <button onClick={onToggle} className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
+          <GripVertical className="size-4 text-muted-foreground/60 shrink-0 mt-0.5" />
+          <GearIcon name={gear.name} className="size-5 text-foreground/80 mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold truncate">{gear.name}</div>
             <div className="text-xs text-muted-foreground mt-1">
