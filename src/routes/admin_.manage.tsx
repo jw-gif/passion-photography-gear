@@ -480,7 +480,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     <main className="min-h-screen">
       <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <Link to="/admin" className="flex items-center gap-2 rounded-md hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <div className="size-8 rounded-full bg-primary flex items-center justify-center">
               <Camera className="size-4" />
             </div>
@@ -488,7 +488,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
               <div className="font-semibold tracking-tight leading-tight">Manage Gear</div>
               <div className="text-xs text-muted-foreground">Add, rename, retire</div>
             </div>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin">
