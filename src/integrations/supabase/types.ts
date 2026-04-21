@@ -14,7 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gear: {
+        Row: {
+          created_at: string
+          current_location: string
+          id: number
+          last_note: string | null
+          last_updated: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          current_location?: string
+          id: number
+          last_note?: string | null
+          last_updated?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          current_location?: string
+          id?: number
+          last_note?: string | null
+          last_updated?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      gear_history: {
+        Row: {
+          gear_id: number
+          id: string
+          location: string
+          note: string | null
+          timestamp: string
+        }
+        Insert: {
+          gear_id: number
+          id?: string
+          location: string
+          note?: string | null
+          timestamp?: string
+        }
+        Update: {
+          gear_id?: number
+          id?: string
+          location?: string
+          note?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gear_history_gear_id_fkey"
+            columns: ["gear_id"]
+            isOneToOne: false
+            referencedRelation: "gear"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
