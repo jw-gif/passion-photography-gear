@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Camera, Check, ArrowRight } from "lucide-react";
+import { Camera, Check, ArrowRight, CircleSlash, Wrench } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import {
   Select,
@@ -75,6 +75,8 @@ function Landing() {
   );
 }
 
+type GearStatus = "active" | "out_of_service" | "out_for_repair";
+
 interface GearRow {
   id: number;
   name: string;
@@ -83,6 +85,7 @@ interface GearRow {
   last_note: string | null;
   last_updated: string;
   moved_by: string | null;
+  status: GearStatus;
 }
 
 function PublicGearView({ gearId }: { gearId: number }) {
