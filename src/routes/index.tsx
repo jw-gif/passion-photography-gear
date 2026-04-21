@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
   }),
   head: () => ({
     meta: [
-      { title: "Passion Gear Tracking" },
+      { title: "Passion Photography Gear Tracking" },
       { name: "description", content: "Track photography gear locations across 515, Cumberland, and Trilith." },
     ],
   }),
@@ -39,7 +39,7 @@ function Landing() {
           <div className="size-8 rounded-full bg-primary flex items-center justify-center">
             <Camera className="size-4" />
           </div>
-          <span className="font-semibold tracking-tight">Passion Gear</span>
+          <span className="font-semibold tracking-tight">Passion Photography Gear</span>
         </div>
         <Link to="/admin">
           <Button variant="outline" size="sm">Admin</Button>
@@ -48,10 +48,10 @@ function Landing() {
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="max-w-xl text-center">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            Photography gear tracking
+            Photography Gear Tracking
           </h1>
           <p className="mt-4 text-muted-foreground text-lg">
-            Scan a gear tag's QR code to view or update its location. Admins manage the full inventory across 515, Cumberland, and Trilith.
+            Scan a gear tag's QR code to view or update its location.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link to="/admin">
@@ -184,7 +184,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
           <div className="size-7 rounded-full bg-primary flex items-center justify-center">
             <Camera className="size-3.5" />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Passion Gear</span>
+          <span className="text-sm font-semibold tracking-tight">Passion Photography Gear</span>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
