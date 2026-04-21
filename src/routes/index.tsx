@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Camera, Check, ArrowRight } from "lucide-react";
+import { GearIcon } from "@/lib/gear-icons";
 import {
   Select,
   SelectContent,
@@ -193,6 +194,8 @@ function PublicGearView({ gearId }: { gearId: number }) {
           </div>
           <span className="text-sm font-semibold tracking-tight">Passion Photography Gear</span>
         </div>
+
+        <GearIcon name={gear.name} className="size-12 text-foreground/80 mb-4" />
 
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
           {gear.name}

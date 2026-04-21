@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { isAdmin, setAdmin, ADMIN_PASSWORD } from "@/lib/admin-auth";
 import { Camera, ArrowLeft, LogOut } from "lucide-react";
+import { GearIcon } from "@/lib/gear-icons";
 import { Input } from "@/components/ui/input";
 import {
   Select,
