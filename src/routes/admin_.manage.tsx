@@ -24,6 +24,7 @@ import {
   Sparkles,
   QrCode,
   Printer,
+  History,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import {
