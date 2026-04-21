@@ -720,6 +720,22 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => handleRequestableToggle(g)}
+                      className={cn(
+                        "shrink-0",
+                        g.requestable
+                          ? "text-muted-foreground hover:text-foreground"
+                          : "text-loc-cumberland-foreground hover:text-loc-cumberland-foreground bg-loc-cumberland/20 hover:bg-loc-cumberland/30",
+                      )}
+                      aria-label={g.requestable ? `Hide ${g.name} from request page` : `Show ${g.name} on request page`}
+                      title={g.requestable ? "Visible on request page — click to hide" : "Hidden from request page — click to show"}
+                    >
+                      {g.requestable ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setDeleteTarget(g)}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       aria-label={`Delete ${g.name}`}
