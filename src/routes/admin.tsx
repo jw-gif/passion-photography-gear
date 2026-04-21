@@ -413,17 +413,35 @@ function GearCard({
 
       {expanded && (
         <div className="mt-4 pt-4 border-t border-border">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
-            History
+          <div className="flex items-baseline justify-between mb-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              History
+            </div>
+            {!loadingHistory && history.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                {history.length} {history.length === 1 ? "entry" : "entries"}
+              </div>
+            )}
           </div>
           {loadingHistory ? (
             <div className="text-sm text-muted-foreground">Loading…</div>
           ) : history.length === 0 ? (
             <div className="text-sm text-muted-foreground">No history yet</div>
           ) : (
-            <ol className="space-y-3 max-h-64 overflow-y-auto pr-2 -mr-2">
-              {history.map((h) => (
-                <li key={h.id} className="text-sm">
+            <ol className="max-h-64 overflow-y-auto pr-2 -mr-2 relative">
+              <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" aria-hidden />
+              {history.map((h, idx) => (
+                <li
+                  key={h.id}
+                  className={cn(
+                    "relative pl-5",
+                    idx !== history.length - 1 && "pb-3",
+                  )}
+                >
+                  <span
+                    className="absolute left-0 top-1.5 size-[11px] rounded-full bg-background border-2 border-primary"
+                    aria-hidden
+                  />
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={cn(
@@ -438,17 +456,18 @@ function GearCard({
                         {h.sub_location}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(h.timestamp)}
-                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>{formatDate(h.timestamp)}</span>
                     {h.moved_by && (
-                      <span className="text-xs text-muted-foreground">
-                        · by {h.moved_by}
-                      </span>
+                      <>
+                        <span aria-hidden>·</span>
+                        <span>by {h.moved_by}</span>
+                      </>
                     )}
                   </div>
                   {h.note && (
-                    <div className="text-sm text-muted-foreground mt-1 italic pl-1">
+                    <div className="mt-1.5 text-sm text-foreground/80 border-l-2 border-border pl-2 italic">
                       "{h.note}"
                     </div>
                   )}
