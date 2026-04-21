@@ -610,6 +610,12 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                       g.status !== "active" && "bg-muted/20",
                     )}
                   >
+                    <Checkbox
+                      checked={selectedIds.has(g.id)}
+                      onCheckedChange={() => toggleSelected(g.id)}
+                      aria-label={`Select ${g.name}`}
+                      className="shrink-0"
+                    />
                     <IconPickerButton gear={g} onChange={(k) => handleIconChange(g, k)} />
                     <div className="min-w-0 flex-1">
                       {isEditing ? (
