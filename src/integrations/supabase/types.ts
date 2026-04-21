@@ -23,6 +23,7 @@ export type Database = {
           last_updated: string
           moved_by: string | null
           name: string
+          status: Database["public"]["Enums"]["gear_status"]
           sub_location: string | null
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           last_updated?: string
           moved_by?: string | null
           name: string
+          status?: Database["public"]["Enums"]["gear_status"]
           sub_location?: string | null
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           last_updated?: string
           moved_by?: string | null
           name?: string
+          status?: Database["public"]["Enums"]["gear_status"]
           sub_location?: string | null
         }
         Relationships: []
@@ -93,7 +96,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      gear_status: "active" | "out_of_service" | "out_for_repair"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -220,6 +223,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      gear_status: ["active", "out_of_service", "out_for_repair"],
+    },
   },
 } as const
