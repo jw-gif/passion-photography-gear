@@ -24,6 +24,7 @@ export type Database = {
           last_updated: string
           moved_by: string | null
           name: string
+          requestable: boolean
           status: Database["public"]["Enums"]["gear_status"]
           sub_location: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           last_updated?: string
           moved_by?: string | null
           name: string
+          requestable?: boolean
           status?: Database["public"]["Enums"]["gear_status"]
           sub_location?: string | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           last_updated?: string
           moved_by?: string | null
           name?: string
+          requestable?: boolean
           status?: Database["public"]["Enums"]["gear_status"]
           sub_location?: string | null
         }

@@ -63,6 +63,7 @@ function RequestPage() {
         .from("gear")
         .select("id, name, icon_kind, status")
         .eq("status", "active")
+        .eq("requestable", true)
         .order("name", { ascending: true });
       setGear((data || []) as GearRow[]);
       setLoading(false);

@@ -27,6 +27,8 @@ import {
   Printer,
   History,
   Inbox,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
@@ -71,6 +73,7 @@ interface GearRow {
   current_location: string;
   status: GearStatus;
   icon_kind: string | null;
+  requestable: boolean;
 }
 
 const STATUS_OPTIONS: { value: GearStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -169,7 +172,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     const { data, error } = await supabase
       .from("gear")
-      .select("id, name, current_location, status, icon_kind")
+      .select("id, name, current_location, status, icon_kind, requestable")
       .order("id", { ascending: true });
     if (error) {
       toast.error("Couldn't load gear", { description: error.message });
@@ -270,6 +273,18 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
         ? `${g.name} icon set to auto`
         : `${g.name} icon updated`,
     );
+  }
+
+  async function handleRequestableToggle(g: GearRow) {
+    const next = !g.requestable;
+    setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: next } : x)));
+    const { error } = await supabase.from("gear").update({ requestable: next }).eq("id", g.id);
+    if (error) {
+      setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: !next } : x)));
+      toast.error(`Couldn't update ${g.name}`, { description: error.message });
+      return;
+    }
+    toast.success(next ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
   }
 
   async function handleAdd(name: string) {
@@ -701,6 +716,22 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                         ))}
                       </SelectContent>
                     </Select>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRequestableToggle(g)}
+                      className={cn(
+                        "shrink-0",
+                        g.requestable
+                          ? "text-muted-foreground hover:text-foreground"
+                          : "text-loc-cumberland-foreground hover:text-loc-cumberland-foreground bg-loc-cumberland/20 hover:bg-loc-cumberland/30",
+                      )}
+                      aria-label={g.requestable ? `Hide ${g.name} from request page` : `Show ${g.name} on request page`}
+                      title={g.requestable ? "Visible on request page — click to hide" : "Hidden from request page — click to show"}
+                    >
+                      {g.requestable ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                    </Button>
 
                     <Button
                       variant="ghost"
