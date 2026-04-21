@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { isAdmin, setAdmin, ADMIN_PASSWORD } from "@/lib/admin-auth";
 import { Camera, ArrowLeft, LogOut } from "lucide-react";
+import { GearIcon } from "@/lib/gear-icons";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -252,8 +253,12 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                           <Link
                             to="/"
                             search={{ gear: h.gear_id }}
-                            className="font-medium hover:underline"
+                            className="font-medium hover:underline inline-flex items-center gap-2"
                           >
+                            <GearIcon
+                              name={gearMap.get(h.gear_id) ?? ""}
+                              className="size-4 text-muted-foreground"
+                            />
                             {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
                           </Link>
                         </td>
@@ -303,8 +308,12 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                   <Link
                     to="/"
                     search={{ gear: h.gear_id }}
-                    className="font-semibold hover:underline"
+                    className="font-semibold hover:underline inline-flex items-center gap-2"
                   >
+                    <GearIcon
+                      name={gearMap.get(h.gear_id) ?? ""}
+                      className="size-4 text-muted-foreground"
+                    />
                     {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
                   </Link>
                   {h.moved_by && (

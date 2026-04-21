@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ADMIN_PASSWORD, isAdmin, setAdmin } from "@/lib/admin-auth";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X, History } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical } from "lucide-react";
+import { GearIcon } from "@/lib/gear-icons";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -101,6 +103,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [qrGearId, setQrGearId] = useState<number | null>(null);
+  const [dragGearId, setDragGearId] = useState<number | null>(null);
+  const [dragOverLoc, setDragOverLoc] = useState<string | null>(null);
 
   async function loadGear() {
     setLoading(true);
@@ -137,6 +141,44 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     }
     return map;
   }, [filtered]);
+
+  async function handleDropOnLocation(targetLoc: string) {
+    const id = dragGearId;
+    setDragGearId(null);
+    setDragOverLoc(null);
+    if (id === null) return;
+    const item = gear.find((g) => g.id === id);
+    if (!item || item.current_location === targetLoc) return;
+
+    const previous = item.current_location;
+    // Optimistic UI update
+    setGear((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, current_location: targetLoc } : g)),
+    );
+
+    const { error: updateErr } = await supabase
+      .from("gear")
+      .update({ current_location: targetLoc, moved_by: "Admin", last_note: "Moved via admin drag" })
+      .eq("id", id);
+
+    if (updateErr) {
+      // revert
+      setGear((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, current_location: previous } : g)),
+      );
+      toast.error(`Couldn't move ${item.name}`, { description: updateErr.message });
+      return;
+    }
+
+    await supabase.from("gear_history").insert({
+      gear_id: id,
+      location: targetLoc,
+      moved_by: "Admin",
+      note: "Moved via admin drag",
+    });
+
+    toast.success(`${item.name} → ${targetLoc}`);
+  }
 
   return (
     <main className="min-h-screen">
@@ -179,39 +221,68 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <div className="text-muted-foreground text-sm">Loading gear…</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {LOCATIONS.map((loc) => (
-              <section key={loc}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span
-                    className={cn(
-                      "px-3 py-1 rounded-full text-sm font-bold",
-                      locationClasses(loc),
-                    )}
-                  >
-                    {loc}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {grouped[loc].length === 0 && (
-                    <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg py-8 text-center">
-                      No gear here
-                    </div>
+            {LOCATIONS.map((loc) => {
+              const isDropTarget = dragGearId !== null;
+              const isOver = dragOverLoc === loc;
+              return (
+                <section
+                  key={loc}
+                  onDragOver={(e) => {
+                    if (dragGearId === null) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverLoc !== loc) setDragOverLoc(loc);
+                  }}
+                  onDragLeave={(e) => {
+                    // Only clear if leaving the section entirely
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    if (dragOverLoc === loc) setDragOverLoc(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDropOnLocation(loc);
+                  }}
+                  className={cn(
+                    "rounded-xl transition-all",
+                    isDropTarget && "ring-2 ring-dashed ring-border p-2 -m-2",
+                    isOver && "ring-foreground bg-muted/40",
                   )}
-                  {grouped[loc].map((g) => (
-                    <GearCard
-                      key={g.id}
-                      gear={g}
-                      expanded={expandedId === g.id}
-                      onToggle={() => setExpandedId(expandedId === g.id ? null : g.id)}
-                      onShowQr={() => setQrGearId(g.id)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      className={cn(
+                        "px-3 py-1 rounded-full text-sm font-bold",
+                        locationClasses(loc),
+                      )}
+                    >
+                      {loc}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {grouped[loc].length === 0 && (
+                      <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg py-8 text-center">
+                        {isOver ? "Drop here" : "No gear here"}
+                      </div>
+                    )}
+                    {grouped[loc].map((g) => (
+                      <GearCard
+                        key={g.id}
+                        gear={g}
+                        expanded={expandedId === g.id}
+                        onToggle={() => setExpandedId(expandedId === g.id ? null : g.id)}
+                        onShowQr={() => setQrGearId(g.id)}
+                        isDragging={dragGearId === g.id}
+                        onDragStart={() => setDragGearId(g.id)}
+                        onDragEnd={() => { setDragGearId(null); setDragOverLoc(null); }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>
@@ -231,11 +302,17 @@ function GearCard({
   expanded,
   onToggle,
   onShowQr,
+  isDragging,
+  onDragStart,
+  onDragEnd,
 }: {
   gear: GearRow;
   expanded: boolean;
   onToggle: () => void;
   onShowQr: () => void;
+  isDragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -259,9 +336,24 @@ function GearCard({
   }, [expanded, gear.id, gear.last_updated]);
 
   return (
-    <Card className="p-4">
+    <Card
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        // Some browsers require data to be set
+        e.dataTransfer.setData("text/plain", String(gear.id));
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "p-4 transition-all cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-50 ring-2 ring-foreground shadow-lg",
+      )}
+    >
       <button onClick={onToggle} className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
+          <GripVertical className="size-4 text-muted-foreground/60 shrink-0 mt-0.5" />
+          <GearIcon name={gear.name} className="size-5 text-foreground/80 mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold truncate">{gear.name}</div>
             <div className="text-xs text-muted-foreground mt-1">
