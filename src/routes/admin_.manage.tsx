@@ -19,8 +19,9 @@ import {
   CircleCheck,
   CircleSlash,
   Wrench,
+  Sparkles,
 } from "lucide-react";
-import { GearIcon } from "@/lib/gear-icons";
+import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +62,7 @@ interface GearRow {
   name: string;
   current_location: string;
   status: GearStatus;
+  icon_kind: string | null;
 }
 
 const STATUS_OPTIONS: { value: GearStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -156,7 +159,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     const { data, error } = await supabase
       .from("gear")
-      .select("id, name, current_location, status")
+      .select("id, name, current_location, status, icon_kind")
       .order("id", { ascending: true });
     if (error) {
       toast.error("Couldn't load gear", { description: error.message });
