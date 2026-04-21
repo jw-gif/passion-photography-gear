@@ -184,37 +184,19 @@ function RequestPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <Card className="p-5">
-            <label className="text-sm font-semibold block mb-3">
+            <label className="text-sm font-semibold block mb-3" htmlFor="requestor-name">
               Your name <span className="text-destructive">*</span>
             </label>
-            <Select
-              value={nameChoice}
-              onValueChange={(v) => {
-                setNameChoice(v);
-                setErrors((e) => ({ ...e, name: "" }));
+            <Input
+              id="requestor-name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setErrors((er) => ({ ...er, name: "" }));
               }}
-            >
-              <SelectTrigger><SelectValue placeholder="Select your name" /></SelectTrigger>
-              <SelectContent>
-                {MOVERS.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            {nameChoice === "Other" && (
-              <Input
-                className="mt-2"
-                value={otherName}
-                onChange={(e) => {
-                  setOtherName(e.target.value);
-                  setErrors((er) => ({ ...er, name: "" }));
-                }}
-                placeholder="Enter your name"
-                maxLength={50}
-                autoFocus
-              />
-            )}
+              placeholder="Enter your name"
+              maxLength={50}
+            />
             {errors.name && <p className="text-destructive text-sm mt-2">{errors.name}</p>}
           </Card>
 
