@@ -221,39 +221,68 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <div className="text-muted-foreground text-sm">Loading gear…</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {LOCATIONS.map((loc) => (
-              <section key={loc}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span
-                    className={cn(
-                      "px-3 py-1 rounded-full text-sm font-bold",
-                      locationClasses(loc),
-                    )}
-                  >
-                    {loc}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {grouped[loc].length === 0 && (
-                    <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg py-8 text-center">
-                      No gear here
-                    </div>
+            {LOCATIONS.map((loc) => {
+              const isDropTarget = dragGearId !== null;
+              const isOver = dragOverLoc === loc;
+              return (
+                <section
+                  key={loc}
+                  onDragOver={(e) => {
+                    if (dragGearId === null) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverLoc !== loc) setDragOverLoc(loc);
+                  }}
+                  onDragLeave={(e) => {
+                    // Only clear if leaving the section entirely
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    if (dragOverLoc === loc) setDragOverLoc(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDropOnLocation(loc);
+                  }}
+                  className={cn(
+                    "rounded-xl transition-all",
+                    isDropTarget && "ring-2 ring-dashed ring-border p-2 -m-2",
+                    isOver && "ring-foreground bg-muted/40",
                   )}
-                  {grouped[loc].map((g) => (
-                    <GearCard
-                      key={g.id}
-                      gear={g}
-                      expanded={expandedId === g.id}
-                      onToggle={() => setExpandedId(expandedId === g.id ? null : g.id)}
-                      onShowQr={() => setQrGearId(g.id)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span
+                      className={cn(
+                        "px-3 py-1 rounded-full text-sm font-bold",
+                        locationClasses(loc),
+                      )}
+                    >
+                      {loc}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {grouped[loc].length === 0 && (
+                      <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg py-8 text-center">
+                        {isOver ? "Drop here" : "No gear here"}
+                      </div>
+                    )}
+                    {grouped[loc].map((g) => (
+                      <GearCard
+                        key={g.id}
+                        gear={g}
+                        expanded={expandedId === g.id}
+                        onToggle={() => setExpandedId(expandedId === g.id ? null : g.id)}
+                        onShowQr={() => setQrGearId(g.id)}
+                        isDragging={dragGearId === g.id}
+                        onDragStart={() => setDragGearId(g.id)}
+                        onDragEnd={() => { setDragGearId(null); setDragOverLoc(null); }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>
