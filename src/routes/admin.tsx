@@ -420,6 +420,11 @@ function GearCard({
                     >
                       {h.location}
                     </span>
+                    {h.sub_location && (
+                      <span className="text-xs font-medium text-foreground/80">
+                        {h.sub_location}
+                      </span>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatDate(h.timestamp)}
                     </span>
