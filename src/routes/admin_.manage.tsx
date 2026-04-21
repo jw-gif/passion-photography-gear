@@ -24,6 +24,7 @@ import {
   Sparkles,
   QrCode,
   Printer,
+  History,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import {
@@ -493,6 +494,11 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin">
                 <ArrowLeft className="size-4" /> <span className="hidden sm:inline">Dashboard</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/history">
+                <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>
