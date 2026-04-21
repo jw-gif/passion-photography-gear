@@ -90,6 +90,9 @@ function PublicGearView({ gearId }: { gearId: number }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [selectedLoc, setSelectedLoc] = useState<Location>("515");
+  const [subLocChoice, setSubLocChoice] = useState<string>("");
+  const [otherSubLoc, setOtherSubLoc] = useState("");
+  const [subLocError, setSubLocError] = useState("");
   const [note, setNote] = useState("");
   const [moverChoice, setMoverChoice] = useState<string>("");
   const [otherName, setOtherName] = useState("");
