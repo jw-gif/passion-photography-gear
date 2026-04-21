@@ -115,6 +115,14 @@ function PublicGearView({ gearId }: { gearId: number }) {
       } else {
         setGear(data as GearRow);
         setSelectedLoc(data.current_location as Location);
+        // Pre-populate sub-location if it matches a known option for this location
+        const known = getSubLocations(data.current_location);
+        if (data.sub_location && known.includes(data.sub_location)) {
+          setSubLocChoice(data.sub_location);
+        } else if (data.sub_location) {
+          setSubLocChoice("Other");
+          setOtherSubLoc(data.sub_location);
+        }
       }
       setLoading(false);
     })();
