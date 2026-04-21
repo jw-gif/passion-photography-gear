@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Passion Photography Gear Tracking" },
-      { name: "description", content: "Track photography gear locations across 515, Cumberland, and Trilith." },
+      { name: "description", content: "Track photography gear locations across 515, CBL, and TRL." },
     ],
   }),
   component: IndexPage,
