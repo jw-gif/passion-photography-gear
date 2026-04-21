@@ -374,7 +374,7 @@ function GearCard({
         </div>
       </button>
 
-      <div className="flex items-center gap-2 mt-3">
+      <div className="flex items-center gap-2 mt-3 flex-wrap">
         <span
           className={cn(
             "px-2.5 py-1 rounded-full text-xs font-bold",
@@ -383,6 +383,11 @@ function GearCard({
         >
           {gear.current_location}
         </span>
+        {gear.sub_location && (
+          <span className="text-xs font-medium text-muted-foreground">
+            · {gear.sub_location}
+          </span>
+        )}
         <Button
           variant="outline"
           size="sm"
