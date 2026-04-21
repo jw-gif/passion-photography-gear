@@ -264,7 +264,12 @@ function PublicGearView({ gearId }: { gearId: number }) {
                   <button
                     key={loc}
                     type="button"
-                    onClick={() => setSelectedLoc(loc)}
+                    onClick={() => {
+                      setSelectedLoc(loc);
+                      setSubLocChoice("");
+                      setOtherSubLoc("");
+                      setSubLocError("");
+                    }}
                     className={cn(
                       "py-3 rounded-lg text-sm font-semibold border-2 transition-all",
                       selectedLoc === loc
@@ -276,6 +281,47 @@ function PublicGearView({ gearId }: { gearId: number }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold block mb-2" htmlFor="sublocation">
+                Spot at {selectedLoc} <span className="text-destructive">*</span>
+              </label>
+              <Select
+                value={subLocChoice}
+                onValueChange={(v) => {
+                  setSubLocChoice(v);
+                  setSubLocError("");
+                }}
+              >
+                <SelectTrigger id="sublocation" className="w-full">
+                  <SelectValue placeholder="Select a spot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getSubLocations(selectedLoc).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {subLocChoice === "Other" && (
+                <Input
+                  className="mt-2"
+                  value={otherSubLoc}
+                  onChange={(e) => {
+                    setOtherSubLoc(e.target.value);
+                    setSubLocError("");
+                  }}
+                  placeholder="Describe the spot"
+                  maxLength={100}
+                  autoFocus
+                />
+              )}
+              {subLocError && (
+                <p className="text-destructive text-sm mt-2">{subLocError}</p>
+              )}
             </div>
 
             <div>
