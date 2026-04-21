@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, MOVERS, locationLabel } from "@/lib/locations";
+import { LOCATIONS, locationLabel } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
