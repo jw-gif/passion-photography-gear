@@ -242,6 +242,26 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     toast.success(`Deleted ${g.name}`);
   }
 
+  async function handleIconChange(g: GearRow, iconKind: string | null) {
+    if ((g.icon_kind ?? null) === iconKind) return;
+    const previous = g.icon_kind;
+    setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, icon_kind: iconKind } : x)));
+    const { error } = await supabase
+      .from("gear")
+      .update({ icon_kind: iconKind })
+      .eq("id", g.id);
+    if (error) {
+      setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, icon_kind: previous } : x)));
+      toast.error(`Couldn't update icon for ${g.name}`, { description: error.message });
+      return;
+    }
+    toast.success(
+      iconKind === null
+        ? `${g.name} icon set to auto`
+        : `${g.name} icon updated`,
+    );
+  }
+
   async function handleAdd(name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -367,7 +387,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                       g.status !== "active" && "bg-muted/20",
                     )}
                   >
-                    <GearIcon name={g.name} className="size-5 text-foreground/70 shrink-0" />
+                    <IconPickerButton gear={g} onChange={(k) => handleIconChange(g, k)} />
                     <div className="min-w-0 flex-1">
                       {isEditing ? (
                         <div className="flex items-center gap-2">
