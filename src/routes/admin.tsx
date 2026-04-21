@@ -160,7 +160,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
     const { error: updateErr } = await supabase
       .from("gear")
-      .update({ current_location: targetLoc, moved_by: "Admin", last_note: "Moved via admin drag" })
+      .update({ current_location: targetLoc, sub_location: null, moved_by: "Admin", last_note: "Moved via admin drag" })
       .eq("id", id);
 
     if (updateErr) {
@@ -175,6 +175,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     await supabase.from("gear_history").insert({
       gear_id: id,
       location: targetLoc,
+      sub_location: null,
       moved_by: "Admin",
       note: "Moved via admin drag",
     });
