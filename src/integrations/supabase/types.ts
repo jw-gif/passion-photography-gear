@@ -91,6 +91,78 @@ export type Database = {
           },
         ]
       }
+      gear_request_items: {
+        Row: {
+          created_at: string
+          gear_id: number
+          id: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          gear_id: number
+          id?: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          gear_id?: number
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gear_request_items_gear_id_fkey"
+            columns: ["gear_id"]
+            isOneToOne: false
+            referencedRelation: "gear"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gear_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "gear_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gear_requests: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          needed_date: string
+          notes: string | null
+          requestor_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["gear_request_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          needed_date: string
+          notes?: string | null
+          requestor_name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["gear_request_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          needed_date?: string
+          notes?: string | null
+          requestor_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["gear_request_status"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -99,6 +171,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      gear_request_status: "pending" | "approved" | "denied"
       gear_status: "active" | "out_of_service" | "out_for_repair"
     }
     CompositeTypes: {
@@ -227,6 +300,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      gear_request_status: ["pending", "approved", "denied"],
       gear_status: ["active", "out_of_service", "out_for_repair"],
     },
   },
