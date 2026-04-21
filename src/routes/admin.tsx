@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ADMIN_PASSWORD, isAdmin, setAdmin } from "@/lib/admin-auth";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
