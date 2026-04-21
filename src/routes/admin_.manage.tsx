@@ -481,9 +481,10 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     <main className="min-h-screen">
       <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <Link to="/admin" className="flex items-center gap-2 rounded-md hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <div className="size-8 rounded-full bg-primary flex items-center justify-center">
-              <Camera className="size-4" />
+          <Link to="/admin" className="group flex items-center gap-2 rounded-md hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <div className="size-8 rounded-full bg-primary flex items-center justify-center relative overflow-hidden">
+              <img src={pccLogo} alt="PCC" className="size-5 object-contain transition-opacity duration-200 group-hover:opacity-0" style={{ filter: "brightness(0) invert(1)" }} />
+              <ArrowLeft className="size-4 text-primary-foreground absolute opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
             </div>
             <div>
               <div className="font-semibold tracking-tight leading-tight">Manage Gear</div>
