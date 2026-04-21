@@ -565,3 +565,91 @@ function AddGearDialog({
     </div>
   );
 }
+
+function IconPickerButton({
+  gear,
+  onChange,
+}: {
+  gear: GearRow;
+  onChange: (kind: string | null) => void;
+}) {
+  const autoKind = autoIconKindFor(gear.name);
+  const isAuto = !gear.icon_kind;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "shrink-0 rounded-md p-1.5 -m-1.5 hover:bg-muted transition-colors group relative",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+          aria-label={`Change icon for ${gear.name}`}
+          title="Click to change icon"
+        >
+          <GearIcon
+            name={gear.name}
+            iconKind={gear.icon_kind}
+            className="size-6 text-foreground/80"
+          />
+          <Pencil className="size-2.5 text-muted-foreground absolute -bottom-0.5 -right-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-px" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3" align="start">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+          Icon
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className={cn(
+            "w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm text-left transition-colors",
+            isAuto ? "bg-muted font-medium" : "hover:bg-muted",
+          )}
+        >
+          <span className="size-8 rounded-md border border-border flex items-center justify-center bg-background">
+            <Sparkles className="size-3.5 text-muted-foreground" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div>Auto</div>
+            <div className="text-xs text-muted-foreground truncate">
+              {ICON_LABELS[autoKind]} (from name)
+            </div>
+          </div>
+          {isAuto && <Check className="size-4 text-foreground" />}
+        </button>
+
+        <div className="h-px bg-border my-2" />
+
+        <div className="grid grid-cols-4 gap-1.5">
+          {ICON_KINDS.map((kind) => {
+            const selected = gear.icon_kind === kind;
+            return (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => onChange(kind)}
+                title={ICON_LABELS[kind]}
+                className={cn(
+                  "aspect-square rounded-md border flex items-center justify-center transition-colors",
+                  selected
+                    ? "border-foreground bg-foreground/5"
+                    : "border-border hover:border-foreground/40 hover:bg-muted",
+                )}
+                aria-label={ICON_LABELS[kind]}
+                aria-pressed={selected}
+              >
+                <GearIcon
+                  name=""
+                  iconKind={kind}
+                  className="size-7 text-foreground/80"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
