@@ -643,7 +643,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
         </div>
 
         {/* Bulk selection bar */}
-        <div className="flex items-center gap-3 flex-wrap mb-3 px-1">
+        <div className="flex items-center gap-2 flex-wrap mb-3 px-1">
           <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
             <Checkbox
               checked={
@@ -655,7 +655,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
             />
             <span>
               {selectedIds.size === 0
-                ? "Select gear to export QR codes"
+                ? "Select gear for bulk actions"
                 : `${selectedIds.size} selected`}
             </span>
           </label>
@@ -664,20 +664,59 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
               Clear
             </Button>
           )}
-          <Button
-            variant="default"
-            size="sm"
-            onClick={exportSelectedQrSheet}
-            disabled={selectedIds.size === 0 || exporting}
-            className="ml-auto"
-          >
-            <Printer className="size-4" />
-            {exporting
-              ? "Generating…"
-              : selectedIds.size === 0
-                ? "Export QR sheet"
-                : `Export ${selectedIds.size} QR${selectedIds.size === 1 ? "" : "s"}`}
-          </Button>
+
+          <div className="ml-auto flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={selectedIds.size === 0 || bulkBusy}>
+                  <CircleCheck className="size-4" /> Status
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {STATUS_OPTIONS.map((s) => (
+                  <DropdownMenuItem key={s.value} onClick={() => handleBulkStatus(s.value)}>
+                    <s.icon className="size-4" /> {s.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={selectedIds.size === 0 || bulkBusy}>
+                  <Eye className="size-4" /> Visibility
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleBulkRequestable(true)}>
+                  <Eye className="size-4" /> Show on request page
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkRequestable(false)}>
+                  <EyeOff className="size-4" /> Hide from request page
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportSelectedQrSheet}
+              disabled={selectedIds.size === 0 || exporting}
+            >
+              <Printer className="size-4" />
+              {exporting ? "Generating…" : `QR sheet${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}`}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              disabled={selectedIds.size === 0 || bulkBusy}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            >
+              <Trash2 className="size-4" /> Delete
+            </Button>
+          </div>
         </div>
 
         {loading ? (
