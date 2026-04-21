@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { ADMIN_PASSWORD, isAdmin, setAdmin } from "@/lib/admin-auth";
+import QRCode from "qrcode";
 import {
   Camera,
   ArrowLeft,
@@ -20,6 +22,8 @@ import {
   CircleSlash,
   Wrench,
   Sparkles,
+  QrCode,
+  Printer,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import {
