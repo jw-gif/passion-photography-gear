@@ -297,6 +297,185 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     toast.success(`Added ${trimmed}`);
   }
 
+  const filteredIds = useMemo(() => filtered.map((g) => g.id), [filtered]);
+  const allFilteredSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+  const someFilteredSelected =
+    !allFilteredSelected && filteredIds.some((id) => selectedIds.has(id));
+
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllFiltered() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        for (const id of filteredIds) next.delete(id);
+      } else {
+        for (const id of filteredIds) next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function exportSelectedQrSheet() {
+    const items = gear.filter((g) => selectedIds.has(g.id));
+    if (items.length === 0) {
+      toast.error("Select at least one item to export");
+      return;
+    }
+    setExporting(true);
+    try {
+      const PUBLIC_ORIGIN = "https://passion-photography-gear.lovable.app";
+      const cards = await Promise.all(
+        items.map(async (g) => {
+          const url = `${PUBLIC_ORIGIN}/?gear=${g.id}`;
+          const dataUrl = await QRCode.toDataURL(url, {
+            width: 600,
+            margin: 1,
+            errorCorrectionLevel: "H",
+          });
+          return { id: g.id, name: g.name, url, dataUrl };
+        }),
+      );
+
+      const win = window.open("", "_blank");
+      if (!win) {
+        toast.error("Popup blocked", {
+          description: "Allow popups for this site to export QR codes.",
+        });
+        return;
+      }
+
+      const escapeHtml = (s: string) =>
+        s.replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,
+        );
+
+      const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Gear QR Codes (${cards.length})</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f5;
+    color: #111;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 1100px;
+    margin: 0 auto 20px;
+  }
+  .toolbar h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  .toolbar button {
+    background: #111; color: #fff; border: 0; border-radius: 6px;
+    padding: 8px 14px; font-size: 14px; cursor: pointer; font-weight: 500;
+  }
+  .sheet {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .card img {
+    width: 100%;
+    height: auto;
+    max-width: 220px;
+    aspect-ratio: 1 / 1;
+    image-rendering: pixelated;
+  }
+  .name {
+    font-weight: 600;
+    font-size: 13px;
+    margin-top: 10px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .meta {
+    font-size: 10px;
+    color: #666;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .toolbar { display: none; }
+    .sheet { box-shadow: none; padding: 12px; max-width: none; border-radius: 0; }
+    .card { border-color: #bbb; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>${cards.length} QR code${cards.length === 1 ? "" : "s"} · Passion Gear</h1>
+    <button onclick="window.print()">Print</button>
+  </div>
+  <div class="sheet">
+    ${cards
+      .map(
+        (c) => `
+      <div class="card">
+        <img src="${c.dataUrl}" alt="QR for ${escapeHtml(c.name)}" />
+        <div class="name">${escapeHtml(c.name)}</div>
+        <div class="meta">ID #${c.id}</div>
+      </div>`,
+      )
+      .join("")}
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => window.print(), 400);
+    });
+  </script>
+</body>
+</html>`;
+
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      toast.success(`Opened print sheet for ${cards.length} QR code${cards.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      toast.error("Couldn't generate QR codes", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <main className="min-h-screen">
       <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
