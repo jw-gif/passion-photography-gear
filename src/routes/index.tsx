@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, MOVERS, locationClasses, formatDate, type Location } from "@/lib/locations";
+import { LOCATIONS, MOVERS, locationClasses, formatDate, getSubLocations, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
