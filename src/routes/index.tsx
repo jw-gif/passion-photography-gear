@@ -156,8 +156,8 @@ function PublicGearView({ gearId }: { gearId: number }) {
     if (!subLocation) {
       setSubLocError(
         subLocChoice === "Other"
-          ? "Please enter the spot"
-          : "Please select a spot",
+          ? "Please enter the location"
+          : "Please select a location",
       );
       return;
     }
@@ -333,7 +333,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
                 }}
               >
                 <SelectTrigger id="sublocation" className="w-full">
-                  <SelectValue placeholder="Select a spot" />
+                  <SelectValue placeholder="Select a location" />
                 </SelectTrigger>
                 <SelectContent>
                   {getSubLocations(selectedLoc).map((s) => (
