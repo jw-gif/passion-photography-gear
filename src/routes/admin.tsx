@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ADMIN_PASSWORD, isAdmin, setAdmin } from "@/lib/admin-auth";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import { toast } from "sonner";
 
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+type GearStatus = "active" | "out_of_service" | "out_for_repair";
+
 interface GearRow {
   id: number;
   name: string;
@@ -28,6 +30,7 @@ interface GearRow {
   sub_location: string | null;
   last_note: string | null;
   last_updated: string;
+  status: GearStatus;
 }
 
 interface HistoryRow {
@@ -130,9 +133,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   const filtered = useMemo(() => {
+    // Hide non-active gear from the main board — manage them via /admin/manage
+    const active = gear.filter((g) => g.status === "active");
     const q = query.trim().toLowerCase();
-    if (!q) return gear;
-    return gear.filter((g) => g.name.toLowerCase().includes(q));
+    if (!q) return active;
+    return active.filter((g) => g.name.toLowerCase().includes(q));
   }, [gear, query]);
 
   const grouped = useMemo(() => {
@@ -197,6 +202,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/manage">
+                <Settings className="size-4" /> <span className="hidden sm:inline">Manage gear</span>
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/history">
                 <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
