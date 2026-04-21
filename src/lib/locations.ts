@@ -4,6 +4,16 @@ export type Location = (typeof LOCATIONS)[number];
 export const MOVERS = ["Jacob", "Jenna", "Karis", "Mac"] as const;
 export type Mover = (typeof MOVERS)[number];
 
+export const SUB_LOCATIONS: Record<Location, readonly string[]> = {
+  "515": ["Creative Suite", "Backspace", "AUD FOH", "Students FOH"],
+  Cumberland: ["Photo Cart", "Gather Space", "AUD FOH", "Students FOH"],
+  Trilith: ["Office", "Photo Cart", "AUD FOH", "Students FOH"],
+};
+
+export function getSubLocations(loc: string): readonly string[] {
+  return SUB_LOCATIONS[loc as Location] ?? [];
+}
+
 export function locationClasses(loc: string): string {
   switch (loc) {
     case "515":

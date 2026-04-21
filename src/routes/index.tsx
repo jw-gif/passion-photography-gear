@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, MOVERS, locationClasses, formatDate, type Location } from "@/lib/locations";
+import { LOCATIONS, MOVERS, locationClasses, formatDate, getSubLocations, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -79,6 +79,7 @@ interface GearRow {
   id: number;
   name: string;
   current_location: string;
+  sub_location: string | null;
   last_note: string | null;
   last_updated: string;
   moved_by: string | null;
@@ -89,6 +90,9 @@ function PublicGearView({ gearId }: { gearId: number }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [selectedLoc, setSelectedLoc] = useState<Location>("515");
+  const [subLocChoice, setSubLocChoice] = useState<string>("");
+  const [otherSubLoc, setOtherSubLoc] = useState("");
+  const [subLocError, setSubLocError] = useState("");
   const [note, setNote] = useState("");
   const [moverChoice, setMoverChoice] = useState<string>("");
   const [otherName, setOtherName] = useState("");
@@ -111,6 +115,14 @@ function PublicGearView({ gearId }: { gearId: number }) {
       } else {
         setGear(data as GearRow);
         setSelectedLoc(data.current_location as Location);
+        // Pre-populate sub-location if it matches a known option for this location
+        const known = getSubLocations(data.current_location);
+        if (data.sub_location && known.includes(data.sub_location)) {
+          setSubLocChoice(data.sub_location);
+        } else if (data.sub_location) {
+          setSubLocChoice("Other");
+          setOtherSubLoc(data.sub_location);
+        }
       }
       setLoading(false);
     })();
@@ -135,12 +147,25 @@ function PublicGearView({ gearId }: { gearId: number }) {
     }
     setNameError("");
 
+    const subLocation =
+      subLocChoice === "Other" ? otherSubLoc.trim() : subLocChoice;
+    if (!subLocation) {
+      setSubLocError(
+        subLocChoice === "Other"
+          ? "Please enter the spot"
+          : "Please select a spot",
+      );
+      return;
+    }
+    setSubLocError("");
+
     setSubmitting(true);
     const trimmedNote = note.trim() || null;
     const { error: updateErr } = await supabase
       .from("gear")
       .update({
         current_location: selectedLoc,
+        sub_location: subLocation,
         last_note: trimmedNote,
         last_updated: new Date().toISOString(),
         moved_by: movedBy,
@@ -150,6 +175,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
       await supabase.from("gear_history").insert({
         gear_id: gear.id,
         location: selectedLoc,
+        sub_location: subLocation,
         note: trimmedNote,
         moved_by: movedBy,
       });
@@ -213,6 +239,11 @@ function PublicGearView({ gearId }: { gearId: number }) {
           >
             {gear.current_location}
           </div>
+          {gear.sub_location && (
+            <div className="mt-2 text-base font-medium text-foreground/80">
+              {gear.sub_location}
+            </div>
+          )}
         </div>
 
         <div className="mt-6 space-y-1">
@@ -241,7 +272,12 @@ function PublicGearView({ gearId }: { gearId: number }) {
                   <button
                     key={loc}
                     type="button"
-                    onClick={() => setSelectedLoc(loc)}
+                    onClick={() => {
+                      setSelectedLoc(loc);
+                      setSubLocChoice("");
+                      setOtherSubLoc("");
+                      setSubLocError("");
+                    }}
                     className={cn(
                       "py-3 rounded-lg text-sm font-semibold border-2 transition-all",
                       selectedLoc === loc
@@ -253,6 +289,47 @@ function PublicGearView({ gearId }: { gearId: number }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold block mb-2" htmlFor="sublocation">
+                Spot at {selectedLoc} <span className="text-destructive">*</span>
+              </label>
+              <Select
+                value={subLocChoice}
+                onValueChange={(v) => {
+                  setSubLocChoice(v);
+                  setSubLocError("");
+                }}
+              >
+                <SelectTrigger id="sublocation" className="w-full">
+                  <SelectValue placeholder="Select a spot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getSubLocations(selectedLoc).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {subLocChoice === "Other" && (
+                <Input
+                  className="mt-2"
+                  value={otherSubLoc}
+                  onChange={(e) => {
+                    setOtherSubLoc(e.target.value);
+                    setSubLocError("");
+                  }}
+                  placeholder="Describe the spot"
+                  maxLength={100}
+                  autoFocus
+                />
+              )}
+              {subLocError && (
+                <p className="text-destructive text-sm mt-2">{subLocError}</p>
+              )}
             </div>
 
             <div>

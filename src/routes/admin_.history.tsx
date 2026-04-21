@@ -31,6 +31,7 @@ interface HistoryRow {
   id: string;
   gear_id: number;
   location: string;
+  sub_location: string | null;
   note: string | null;
   timestamp: string;
   moved_by: string | null;
@@ -263,14 +264,21 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                           </Link>
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={cn(
-                              "px-2.5 py-1 rounded-full text-xs font-bold",
-                              locationClasses(h.location),
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={cn(
+                                "px-2.5 py-1 rounded-full text-xs font-bold",
+                                locationClasses(h.location),
+                              )}
+                            >
+                              {h.location}
+                            </span>
+                            {h.sub_location && (
+                              <span className="text-xs font-medium text-foreground/80">
+                                {h.sub_location}
+                              </span>
                             )}
-                          >
-                            {h.location}
-                          </span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {h.moved_by ?? <span className="text-muted-foreground opacity-50">—</span>}
@@ -289,7 +297,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
             <div className="md:hidden space-y-3">
               {filtered.map((h) => (
                 <Card key={h.id} className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span
                       className={cn(
                         "px-2.5 py-1 rounded-full text-xs font-bold",
@@ -298,6 +306,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                     >
                       {h.location}
                     </span>
+                    {h.sub_location && (
+                      <span className="text-xs font-medium text-foreground/80">
+                        {h.sub_location}
+                      </span>
+                    )}
                     <span
                       className="text-xs text-muted-foreground ml-auto"
                       title={new Date(h.timestamp).toLocaleString()}

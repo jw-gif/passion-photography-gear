@@ -23,6 +23,7 @@ export type Database = {
           last_updated: string
           moved_by: string | null
           name: string
+          sub_location: string | null
         }
         Insert: {
           created_at?: string
@@ -32,6 +33,7 @@ export type Database = {
           last_updated?: string
           moved_by?: string | null
           name: string
+          sub_location?: string | null
         }
         Update: {
           created_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           last_updated?: string
           moved_by?: string | null
           name?: string
+          sub_location?: string | null
         }
         Relationships: []
       }
@@ -51,6 +54,7 @@ export type Database = {
           location: string
           moved_by: string | null
           note: string | null
+          sub_location: string | null
           timestamp: string
         }
         Insert: {
@@ -59,6 +63,7 @@ export type Database = {
           location: string
           moved_by?: string | null
           note?: string | null
+          sub_location?: string | null
           timestamp?: string
         }
         Update: {
@@ -67,6 +72,7 @@ export type Database = {
           location?: string
           moved_by?: string | null
           note?: string | null
+          sub_location?: string | null
           timestamp?: string
         }
         Relationships: [

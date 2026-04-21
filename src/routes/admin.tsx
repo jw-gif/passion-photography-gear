@@ -25,6 +25,7 @@ interface GearRow {
   id: number;
   name: string;
   current_location: string;
+  sub_location: string | null;
   last_note: string | null;
   last_updated: string;
 }
@@ -33,6 +34,7 @@ interface HistoryRow {
   id: string;
   gear_id: number;
   location: string;
+  sub_location: string | null;
   note: string | null;
   timestamp: string;
   moved_by: string | null;
@@ -158,7 +160,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
     const { error: updateErr } = await supabase
       .from("gear")
-      .update({ current_location: targetLoc, moved_by: "Admin", last_note: "Moved via admin drag" })
+      .update({ current_location: targetLoc, sub_location: null, moved_by: "Admin", last_note: "Moved via admin drag" })
       .eq("id", id);
 
     if (updateErr) {
@@ -173,6 +175,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     await supabase.from("gear_history").insert({
       gear_id: id,
       location: targetLoc,
+      sub_location: null,
       moved_by: "Admin",
       note: "Moved via admin drag",
     });
@@ -371,7 +374,7 @@ function GearCard({
         </div>
       </button>
 
-      <div className="flex items-center gap-2 mt-3">
+      <div className="flex items-center gap-2 mt-3 flex-wrap">
         <span
           className={cn(
             "px-2.5 py-1 rounded-full text-xs font-bold",
@@ -380,6 +383,11 @@ function GearCard({
         >
           {gear.current_location}
         </span>
+        {gear.sub_location && (
+          <span className="text-xs font-medium text-muted-foreground">
+            · {gear.sub_location}
+          </span>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -412,6 +420,11 @@ function GearCard({
                     >
                       {h.location}
                     </span>
+                    {h.sub_location && (
+                      <span className="text-xs font-medium text-foreground/80">
+                        {h.sub_location}
+                      </span>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatDate(h.timestamp)}
                     </span>
