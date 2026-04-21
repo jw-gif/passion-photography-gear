@@ -231,6 +231,11 @@ function PublicGearView({ gearId }: { gearId: number }) {
           >
             {gear.current_location}
           </div>
+          {gear.sub_location && (
+            <div className="mt-2 text-base font-medium text-foreground/80">
+              {gear.sub_location}
+            </div>
+          )}
         </div>
 
         <div className="mt-6 space-y-1">
