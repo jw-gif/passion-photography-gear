@@ -551,6 +551,44 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
           </Button>
         </div>
 
+        {/* Bulk selection bar */}
+        <div className="flex items-center gap-3 flex-wrap mb-3 px-1">
+          <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
+            <Checkbox
+              checked={
+                allFilteredSelected ? true : someFilteredSelected ? "indeterminate" : false
+              }
+              onCheckedChange={() => toggleSelectAllFiltered()}
+              disabled={filtered.length === 0}
+              aria-label="Select all visible gear"
+            />
+            <span>
+              {selectedIds.size === 0
+                ? "Select gear to export QR codes"
+                : `${selectedIds.size} selected`}
+            </span>
+          </label>
+          {selectedIds.size > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              Clear
+            </Button>
+          )}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={exportSelectedQrSheet}
+            disabled={selectedIds.size === 0 || exporting}
+            className="ml-auto"
+          >
+            <Printer className="size-4" />
+            {exporting
+              ? "Generating…"
+              : selectedIds.size === 0
+                ? "Export QR sheet"
+                : `Export ${selectedIds.size} QR${selectedIds.size === 1 ? "" : "s"}`}
+          </Button>
+        </div>
+
         {loading ? (
           <div className="text-muted-foreground text-sm">Loading gear…</div>
         ) : filtered.length === 0 ? (
