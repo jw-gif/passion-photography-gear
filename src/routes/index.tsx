@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Camera, Check, ArrowRight } from "lucide-react";
+import { Camera, Check, ArrowRight, CircleSlash, Wrench } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import {
   Select,
@@ -75,6 +75,8 @@ function Landing() {
   );
 }
 
+type GearStatus = "active" | "out_of_service" | "out_for_repair";
+
 interface GearRow {
   id: number;
   name: string;
@@ -83,6 +85,7 @@ interface GearRow {
   last_note: string | null;
   last_updated: string;
   moved_by: string | null;
+  status: GearStatus;
 }
 
 function PublicGearView({ gearId }: { gearId: number }) {
@@ -263,6 +266,32 @@ function PublicGearView({ gearId }: { gearId: number }) {
           )}
         </div>
 
+        {gear.status !== "active" && (
+          <div
+            className={cn(
+              "mt-8 p-4 rounded-xl border-2 flex items-start gap-3",
+              gear.status === "out_of_service"
+                ? "bg-destructive/10 border-destructive/30 text-destructive"
+                : "bg-loc-cumberland/10 border-loc-cumberland/40 text-loc-cumberland-foreground",
+            )}
+          >
+            {gear.status === "out_of_service" ? (
+              <CircleSlash className="size-5 mt-0.5 shrink-0" />
+            ) : (
+              <Wrench className="size-5 mt-0.5 shrink-0" />
+            )}
+            <div>
+              <div className="font-semibold">
+                {gear.status === "out_of_service" ? "Out of service" : "Out for repair"}
+              </div>
+              <div className="text-sm opacity-90 mt-0.5">
+                This gear is currently unavailable and can't be moved. Contact an admin if you need it.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gear.status === "active" && (
         <Card className="mt-10 p-5">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -402,6 +431,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
             )}
           </form>
         </Card>
+        )}
       </div>
     </main>
   );

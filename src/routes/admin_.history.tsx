@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { isAdmin, setAdmin, ADMIN_PASSWORD } from "@/lib/admin-auth";
-import { Camera, ArrowLeft, LogOut } from "lucide-react";
+import { Camera, ArrowLeft, LogOut, Settings } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import { Input } from "@/components/ui/input";
 import {
@@ -176,6 +176,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin">
                 <ArrowLeft className="size-4" /> <span className="hidden sm:inline">Dashboard</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/manage">
+                <Settings className="size-4" /> <span className="hidden sm:inline">Manage gear</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>

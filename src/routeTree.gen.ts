@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminManageRouteImport } from './routes/admin_.manage'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
 
 const AdminRoute = AdminRouteImport.update({
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminManageRoute = AdminManageRouteImport.update({
+  id: '/admin_/manage',
+  path: '/admin/manage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminHistoryRoute = AdminHistoryRouteImport.update({
   id: '/admin_/history',
   path: '/admin/history',
@@ -33,30 +39,34 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin/history': typeof AdminHistoryRoute
+  '/admin/manage': typeof AdminManageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin/history': typeof AdminHistoryRoute
+  '/admin/manage': typeof AdminManageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin_/history': typeof AdminHistoryRoute
+  '/admin_/manage': typeof AdminManageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/admin/history'
+  fullPaths: '/' | '/admin' | '/admin/history' | '/admin/manage'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/admin/history'
-  id: '__root__' | '/' | '/admin' | '/admin_/history'
+  to: '/' | '/admin' | '/admin/history' | '/admin/manage'
+  id: '__root__' | '/' | '/admin' | '/admin_/history' | '/admin_/manage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
+  AdminManageRoute: typeof AdminManageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/manage': {
+      id: '/admin_/manage'
+      path: '/admin/manage'
+      fullPath: '/admin/manage'
+      preLoaderRoute: typeof AdminManageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/history': {
       id: '/admin_/history'
       path: '/admin/history'
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminHistoryRoute: AdminHistoryRoute,
+  AdminManageRoute: AdminManageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
