@@ -275,7 +275,17 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     );
   }
 
-  async function handleAdd(name: string) {
+  async function handleRequestableToggle(g: GearRow) {
+    const next = !g.requestable;
+    setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: next } : x)));
+    const { error } = await supabase.from("gear").update({ requestable: next }).eq("id", g.id);
+    if (error) {
+      setGear((prev) => prev.map((x) => (x.id === g.id ? { ...x, requestable: !next } : x)));
+      toast.error(`Couldn't update ${g.name}`, { description: error.message });
+      return;
+    }
+    toast.success(next ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
+  }
     const trimmed = name.trim();
     if (!trimmed) {
       toast.error("Name can't be empty");
