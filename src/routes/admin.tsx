@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, locationClasses, formatDate } from "@/lib/locations";
+import { LOCATIONS, locationClasses, locationLabel, formatDate } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -167,7 +167,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
     const { error: updateErr } = await supabase
       .from("gear")
-      .update({ current_location: targetLoc, sub_location: null, moved_by: "Admin", last_note: "Moved via admin drag" })
+      .update({ current_location: targetLoc, sub_location: null, moved_by: "Admin", last_note: null })
       .eq("id", id);
 
     if (updateErr) {
@@ -184,10 +184,10 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       location: targetLoc,
       sub_location: null,
       moved_by: "Admin",
-      note: "Moved via admin drag",
+      note: null,
     });
 
-    toast.success(`${item.name} → ${targetLoc}`);
+    toast.success(`${item.name} → ${locationLabel(targetLoc)}`);
   }
 
   return (
@@ -271,7 +271,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                         locationClasses(loc),
                       )}
                     >
-                      {loc}
+                      {locationLabel(loc)}
                     </span>
                     <span className="text-sm text-muted-foreground">
                       {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
@@ -394,7 +394,7 @@ function GearCard({
             locationClasses(gear.current_location),
           )}
         >
-          {gear.current_location}
+          {locationLabel(gear.current_location)}
         </span>
         {gear.sub_location && (
           <span className="text-xs font-medium text-muted-foreground">
@@ -449,7 +449,7 @@ function GearCard({
                         locationClasses(h.location),
                       )}
                     >
-                      {h.location}
+                      {locationLabel(h.location)}
                     </span>
                     {h.sub_location && (
                       <span className="text-xs font-medium text-foreground/80">

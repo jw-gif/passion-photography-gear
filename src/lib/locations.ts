@@ -14,6 +14,17 @@ export function getSubLocations(loc: string): readonly string[] {
   return SUB_LOCATIONS[loc as Location] ?? [];
 }
 
+export function locationLabel(loc: string): string {
+  switch (loc) {
+    case "Cumberland":
+      return "CBL";
+    case "Trilith":
+      return "TRL";
+    default:
+      return loc;
+  }
+}
+
 export function locationClasses(loc: string): string {
   switch (loc) {
     case "515":

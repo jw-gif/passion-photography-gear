@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, MOVERS, locationClasses, formatDate, getSubLocations, type Location } from "@/lib/locations";
+import { LOCATIONS, MOVERS, locationClasses, locationLabel, formatDate, getSubLocations, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Passion Photography Gear Tracking" },
-      { name: "description", content: "Track photography gear locations across 515, Cumberland, and Trilith." },
+      { name: "description", content: "Track photography gear locations across 515, CBL, and TRL." },
     ],
   }),
   component: IndexPage,
@@ -156,8 +156,8 @@ function PublicGearView({ gearId }: { gearId: number }) {
     if (!subLocation) {
       setSubLocError(
         subLocChoice === "Other"
-          ? "Please enter the spot"
-          : "Please select a spot",
+          ? "Please enter the location"
+          : "Please select a location",
       );
       return;
     }
@@ -241,7 +241,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
               locationClasses(gear.current_location),
             )}
           >
-            {gear.current_location}
+            {locationLabel(gear.current_location)}
           </div>
           {gear.sub_location && (
             <div className="mt-2 text-base font-medium text-foreground/80">
@@ -315,7 +315,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
                         : "bg-background border-border text-foreground hover:border-foreground/30",
                     )}
                   >
-                    {loc}
+                    {locationLabel(loc)}
                   </button>
                 ))}
               </div>
@@ -333,7 +333,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
                 }}
               >
                 <SelectTrigger id="sublocation" className="w-full">
-                  <SelectValue placeholder="Select a spot" />
+                  <SelectValue placeholder="Select a location" />
                 </SelectTrigger>
                 <SelectContent>
                   {getSubLocations(selectedLoc).map((s) => (

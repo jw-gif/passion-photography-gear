@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { locationLabel } from "@/lib/locations";
 import { ADMIN_PASSWORD, isAdmin, setAdmin } from "@/lib/admin-auth";
 import QRCode from "qrcode";
 import {
@@ -660,7 +661,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
                             </button>
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5">
-                            ID #{g.id} · {g.current_location}
+                            ID #{g.id} · {locationLabel(g.current_location)}
                           </div>
                         </>
                       )}
