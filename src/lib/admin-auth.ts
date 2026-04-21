@@ -1,6 +1,6 @@
 // Simple shared-password admin gate. Stored client-side only.
 // Password is intentionally hardcoded per user request for quick access.
-export const ADMIN_PASSWORD = "passion2025";
+export const ADMIN_PASSWORD = "passion.268!";
 const KEY = "pg_admin_ok";
 
 export function isAdmin(): boolean {
