@@ -48,8 +48,7 @@ function RequestPage() {
   const [query, setQuery] = useState("");
   const [selectedGear, setSelectedGear] = useState<Set<number>>(new Set());
 
-  const [nameChoice, setNameChoice] = useState<string>("");
-  const [otherName, setOtherName] = useState("");
+  const [name, setName] = useState("");
   const [location, setLocation] = useState<string>("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
