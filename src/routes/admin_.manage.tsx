@@ -289,6 +289,58 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     toast.success(nextValue ? `${g.name} is now requestable` : `${g.name} hidden from requests`);
   };
 
+  async function handleBulkStatus(status: GearStatus) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const previous = gear;
+    setGear((prev) => prev.map((x) => (selectedIds.has(x.id) ? { ...x, status } : x)));
+    const { error } = await supabase.from("gear").update({ status }).in("id", ids);
+    setBulkBusy(false);
+    if (error) {
+      setGear(previous);
+      toast.error("Couldn't update status", { description: error.message });
+      return;
+    }
+    toast.success(`Updated ${ids.length} item${ids.length === 1 ? "" : "s"} → ${statusMeta(status).label}`);
+  }
+
+  async function handleBulkRequestable(requestable: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const previous = gear;
+    setGear((prev) => prev.map((x) => (selectedIds.has(x.id) ? { ...x, requestable } : x)));
+    const { error } = await supabase.from("gear").update({ requestable }).in("id", ids);
+    setBulkBusy(false);
+    if (error) {
+      setGear(previous);
+      toast.error("Couldn't update visibility", { description: error.message });
+      return;
+    }
+    toast.success(
+      `${ids.length} item${ids.length === 1 ? "" : "s"} ${requestable ? "shown on" : "hidden from"} request page`,
+    );
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    setBulkDeleteOpen(false);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const previous = gear;
+    setGear((prev) => prev.filter((x) => !selectedIds.has(x.id)));
+    const { error } = await supabase.from("gear").delete().in("id", ids);
+    setBulkBusy(false);
+    if (error) {
+      setGear(previous);
+      toast.error("Couldn't delete gear", { description: error.message });
+      return;
+    }
+    clearSelection();
+    toast.success(`Deleted ${ids.length} item${ids.length === 1 ? "" : "s"}`);
+  }
+
   async function handleAdd(name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
