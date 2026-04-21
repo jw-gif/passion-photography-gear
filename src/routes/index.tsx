@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, locationClasses, formatDate, type Location } from "@/lib/locations";
+import { LOCATIONS, MOVERS, locationClasses, formatDate, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -73,6 +73,7 @@ interface GearRow {
   current_location: string;
   last_note: string | null;
   last_updated: string;
+  moved_by: string | null;
 }
 
 function PublicGearView({ gearId }: { gearId: number }) {
@@ -81,6 +82,9 @@ function PublicGearView({ gearId }: { gearId: number }) {
   const [notFound, setNotFound] = useState(false);
   const [selectedLoc, setSelectedLoc] = useState<Location>("515");
   const [note, setNote] = useState("");
+  const [moverChoice, setMoverChoice] = useState<string>("");
+  const [otherName, setOtherName] = useState("");
+  const [nameError, setNameError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -110,6 +114,19 @@ function PublicGearView({ gearId }: { gearId: number }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!gear) return;
+
+    const movedBy =
+      moverChoice === "Other" ? otherName.trim() : moverChoice;
+    if (!movedBy) {
+      setNameError(
+        moverChoice === "Other"
+          ? "Please enter your name"
+          : "Please select your name",
+      );
+      return;
+    }
+    setNameError("");
+
     setSubmitting(true);
     const trimmedNote = note.trim() || null;
     const { error: updateErr } = await supabase
@@ -118,6 +135,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
         current_location: selectedLoc,
         last_note: trimmedNote,
         last_updated: new Date().toISOString(),
+        moved_by: movedBy,
       })
       .eq("id", gear.id);
     if (!updateErr) {
@@ -125,6 +143,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
         gear_id: gear.id,
         location: selectedLoc,
         note: trimmedNote,
+        moved_by: movedBy,
       });
       // refresh
       const { data } = await supabase
@@ -190,7 +209,12 @@ function PublicGearView({ gearId }: { gearId: number }) {
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
             Last updated
           </div>
-          <div className="text-sm">{formatDate(gear.last_updated)}</div>
+          <div className="text-sm">
+            {formatDate(gear.last_updated)}
+            {gear.moved_by && (
+              <span className="text-muted-foreground"> · by {gear.moved_by}</span>
+            )}
+          </div>
           {gear.last_note && (
             <div className="text-sm text-muted-foreground italic pt-1">
               "{gear.last_note}"
@@ -219,6 +243,63 @@ function PublicGearView({ gearId }: { gearId: number }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <div className="text-sm font-semibold mb-3">
+                Your name <span className="text-destructive">*</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {MOVERS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setMoverChoice(m);
+                      setNameError("");
+                    }}
+                    className={cn(
+                      "py-2.5 rounded-lg text-sm font-semibold border-2 transition-all",
+                      moverChoice === m
+                        ? "bg-primary text-primary-foreground border-transparent"
+                        : "bg-background border-border text-foreground hover:border-foreground/30",
+                    )}
+                  >
+                    {m}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoverChoice("Other");
+                    setNameError("");
+                  }}
+                  className={cn(
+                    "py-2.5 rounded-lg text-sm font-semibold border-2 transition-all col-span-3",
+                    moverChoice === "Other"
+                      ? "bg-primary text-primary-foreground border-transparent"
+                      : "bg-background border-border text-foreground hover:border-foreground/30",
+                  )}
+                >
+                  Other
+                </button>
+              </div>
+              {moverChoice === "Other" && (
+                <Input
+                  className="mt-2"
+                  value={otherName}
+                  onChange={(e) => {
+                    setOtherName(e.target.value);
+                    setNameError("");
+                  }}
+                  placeholder="Enter your name"
+                  maxLength={50}
+                  autoFocus
+                />
+              )}
+              {nameError && (
+                <p className="text-destructive text-sm mt-2">{nameError}</p>
+              )}
             </div>
 
             <div>

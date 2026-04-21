@@ -21,6 +21,7 @@ export type Database = {
           id: number
           last_note: string | null
           last_updated: string
+          moved_by: string | null
           name: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           id: number
           last_note?: string | null
           last_updated?: string
+          moved_by?: string | null
           name: string
         }
         Update: {
@@ -37,6 +39,7 @@ export type Database = {
           id?: number
           last_note?: string | null
           last_updated?: string
+          moved_by?: string | null
           name?: string
         }
         Relationships: []
@@ -46,6 +49,7 @@ export type Database = {
           gear_id: number
           id: string
           location: string
+          moved_by: string | null
           note: string | null
           timestamp: string
         }
@@ -53,6 +57,7 @@ export type Database = {
           gear_id: number
           id?: string
           location: string
+          moved_by?: string | null
           note?: string | null
           timestamp?: string
         }
@@ -60,6 +65,7 @@ export type Database = {
           gear_id?: number
           id?: string
           location?: string
+          moved_by?: string | null
           note?: string | null
           timestamp?: string
         }

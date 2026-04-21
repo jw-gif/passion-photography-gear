@@ -33,6 +33,7 @@ interface HistoryRow {
   location: string;
   note: string | null;
   timestamp: string;
+  moved_by: string | null;
 }
 
 function AdminPage() {
@@ -310,7 +311,7 @@ function GearCard({
             <ol className="space-y-3">
               {history.map((h) => (
                 <li key={h.id} className="text-sm">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={cn(
                         "px-2 py-0.5 rounded-full text-xs font-semibold",
@@ -322,6 +323,11 @@ function GearCard({
                     <span className="text-xs text-muted-foreground">
                       {formatDate(h.timestamp)}
                     </span>
+                    {h.moved_by && (
+                      <span className="text-xs text-muted-foreground">
+                        · by {h.moved_by}
+                      </span>
+                    )}
                   </div>
                   {h.note && (
                     <div className="text-sm text-muted-foreground mt-1 italic pl-1">

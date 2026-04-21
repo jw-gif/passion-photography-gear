@@ -1,6 +1,9 @@
 export const LOCATIONS = ["515", "Cumberland", "Trilith"] as const;
 export type Location = (typeof LOCATIONS)[number];
 
+export const MOVERS = ["Jacob", "Jenna", "Karis", "Mac"] as const;
+export type Mover = (typeof MOVERS)[number];
+
 export function locationClasses(loc: string): string {
   switch (loc) {
     case "515":

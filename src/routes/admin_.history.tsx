@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/admin/history")({
+export const Route = createFileRoute("/admin_/history")({
   head: () => ({
     meta: [
       { title: "Activity Log · Passion Gear Tracking" },
@@ -32,6 +32,7 @@ interface HistoryRow {
   location: string;
   note: string | null;
   timestamp: string;
+  moved_by: string | null;
 }
 
 interface GearRow {
@@ -235,6 +236,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                       <th className="px-4 py-3 font-medium text-muted-foreground">When</th>
                       <th className="px-4 py-3 font-medium text-muted-foreground">Gear</th>
                       <th className="px-4 py-3 font-medium text-muted-foreground">Location</th>
+                      <th className="px-4 py-3 font-medium text-muted-foreground">By</th>
                       <th className="px-4 py-3 font-medium text-muted-foreground">Note</th>
                     </tr>
                   </thead>
@@ -264,6 +266,9 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                           >
                             {h.location}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {h.moved_by ?? <span className="text-muted-foreground opacity-50">—</span>}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground italic">
                           {h.note ? `"${h.note}"` : <span className="opacity-50">—</span>}
@@ -302,6 +307,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
                   >
                     {gearMap.get(h.gear_id) ?? `Gear #${h.gear_id}`}
                   </Link>
+                  {h.moved_by && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      by {h.moved_by}
+                    </div>
+                  )}
                   {h.note && (
                     <div className="text-sm text-muted-foreground mt-2 italic">
                       "{h.note}"
