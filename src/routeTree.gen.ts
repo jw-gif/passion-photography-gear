@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RequestPhotographyRouteImport } from './routes/request-photography'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -23,6 +24,11 @@ import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestPhotographyRoute = RequestPhotographyRouteImport.update({
+  id: '/request-photography',
+  path: '/request-photography',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RequestRoute = RequestRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
+  '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/history': typeof AdminHistoryRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
+  '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/history': typeof AdminHistoryRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
+  '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin_/admins': typeof AdminAdminsRoute
   '/admin_/history': typeof AdminHistoryRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/request'
+    | '/request-photography'
     | '/reset-password'
     | '/admin/admins'
     | '/admin/history'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/request'
+    | '/request-photography'
     | '/reset-password'
     | '/admin/admins'
     | '/admin/history'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/request'
+    | '/request-photography'
     | '/reset-password'
     | '/admin_/admins'
     | '/admin_/history'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
   RequestRoute: typeof RequestRoute
+  RequestPhotographyRoute: typeof RequestPhotographyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/request-photography': {
+      id: '/request-photography'
+      path: '/request-photography'
+      fullPath: '/request-photography'
+      preLoaderRoute: typeof RequestPhotographyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/request': {
@@ -240,6 +260,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
   RequestRoute: RequestRoute,
+  RequestPhotographyRoute: RequestPhotographyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminAdminsRoute: AdminAdminsRoute,
   AdminHistoryRoute: AdminHistoryRoute,
