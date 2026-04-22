@@ -1,131 +1,131 @@
 
 
-## Plan: Real authentication + role-based access + display name everywhere
+# Photography Hub Restructure
 
-This replaces the shared `passion.268!` password with proper email/password sign-in, adds an admins table with display names, hardens the database, and uses the signed-in person's name in QR/update flows.
+Transform the app from "gear-tracking-first" to a unified Photography Hub with a centralized admin home, calendar view, and consistent URL structure across photography and gear workflows.
 
----
+## URL & naming changes
 
-### 1. Authentication system
+| Old | New |
+|---|---|
+| `/request` | `/request-gear` |
+| `/request-photography` | `/request-photography` (unchanged) |
+| `/admin` (gear board) | `/admin/gear` |
+| `/admin/requests` | `/admin/requests-gear` |
+| `/admin/photo-requests` | `/admin/requests-photography` |
+| `/admin/manage` | `/admin/gear-manage` |
+| `/admin/history` | `/admin/gear-history` |
+| `/admin/admins` | `/admin/team` |
+| `/admin` (NEW) | Hub home — calendar + upcoming requests |
 
-**Sign-in method**: Email + password (no Google, since this is a small internal team — but I'll leave that easy to add later). New admins are created from inside the app by an existing admin.
+The old `/request` route stays as a thin redirect to `/request-gear` so existing QR codes and links still resolve. (Public gear QR scans use `/?gear=ID`, which is unchanged.)
 
-**New page**: `/login`
-- Email + password fields.
-- Show/hide password toggle (eye icon button on the right of the field) — applies to every password field in the app.
-- "Forgot password?" link → triggers a Supabase reset email → user lands on `/reset-password` to set a new one.
-- Redirects back to where you came from after success (`?redirect=...`).
+App-wide copy update: "Passion Gear" / "Passion Gear Tracking" → **"Passion Photography Hub"** in headers, page titles, meta descriptions, and the landing page.
 
-**New page**: `/reset-password`
-- Reads the recovery token, lets the user set a new password (with show/hide).
+## New `/admin` Hub home
 
-**Removed**: `src/lib/admin-auth.ts` and the four `LoginGate` components in admin routes. The hardcoded `passion.268!` is gone from the bundle.
+Replaces today's gear board as the admin landing page.
 
-**Initial admin**: I'll seed one admin row for you to claim. You'll get a sign-up link once and set your password — then you create the rest of the team from inside the Manage page.
+**Top section — Month calendar**
+- Month grid (week starts Sunday), prev/next/today controls.
+- Each day cell shows compact "pills" for items happening that day:
+  - Gear requests → use `needed_date`
+  - Photography requests → use `event_date` (and span across `event_end_date` when `spans_multiple_days`)
+- Pill color = status, with a shared legend:
+  - Green = approved / scheduled
+  - Amber = pending / in review
+  - Blue = new
+  - Violet = scheduled (photo)
+  - Red = denied / declined
+  - Gray = completed / archived
+- Pill icon distinguishes type (camera vs. gear box). Click a pill → opens existing detail view in the relevant admin route.
 
----
+**Below calendar — Upcoming list (two columns on desktop, stacked on mobile)**
+- **Photography Requests** — next 30 days, sorted by event date, showing status badge, requester, event name, date, location.
+- **Gear Requests** — next 30 days, sorted by needed date, showing status badge, requestor, item count, location, needed date.
+- Each card links to the corresponding admin detail route.
+- Empty states + "View all" links to the full list pages.
 
-### 2. Database changes
+**Header** — unified hub nav with grouped sections:
+- Hub (home)
+- Photography → Requests
+- Gear → Board, Requests, Manage, History
+- Team
+- Sign out
 
-**New tables**:
+Use a compact dropdown/segmented nav so it fits on one row at desktop and collapses to a sheet on mobile.
 
-- `admin_profiles` — stores display name per admin user.
-  - `id uuid` (FK → `auth.users.id`, cascade delete)
-  - `display_name text not null` (e.g. "Jacob", "Jenna")
-  - `created_at`, `updated_at`
-- `user_roles` — separate table per security best practice.
-  - `id uuid pk`, `user_id uuid` (FK → `auth.users.id`, cascade), `role app_role not null`
-  - Unique on `(user_id, role)`
-- New enum `app_role` with one value: `admin`. (Easy to extend later.)
+## Landing page (`/`)
 
-**New SECURITY DEFINER function**: `public.has_role(_user_id uuid, _role app_role) returns boolean` — used in all admin RLS checks. Avoids recursive RLS.
+Rewrite as a hub entry point:
+- Headline: "Passion Photography Hub"
+- Subhead: "Request photography, request gear, and track everything the team is shooting."
+- Three primary CTAs: **Request photography**, **Request gear**, **Admin hub**.
+- Public gear-QR view (`/?gear=ID`) keeps current behavior, just rebranded header.
 
-**Trigger**: when a new row is added to `auth.users` for someone we've pre-authorized, auto-create their `admin_profiles` row. (For simplicity, I'll just have the admin invite flow insert both rows together.)
+## Technical implementation
 
-**RLS policy overhaul** (replaces all the current `true` policies):
+**New files**
+- `src/routes/admin.index.tsx` — replaces current `admin.tsx` content; renders the Hub home (calendar + upcoming lists). The current `/admin` root becomes a layout shell with `<Outlet />`.
 
-| Table | Public can | Admin can |
-|---|---|---|
-| `gear` | SELECT, UPDATE (location fields only — see #3) | INSERT, DELETE, full UPDATE |
-| `gear_history` | SELECT, INSERT | (no changes needed) |
-| `gear_requests` | SELECT, INSERT | UPDATE, DELETE |
-| `gear_request_items` | SELECT, INSERT | UPDATE, DELETE |
-| `admin_profiles` | SELECT (so we can show names on history) | UPDATE own, admin can UPDATE all |
-| `user_roles` | nothing | SELECT, INSERT, DELETE (admins only) |
+  Actually, since we use flat file-based routing (`admin.tsx` + `admin_.*.tsx`), simpler approach: **rewrite `src/routes/admin.tsx`** to be the Hub home. The existing gear board moves to a new `src/routes/admin_.gear.tsx`.
 
----
+- `src/routes/admin_.gear.tsx` — extracted gear board (Dashboard + GearCard + QrModal from current admin.tsx).
+- `src/routes/admin_.requests-gear.tsx` — copy of `admin_.requests.tsx` at new path.
+- `src/routes/admin_.requests-photography.tsx` — copy of `admin_.photo-requests.tsx` at new path.
+- `src/routes/admin_.gear-manage.tsx`, `admin_.gear-history.tsx`, `admin_.team.tsx` — renames of manage/history/admins.
+- `src/routes/request-gear.tsx` — copy of `request.tsx` at new path.
+- `src/components/hub-header.tsx` — shared admin header (logo, nav, sign out) used across all admin routes.
+- `src/components/hub-calendar.tsx` — month calendar grid component.
 
-### 3. Lock down public gear updates (Input validation finding)
+**Deleted/redirected files**
+- `src/routes/admin_.requests.tsx` → replace body with a `<Navigate to="/admin/requests-gear" />` to avoid breaking bookmarks.
+- `src/routes/admin_.photo-requests.tsx` → redirect to `/admin/requests-photography`.
+- `src/routes/admin_.manage.tsx`, `admin_.history.tsx`, `admin_.admins.tsx` → redirects to new paths.
+- `src/routes/request.tsx` → redirect to `/request-gear`.
 
-A DB trigger on `gear` UPDATE rejects unauthenticated edits to anything except `current_location`, `sub_location`, `last_note`, `moved_by`, `last_updated`. Also caps lengths (sub_location ≤ 100, note ≤ 200, moved_by ≤ 50) and validates `current_location` is one of `'515' | 'Cumberland' | 'Trilith'`. Authenticated admins bypass these checks.
+**Data loading for hub**
+- Single combined fetch on hub mount:
+  - `gear_requests` where `needed_date >= today AND needed_date <= today + 60 days`
+  - `photo_requests` where `event_date >= today AND event_date <= today + 60 days`
+- Realtime subscriptions on both tables to refresh automatically.
+- Memoize a unified `events[]` array keyed by date for the calendar.
 
----
+**Status color mapping**
+- Reuse `statusBadgeClasses` from `src/lib/orgs.ts` for photo statuses.
+- Add equivalent helper for gear request statuses (`pending`, `approved`, `denied`).
+- Extract a shared `statusDotColor(status, kind)` util into `src/lib/orgs.ts` so calendar pills and list badges stay consistent.
 
-### 4. Use the signed-in admin's display name everywhere
+**Header copy & meta**
+- Update `<title>` and `<meta description>` in `__root.tsx` and every route's `head()` to "Passion Photography Hub" branding.
+- Update landing page hero copy.
 
-**On `/admin` (drag & drop)**: when logged-in, use the admin's `display_name` for `moved_by` instead of the literal string `"Admin"`.
+## ASCII layout — admin hub home
 
-**On `/?gear=<id>` (public QR update form)**:
-- If signed in as an admin, the **"Your name"** dropdown is pre-selected to the admin's `display_name` (added to the dropdown if not already in `MOVERS`). The form still lets them change it if they're updating on someone else's behalf.
-- If not signed in, the form behaves exactly as today.
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ [logo] Passion Photography Hub    Photo · Gear · Team · Out │
+├─────────────────────────────────────────────────────────────┤
+│  ◀  April 2026  ▶                              [Today]      │
+│  Sun  Mon  Tue  Wed  Thu  Fri  Sat                          │
+│  ┌──┬──┬──┬──┬──┬──┬──┐                                     │
+│  │  │  │ 1│ 2│ 3│ 4│ 5│                                     │
+│  │  │  │📷│  │🎒│📷│  │  ← color-coded pills                │
+│  └──┴──┴──┴──┴──┴──┴──┘                                     │
+│  Legend: ● Approved  ● Pending  ● New  ● Declined           │
+├─────────────────────────────────────────────────────────────┤
+│  Upcoming Photography          │  Upcoming Gear              │
+│  ─────────────────────         │  ──────────────────         │
+│  [Scheduled] Easter Service    │  [Approved] Sunday kit      │
+│  Apr 5 · 515 · Jacob W.        │  Apr 4 · 515 · Sarah        │
+│  ...                           │  ...                        │
+└─────────────────────────────────────────────────────────────┘
+```
 
-**On `/admin/history`, `/admin/requests`, gear card history popovers**: anywhere the code currently renders the literal `"Admin"`, swap to the actual person's name (already stored in `moved_by` from the writes above).
+## Out of scope (future phases)
 
-**Approve/deny on `/admin/requests`**: `reviewed_by` gets the admin's display name instead of `"Admin"`.
-
----
-
-### 5. Show/hide password toggle (your request)
-
-A small reusable `<PasswordInput />` component with an eye icon button on the right that toggles `type="password"` ↔ `type="text"`. Used on:
-- `/login`
-- `/reset-password`
-- Manage admins page (when creating new admin or changing password)
-
----
-
-### 6. Manage admins (under `/admin/manage`)
-
-A new "Admins" tab/section on the existing manage page so you can:
-- See all admins (email + display name)
-- Invite a new admin (email + display name → sends magic invite link)
-- Rename / remove admins
-- Reset your own password from inside the app
-
----
-
-### Files
-
-**New**:
-- `src/routes/login.tsx`
-- `src/routes/reset-password.tsx`
-- `src/components/password-input.tsx`
-- `src/lib/auth.tsx` — `useAuth()` hook + provider wrapping the app, exposes `user`, `displayName`, `isAdmin`, `signIn`, `signOut`
-- `src/routes/_authenticated.tsx` — pathless layout route that gates `/admin*` behind auth + admin role
-- Migration: `admin_profiles`, `user_roles`, `app_role` enum, `has_role()`, RLS policies, gear-update validation trigger
-
-**Edited**:
-- `src/routes/__root.tsx` — wrap in auth provider
-- `src/routes/admin.tsx`, `admin_.manage.tsx`, `admin_.history.tsx`, `admin_.requests.tsx` — move under `_authenticated`, drop `LoginGate`, use display name for `moved_by` / `reviewed_by`
-- `src/routes/index.tsx` — auto-fill mover name when admin is signed in
-- `src/router.tsx` — pass auth context to router
-
-**Deleted**:
-- `src/lib/admin-auth.ts`
-
----
-
-### Initial setup (one-time, after this lands)
-
-1. I'll seed one admin row with your email — you'll get an invite email, set your password, and you're in.
-2. From `/admin/manage` → Admins tab, you invite the rest of the team.
-3. The old shared password no longer works.
-
-### What this fixes from the security scan
-
-- ✅ `SECRETS_EXPOSED` — hardcoded password gone
-- ✅ `CLIENT_SIDE_AUTH` — replaced with real Supabase Auth
-- ✅ `PUBLIC_DATA_EXPOSURE` — RLS policies now require admin role for destructive ops
-- ✅ `UNRESTRICTED_WRITE_ACCESS` — same
-- ✅ `INPUT_VALIDATION` — DB trigger caps what public QR scans can write
+- Photographer job board (Phase 2)
+- AI shot list generator (Phase 3)
+- Drag-to-reschedule on calendar
+- Week/day calendar views
 
