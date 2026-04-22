@@ -74,6 +74,8 @@ function RequestsRoute() {
 }
 
 function RequestsView({ onLogout }: { onLogout: () => void }) {
+  const { displayName } = useAuth();
+  const reviewerName = displayName ?? "Admin";
   const [requests, setRequests] = useState<GearRequest[]>([]);
   const [items, setItems] = useState<GearRequestItem[]>([]);
   const [gear, setGear] = useState<GearRow[]>([]);
