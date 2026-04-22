@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import { Camera, Check, ArrowRight, CircleSlash, Wrench } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import {
@@ -95,6 +96,7 @@ interface GearRow {
 }
 
 function PublicGearView({ gearId }: { gearId: number }) {
+  const { displayName, isAdmin } = useAuth();
   const [gear, setGear] = useState<GearRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -108,6 +110,17 @@ function PublicGearView({ gearId }: { gearId: number }) {
   const [nameError, setNameError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Auto-select admin's display name when signed in
+  useEffect(() => {
+    if (!isAdmin || !displayName || moverChoice) return;
+    if ((MOVERS as readonly string[]).includes(displayName)) {
+      setMoverChoice(displayName);
+    } else {
+      setMoverChoice("Other");
+      setOtherName(displayName);
+    }
+  }, [isAdmin, displayName, moverChoice]);
 
   useEffect(() => {
     let cancelled = false;

@@ -155,11 +155,11 @@ function RequestsView({ onLogout }: { onLogout: () => void }) {
   async function setStatus(req: GearRequest, status: RequestStatus) {
     const previous = req.status;
     setRequests((prev) =>
-      prev.map((r) => (r.id === req.id ? { ...r, status, reviewed_by: "Admin", reviewed_at: new Date().toISOString() } : r)),
+      prev.map((r) => (r.id === req.id ? { ...r, status, reviewed_by: reviewerName, reviewed_at: new Date().toISOString() } : r)),
     );
     const { error } = await supabase
       .from("gear_requests")
-      .update({ status, reviewed_by: "Admin", reviewed_at: new Date().toISOString() })
+      .update({ status, reviewed_by: reviewerName, reviewed_at: new Date().toISOString() })
       .eq("id", req.id);
     if (error) {
       setRequests((prev) => prev.map((r) => (r.id === req.id ? { ...r, status: previous } : r)));
