@@ -13,7 +13,7 @@ import {
   subMonths,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Camera, Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CalendarEventKind = "photo" | "gear";
