@@ -305,10 +305,10 @@ function RequestPhotographyPage() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* SECTION: Who you are */}
           <Section title="Tell us about you">
-            <Field label="Please tell us which company you're with" required>
+            <Field label="Please tell us what team you're on" required>
               <Select value={company} onValueChange={(v) => { setCompany(v); setTeam(""); }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
+                  <SelectValue placeholder="Select a team" />
                 </SelectTrigger>
                 <SelectContent>
                   {COMPANIES.map((c) => (
