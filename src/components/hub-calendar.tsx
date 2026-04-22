@@ -48,13 +48,10 @@ const LEGEND: { color: string; label: string }[] = [
 export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
   const [cursor, setCursor] = useState<Date>(new Date());
 
-  const monthStart = useMemo(() => startOfMonth(cursor), [cursor]);
-  const monthEnd = useMemo(() => endOfMonth(cursor), [cursor]);
-  const gridStart = useMemo(
-    () => startOfWeek(monthStart, { weekStartsOn: 0 }),
-    [monthStart],
-  );
-  const gridEnd = useMemo(() => endOfWeek(monthEnd, { weekStartsOn: 0 }), [monthEnd]);
+  // Always anchor the grid to the current week as the top row.
+  // `cursor` advances/retreats by week (not month) so navigation slides forward in time.
+  const gridStart = useMemo(() => startOfWeek(cursor, { weekStartsOn: 0 }), [cursor]);
+  const gridEnd = useMemo(() => addDays(gridStart, 7 * 5 - 1), [gridStart]); // 5 weeks visible
 
   const days = useMemo(() => {
     const arr: Date[] = [];
@@ -64,6 +61,16 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
       d = addDays(d, 1);
     }
     return arr;
+  }, [gridStart, gridEnd]);
+
+  // Label for the visible range header
+  const rangeLabel = useMemo(() => {
+    const sameMonth = isSameMonth(gridStart, gridEnd);
+    if (sameMonth) return format(gridStart, "MMMM yyyy");
+    if (gridStart.getFullYear() === gridEnd.getFullYear()) {
+      return `${format(gridStart, "MMM")} – ${format(gridEnd, "MMM yyyy")}`;
+    }
+    return `${format(gridStart, "MMM yyyy")} – ${format(gridEnd, "MMM yyyy")}`;
   }, [gridStart, gridEnd]);
 
   const eventsByDay = useMemo(() => {
