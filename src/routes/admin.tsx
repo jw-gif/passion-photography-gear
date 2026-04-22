@@ -268,7 +268,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold tracking-tight inline-flex items-center gap-2">
                 <Wrench className="size-4 text-muted-foreground" />
-                Upcoming Gear Requests
+                &nbsp;Upcoming Gear Requests
               </h2>
               <Button asChild variant="ghost" size="sm">
                 <Link to="/admin/requests-gear">
