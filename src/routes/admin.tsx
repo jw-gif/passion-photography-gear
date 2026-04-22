@@ -173,6 +173,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
               </Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/admins">
+                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>
               <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
             </Button>

@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
-import { Camera, ArrowLeft, LogOut, Settings, Inbox } from "lucide-react";
+import { Camera, ArrowLeft, LogOut, Settings, Inbox, Users } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
 import { Input } from "@/components/ui/input";
@@ -140,6 +140,11 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/manage">
                 <Settings className="size-4" /> <span className="hidden sm:inline">Manage gear</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/admins">
+                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>
