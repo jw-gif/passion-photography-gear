@@ -187,6 +187,117 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_requests: {
+        Row: {
+          admin_notes: string | null
+          assigned_to: string | null
+          budget: string | null
+          company: string
+          concur_budget_approver: string | null
+          concur_class: string | null
+          concur_company: string | null
+          concur_department: string | null
+          concur_expense_category: string | null
+          concur_people_resource_type: string | null
+          concur_project: string | null
+          coverage_other: string | null
+          coverage_types: Database["public"]["Enums"]["photo_coverage_type"][]
+          created_at: string
+          email: string
+          end_time: string | null
+          event_date: string | null
+          event_end_date: string | null
+          event_location: string | null
+          event_name: string | null
+          first_name: string
+          id: string
+          last_name: string
+          notes: string | null
+          on_site_contact_name: string | null
+          on_site_contact_phone: string | null
+          request_types: Database["public"]["Enums"]["photo_request_type"][]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          spans_multiple_days: boolean
+          start_time: string | null
+          status: Database["public"]["Enums"]["photo_request_status"]
+          team: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          budget?: string | null
+          company: string
+          concur_budget_approver?: string | null
+          concur_class?: string | null
+          concur_company?: string | null
+          concur_department?: string | null
+          concur_expense_category?: string | null
+          concur_people_resource_type?: string | null
+          concur_project?: string | null
+          coverage_other?: string | null
+          coverage_types?: Database["public"]["Enums"]["photo_coverage_type"][]
+          created_at?: string
+          email: string
+          end_time?: string | null
+          event_date?: string | null
+          event_end_date?: string | null
+          event_location?: string | null
+          event_name?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          notes?: string | null
+          on_site_contact_name?: string | null
+          on_site_contact_phone?: string | null
+          request_types?: Database["public"]["Enums"]["photo_request_type"][]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          spans_multiple_days?: boolean
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["photo_request_status"]
+          team?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          budget?: string | null
+          company?: string
+          concur_budget_approver?: string | null
+          concur_class?: string | null
+          concur_company?: string | null
+          concur_department?: string | null
+          concur_expense_category?: string | null
+          concur_people_resource_type?: string | null
+          concur_project?: string | null
+          coverage_other?: string | null
+          coverage_types?: Database["public"]["Enums"]["photo_coverage_type"][]
+          created_at?: string
+          email?: string
+          end_time?: string | null
+          event_date?: string | null
+          event_end_date?: string | null
+          event_location?: string | null
+          event_name?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          notes?: string | null
+          on_site_contact_name?: string | null
+          on_site_contact_phone?: string | null
+          request_types?: Database["public"]["Enums"]["photo_request_type"][]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          spans_multiple_days?: boolean
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["photo_request_status"]
+          team?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -225,6 +336,18 @@ export type Database = {
       app_role: "admin"
       gear_request_status: "pending" | "approved" | "denied"
       gear_status: "active" | "out_of_service" | "out_for_repair"
+      photo_coverage_type: "live_event" | "photo_booth" | "other"
+      photo_request_status:
+        | "new"
+        | "in_review"
+        | "scheduled"
+        | "completed"
+        | "declined"
+        | "archived"
+      photo_request_type:
+        | "photography_team"
+        | "shot_list_addition"
+        | "photoshoot"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -355,6 +478,20 @@ export const Constants = {
       app_role: ["admin"],
       gear_request_status: ["pending", "approved", "denied"],
       gear_status: ["active", "out_of_service", "out_for_repair"],
+      photo_coverage_type: ["live_event", "photo_booth", "other"],
+      photo_request_status: [
+        "new",
+        "in_review",
+        "scheduled",
+        "completed",
+        "declined",
+        "archived",
+      ],
+      photo_request_type: [
+        "photography_team",
+        "shot_list_addition",
+        "photoshoot",
+      ],
     },
   },
 } as const
