@@ -111,3 +111,55 @@ export function statusBadgeClasses(s: PhotoRequestStatus): string {
       return "bg-muted text-muted-foreground border-border";
   }
 }
+
+// ----- Gear request status helpers -----
+export type GearRequestStatus = "pending" | "approved" | "denied";
+
+export function gearRequestStatusLabel(s: GearRequestStatus): string {
+  switch (s) {
+    case "pending":
+      return "Pending";
+    case "approved":
+      return "Approved";
+    case "denied":
+      return "Denied";
+  }
+}
+
+export function gearRequestBadgeClasses(s: GearRequestStatus): string {
+  switch (s) {
+    case "pending":
+      return "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30";
+    case "approved":
+      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30";
+    case "denied":
+      return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30";
+  }
+}
+
+/**
+ * Returns a Tailwind background-color class used for calendar pills and dots,
+ * unified across photo and gear request statuses.
+ */
+export function statusDotColor(
+  status: PhotoRequestStatus | GearRequestStatus,
+): string {
+  switch (status) {
+    case "approved":
+    case "scheduled":
+      return "bg-emerald-500";
+    case "pending":
+    case "in_review":
+      return "bg-amber-500";
+    case "new":
+      return "bg-blue-500";
+    case "denied":
+    case "declined":
+      return "bg-rose-500";
+    case "completed":
+    case "archived":
+      return "bg-zinc-400";
+    default:
+      return "bg-zinc-400";
+  }
+}

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { Camera, Check, ArrowRight, CircleSlash, Wrench } from "lucide-react";
+import { Camera, Check, ArrowRight, CircleSlash, Wrench, Package, ImageIcon } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import {
   Select,
@@ -27,8 +27,8 @@ export const Route = createFileRoute("/")({
   }),
   head: () => ({
     meta: [
-      { title: "Passion Photography Gear Tracking" },
-      { name: "description", content: "Track photography gear locations across 515, CBL, and TRL." },
+      { title: "Passion Photography Hub" },
+      { name: "description", content: "Request photography, request gear, and track everything the team is shooting." },
     ],
   }),
   component: IndexPage,
@@ -48,35 +48,37 @@ function Landing() {
           <div className="size-8 rounded-full bg-primary flex items-center justify-center">
             <Camera className="size-4" />
           </div>
-          <span className="font-semibold tracking-tight">Passion Photography Gear</span>
+          <span className="font-semibold tracking-tight">Passion Photography Hub</span>
         </div>
         <Link to="/admin">
           <Button variant="outline" size="sm">Admin</Button>
         </Link>
       </header>
       <div className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="max-w-xl text-center">
+        <div className="max-w-2xl text-center">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            Photography Gear Tracking
+            Passion Photography Hub
           </h1>
           <p className="mt-4 text-muted-foreground text-lg">
-            Scan a gear tag's QR code to view or update its location, or request gear ahead of a shoot.
+            Request photography, request gear, and track everything the team is shooting.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/request">
+            <Link to="/request-photography">
               <Button size="lg">
-                Request gear
+                <ImageIcon className="size-4" />
+                Request photography
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
-            <Link to="/request-photography">
+            <Link to="/request-gear">
               <Button size="lg" variant="secondary">
-                Request photography
+                <Package className="size-4" />
+                Request gear
               </Button>
             </Link>
             <Link to="/admin">
               <Button size="lg" variant="outline">
-                Admin dashboard
+                Admin hub
               </Button>
             </Link>
           </div>
@@ -245,7 +247,7 @@ function PublicGearView({ gearId }: { gearId: number }) {
           <div className="size-7 rounded-full bg-primary flex items-center justify-center">
             <Camera className="size-3.5" />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Passion Photography Gear</span>
+          <span className="text-sm font-semibold tracking-tight">Passion Photography Hub</span>
         </div>
 
         <GearIcon name={gear.name} iconKind={gear.icon_kind} className="size-12 text-foreground/80 mb-4" />

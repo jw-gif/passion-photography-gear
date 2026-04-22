@@ -1,519 +1,343 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { addDays, format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { LOCATIONS, locationClasses, locationLabel, formatDate } from "@/lib/locations";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox, Users, ImageIcon } from "lucide-react";
-import { GearIcon } from "@/lib/gear-icons";
-import pccLogo from "@/assets/pcc-logo.png";
-import { toast } from "sonner";
+import { HubHeader } from "@/components/hub-header";
+import { HubCalendar, type CalendarEvent } from "@/components/hub-calendar";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Camera, Package, ArrowRight, Inbox, MapPin, User as UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  statusBadgeClasses,
+  statusLabel,
+  statusDotColor,
+  gearRequestBadgeClasses,
+  gearRequestStatusLabel,
+  type PhotoRequestStatus,
+  type GearRequestStatus,
+} from "@/lib/orgs";
+import { locationLabel } from "@/lib/locations";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin · Passion Gear Tracking" },
-      { name: "description", content: "Manage photography gear inventory by location." },
+      { title: "Hub · Passion Photography Hub" },
+      { name: "description", content: "Centralized view of upcoming photography and gear requests." },
     ],
   }),
-  component: AdminPage,
+  component: AdminHubPage,
 });
 
-type GearStatus = "active" | "out_of_service" | "out_for_repair";
-
-interface GearRow {
-  id: number;
-  name: string;
-  current_location: string;
-  sub_location: string | null;
-  last_note: string | null;
-  last_updated: string;
-  status: GearStatus;
-  icon_kind: string | null;
-}
-
-interface HistoryRow {
+interface PhotoRow {
   id: string;
-  gear_id: number;
-  location: string;
-  sub_location: string | null;
-  note: string | null;
-  timestamp: string;
-  moved_by: string | null;
+  first_name: string;
+  last_name: string;
+  event_name: string | null;
+  event_location: string | null;
+  event_date: string | null;
+  event_end_date: string | null;
+  spans_multiple_days: boolean;
+  status: PhotoRequestStatus;
 }
 
-function AdminPage() {
+interface GearReqRow {
+  id: string;
+  requestor_name: string;
+  location: string;
+  needed_date: string;
+  status: GearRequestStatus;
+}
+
+interface GearReqItemRow {
+  request_id: string;
+  gear_id: number;
+}
+
+function AdminHubPage() {
   const { signOut } = useAuth();
   return (
     <RequireAdmin>
-      <Dashboard onLogout={() => signOut()} />
+      <HubView onLogout={() => signOut()} />
     </RequireAdmin>
   );
 }
 
-function Dashboard({ onLogout }: { onLogout: () => void }) {
-  const { displayName } = useAuth();
-  const movedByName = displayName ?? "Admin";
-  const [gear, setGear] = useState<GearRow[]>([]);
+function HubView({ onLogout }: { onLogout: () => void }) {
+  const [photo, setPhoto] = useState<PhotoRow[]>([]);
+  const [gearReqs, setGearReqs] = useState<GearReqRow[]>([]);
+  const [gearItems, setGearItems] = useState<GearReqItemRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [qrGearId, setQrGearId] = useState<number | null>(null);
-  const [dragGearId, setDragGearId] = useState<number | null>(null);
-  const [dragOverLoc, setDragOverLoc] = useState<string | null>(null);
 
-  async function loadGear() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("gear")
-      .select("*")
-      .order("id", { ascending: true });
-    setGear((data || []) as GearRow[]);
+  async function loadAll() {
+    const today = format(new Date(), "yyyy-MM-dd");
+    const horizon = format(addDays(new Date(), 90), "yyyy-MM-dd");
+    const past = format(addDays(new Date(), -30), "yyyy-MM-dd");
+    const [{ data: p }, { data: g }, { data: gi }] = await Promise.all([
+      supabase
+        .from("photo_requests")
+        .select(
+          "id, first_name, last_name, event_name, event_location, event_date, event_end_date, spans_multiple_days, status",
+        )
+        .gte("event_date", past)
+        .lte("event_date", horizon)
+        .order("event_date", { ascending: true }),
+      supabase
+        .from("gear_requests")
+        .select("id, requestor_name, location, needed_date, status")
+        .gte("needed_date", past)
+        .lte("needed_date", horizon)
+        .order("needed_date", { ascending: true }),
+      supabase.from("gear_request_items").select("request_id, gear_id"),
+    ]);
+    setPhoto((p ?? []) as PhotoRow[]);
+    setGearReqs((g ?? []) as GearReqRow[]);
+    setGearItems((gi ?? []) as GearReqItemRow[]);
     setLoading(false);
+    void today;
   }
 
   useEffect(() => {
-    loadGear();
+    loadAll();
     const channel = supabase
-      .channel("gear-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "gear" }, () => loadGear())
+      .channel("hub_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "photo_requests" },
+        () => loadAll(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "gear_requests" },
+        () => loadAll(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "gear_request_items" },
+        () => loadAll(),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  const filtered = useMemo(() => {
-    // Hide non-active gear from the main board — manage them via /admin/manage
-    const active = gear.filter((g) => g.status === "active");
-    const q = query.trim().toLowerCase();
-    if (!q) return active;
-    return active.filter((g) => g.name.toLowerCase().includes(q));
-  }, [gear, query]);
-
-  const grouped = useMemo(() => {
-    const map: Record<string, GearRow[]> = { "515": [], Cumberland: [], Trilith: [] };
-    for (const g of filtered) {
-      if (map[g.current_location]) map[g.current_location].push(g);
-      else map["515"].push(g);
+  const events = useMemo<CalendarEvent[]>(() => {
+    const evs: CalendarEvent[] = [];
+    for (const p of photo) {
+      if (!p.event_date) continue;
+      evs.push({
+        id: `p-${p.id}`,
+        kind: "photo",
+        date: p.event_date,
+        endDate: p.spans_multiple_days ? p.event_end_date ?? null : null,
+        title: p.event_name || `${p.first_name} ${p.last_name}`,
+        statusColor: statusDotColor(p.status),
+        statusLabel: statusLabel(p.status),
+        href: `/admin/requests-photography`,
+      });
     }
-    return map;
-  }, [filtered]);
-
-  async function handleDropOnLocation(targetLoc: string) {
-    const id = dragGearId;
-    setDragGearId(null);
-    setDragOverLoc(null);
-    if (id === null) return;
-    const item = gear.find((g) => g.id === id);
-    if (!item || item.current_location === targetLoc) return;
-
-    const previous = item.current_location;
-    // Optimistic UI update
-    setGear((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, current_location: targetLoc } : g)),
-    );
-
-    const { error: updateErr } = await supabase
-      .from("gear")
-      .update({ current_location: targetLoc, sub_location: null, moved_by: movedByName, last_note: null })
-      .eq("id", id);
-
-    if (updateErr) {
-      // revert
-      setGear((prev) =>
-        prev.map((g) => (g.id === id ? { ...g, current_location: previous } : g)),
-      );
-      toast.error(`Couldn't move ${item.name}`, { description: updateErr.message });
-      return;
+    for (const g of gearReqs) {
+      evs.push({
+        id: `g-${g.id}`,
+        kind: "gear",
+        date: g.needed_date,
+        title: `${g.requestor_name} — ${locationLabel(g.location)}`,
+        statusColor: statusDotColor(g.status),
+        statusLabel: gearRequestStatusLabel(g.status),
+        href: `/admin/requests-gear`,
+      });
     }
+    return evs;
+  }, [photo, gearReqs]);
 
-    await supabase.from("gear_history").insert({
-      gear_id: id,
-      location: targetLoc,
-      sub_location: null,
-      moved_by: movedByName,
-      note: null,
-    });
+  // Upcoming lists: today through next 30 days
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const horizonKey = format(addDays(new Date(), 30), "yyyy-MM-dd");
 
-    toast.success(`${item.name} → ${locationLabel(targetLoc)}`);
-  }
+  const upcomingPhoto = useMemo(
+    () =>
+      photo
+        .filter((p) => p.event_date && p.event_date >= todayKey && p.event_date <= horizonKey)
+        .sort((a, b) => (a.event_date! < b.event_date! ? -1 : 1)),
+    [photo, todayKey, horizonKey],
+  );
+  const upcomingGear = useMemo(
+    () =>
+      gearReqs
+        .filter((g) => g.needed_date >= todayKey && g.needed_date <= horizonKey)
+        .sort((a, b) => (a.needed_date < b.needed_date ? -1 : 1)),
+    [gearReqs, todayKey, horizonKey],
+  );
+
+  const itemCountFor = (reqId: string) =>
+    gearItems.filter((i) => i.request_id === reqId).length;
 
   return (
     <main className="min-h-screen">
-      <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <Link to="/admin" className="group flex items-center gap-2 rounded-md hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <div className="size-8 rounded-full bg-primary flex items-center justify-center relative overflow-hidden">
-              <img src={pccLogo} alt="PCC" className="size-5 object-contain transition-opacity duration-200 group-hover:opacity-0" style={{ filter: "brightness(0) invert(1)" }} />
-              <ArrowLeft className="size-4 text-primary-foreground absolute opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            </div>
-            <div>
-              <div className="font-semibold tracking-tight leading-tight">Passion Gear</div>
-              <div className="text-xs text-muted-foreground">Admin dashboard</div>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/photo-requests">
-                <ImageIcon className="size-4" /> <span className="hidden sm:inline">Photo Requests</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/requests">
-                <Inbox className="size-4" /> <span className="hidden sm:inline">Gear Requests</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/manage">
-                <Settings className="size-4" /> <span className="hidden sm:inline">Manage gear</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/history">
-                <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/admins">
-                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onLogout}>
-              <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <HubHeader onLogout={onLogout} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="relative max-w-md mb-6">
-          <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search gear by name…"
-            className="pl-9"
-          />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Hub</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Upcoming photography and gear requests across the team.
+          </p>
         </div>
 
-        {loading ? (
-          <div className="text-muted-foreground text-sm">Loading gear…</div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {LOCATIONS.map((loc) => {
-              const isDropTarget = dragGearId !== null;
-              const isOver = dragOverLoc === loc;
-              return (
-                <section
-                  key={loc}
-                  onDragOver={(e) => {
-                    if (dragGearId === null) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    if (dragOverLoc !== loc) setDragOverLoc(loc);
-                  }}
-                  onDragLeave={(e) => {
-                    // Only clear if leaving the section entirely
-                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-                    if (dragOverLoc === loc) setDragOverLoc(null);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleDropOnLocation(loc);
-                  }}
-                  className={cn(
-                    "rounded-xl transition-all",
-                    isDropTarget && "ring-2 ring-dashed ring-border p-2 -m-2",
-                    isOver && "ring-foreground bg-muted/40",
-                  )}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <span
-                      className={cn(
-                        "px-3 py-1 rounded-full text-sm font-bold",
-                        locationClasses(loc),
-                      )}
-                    >
-                      {locationLabel(loc)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {grouped[loc].length} item{grouped[loc].length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    {grouped[loc].length === 0 && (
-                      <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg py-8 text-center">
-                        {isOver ? "Drop here" : "No gear here"}
-                      </div>
-                    )}
-                    {grouped[loc].map((g) => (
-                      <GearCard
-                        key={g.id}
-                        gear={g}
-                        expanded={expandedId === g.id}
-                        onToggle={() => setExpandedId(expandedId === g.id ? null : g.id)}
-                        onShowQr={() => setQrGearId(g.id)}
-                        isDragging={dragGearId === g.id}
-                        onDragStart={() => setDragGearId(g.id)}
-                        onDragEnd={() => { setDragGearId(null); setDragOverLoc(null); }}
-                      />
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {qrGearId !== null && (
-        <QrModal
-          gear={gear.find((g) => g.id === qrGearId)!}
-          onClose={() => setQrGearId(null)}
-        />
-      )}
-    </main>
-  );
-}
-
-function GearCard({
-  gear,
-  expanded,
-  onToggle,
-  onShowQr,
-  isDragging,
-  onDragStart,
-  onDragEnd,
-}: {
-  gear: GearRow;
-  expanded: boolean;
-  onToggle: () => void;
-  onShowQr: () => void;
-  isDragging: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-}) {
-  const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  useEffect(() => {
-    if (!expanded) return;
-    let cancelled = false;
-    (async () => {
-      setLoadingHistory(true);
-      const { data } = await supabase
-        .from("gear_history")
-        .select("*")
-        .eq("gear_id", gear.id)
-        .order("timestamp", { ascending: false });
-      if (!cancelled) {
-        setHistory((data || []) as HistoryRow[]);
-        setLoadingHistory(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [expanded, gear.id, gear.last_updated]);
-
-  return (
-    <Card
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = "move";
-        // Some browsers require data to be set
-        e.dataTransfer.setData("text/plain", String(gear.id));
-        onDragStart();
-      }}
-      onDragEnd={onDragEnd}
-      className={cn(
-        "p-4 transition-all cursor-grab active:cursor-grabbing",
-        isDragging && "opacity-50 ring-2 ring-foreground shadow-lg",
-      )}
-    >
-      <button onClick={onToggle} className="w-full text-left">
-        <div className="flex items-start justify-between gap-3">
-          <GripVertical className="size-4 text-muted-foreground/60 shrink-0 mt-0.5" />
-          <GearIcon name={gear.name} iconKind={gear.icon_kind} className="size-5 text-foreground/80 mt-0.5" />
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold truncate">{gear.name}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Updated {formatDate(gear.last_updated)}
-            </div>
-            {gear.last_note && (
-              <div className="text-sm mt-2 text-muted-foreground italic line-clamp-2">
-                "{gear.last_note}"
-              </div>
-            )}
-          </div>
-          <ChevronDown
-            className={cn("size-4 text-muted-foreground transition-transform shrink-0 mt-1", expanded && "rotate-180")}
-          />
-        </div>
-      </button>
-
-      <div className="flex items-center gap-2 mt-3 flex-wrap">
-        <span
-          className={cn(
-            "px-2.5 py-1 rounded-full text-xs font-bold",
-            locationClasses(gear.current_location),
-          )}
-        >
-          {locationLabel(gear.current_location)}
-        </span>
-        {gear.sub_location && (
-          <span className="text-xs font-medium text-muted-foreground">
-            · {gear.sub_location}
-          </span>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => { e.stopPropagation(); onShowQr(); }}
-          className="ml-auto"
-        >
-          <QrCode className="size-3.5" /> QR
-        </Button>
-      </div>
-
-      {expanded && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <div className="flex items-baseline justify-between mb-3">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">
-              History
-            </div>
-            {!loadingHistory && history.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                {history.length} {history.length === 1 ? "entry" : "entries"}
-              </div>
-            )}
-          </div>
-          {loadingHistory ? (
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          ) : history.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No history yet</div>
+        {/* Calendar */}
+        <section>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading calendar…</div>
           ) : (
-            <ol className="max-h-64 overflow-y-auto pr-2 -mr-2 relative">
-              <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" aria-hidden />
-              {history.map((h, idx) => (
-                <li
-                  key={h.id}
-                  className={cn(
-                    "relative pl-5",
-                    idx !== history.length - 1 && "pb-3",
-                  )}
-                >
-                  <span
-                    className="absolute left-0 top-1.5 size-[11px] rounded-full bg-background border-2 border-primary"
-                    aria-hidden
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-semibold",
-                        locationClasses(h.location),
-                      )}
-                    >
-                      {locationLabel(h.location)}
-                    </span>
-                    {h.sub_location && (
-                      <span className="text-xs font-medium text-foreground/80">
-                        {h.sub_location}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>{formatDate(h.timestamp)}</span>
-                    {h.moved_by && (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span>by {h.moved_by}</span>
-                      </>
-                    )}
-                  </div>
-                  {h.note && (
-                    <div className="mt-1.5 text-sm text-foreground/80 border-l-2 border-border pl-2 italic">
-                      "{h.note}"
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ol>
+            <HubCalendar events={events} />
           )}
-        </div>
-      )}
-    </Card>
-  );
-}
+        </section>
 
-function QrModal({ gear, onClose }: { gear: GearRow; onClose: () => void }) {
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const [url, setUrl] = useState("");
+        {/* Upcoming lists */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Photography */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold tracking-tight inline-flex items-center gap-2">
+                <Camera className="size-4 text-muted-foreground" />
+                Upcoming Photography
+              </h2>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/admin/requests-photography">
+                  View all <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            </div>
+            {loading ? (
+              <Card className="p-6 text-sm text-muted-foreground">Loading…</Card>
+            ) : upcomingPhoto.length === 0 ? (
+              <Card className="p-8 text-center border-dashed">
+                <Camera className="size-6 mx-auto text-muted-foreground/60 mb-2" />
+                <div className="text-sm text-muted-foreground">
+                  No photography requests in the next 30 days.
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {upcomingPhoto.slice(0, 6).map((p) => (
+                  <Link
+                    key={p.id}
+                    to="/admin/requests-photography"
+                    className="block"
+                  >
+                    <Card className="p-4 hover:border-foreground/30 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span
+                              className={cn(
+                                "text-xs font-medium px-2 py-0.5 rounded-full border",
+                                statusBadgeClasses(p.status),
+                              )}
+                            >
+                              {statusLabel(p.status)}
+                            </span>
+                          </div>
+                          <div className="font-semibold truncate">
+                            {p.event_name || `${p.first_name} ${p.last_name}`}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                            {p.event_date && (
+                              <span>
+                                {format(parseISO(p.event_date), "EEE, MMM d")}
+                                {p.spans_multiple_days && p.event_end_date &&
+                                  ` → ${format(parseISO(p.event_end_date), "MMM d")}`}
+                              </span>
+                            )}
+                            {p.event_location && (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="size-3" />
+                                {p.event_location}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1">
+                              <UserIcon className="size-3" />
+                              {p.first_name} {p.last_name}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
-  useEffect(() => {
-    // Always use the public published URL so QR codes work for anyone,
-    // even when this admin page is opened via the Lovable preview origin.
-    const PUBLIC_ORIGIN = "https://passion-photography-gear.lovable.app";
-    const u = `${PUBLIC_ORIGIN}/?gear=${gear.id}`;
-    setUrl(u);
-
-    // Load qrcode.js from CDN
-    const existing = document.getElementById("qrcode-cdn") as HTMLScriptElement | null;
-    function render() {
-      if (!canvasRef.current) return;
-      canvasRef.current.innerHTML = "";
-      // @ts-expect-error - QRCode loaded from CDN
-      new window.QRCode(canvasRef.current, {
-        text: u,
-        width: 240,
-        height: 240,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        // @ts-expect-error CDN constants
-        correctLevel: window.QRCode.CorrectLevel.H,
-      });
-    }
-    if (existing && (window as any).QRCode) {
-      render();
-    } else if (!existing) {
-      const s = document.createElement("script");
-      s.id = "qrcode-cdn";
-      s.src = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
-      s.onload = render;
-      document.head.appendChild(s);
-    } else {
-      existing.addEventListener("load", render);
-    }
-  }, [gear.id]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center px-4"
-      onClick={onClose}
-    >
-      <Card
-        className="p-6 max-w-sm w-full relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 size-8 rounded-full hover:bg-muted flex items-center justify-center"
-          aria-label="Close"
-        >
-          <X className="size-4" />
-        </button>
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">QR for</div>
-        <div className="font-semibold text-lg mb-4">{gear.name}</div>
-        <div className="bg-white p-4 rounded-lg flex items-center justify-center">
-          <div ref={canvasRef} />
-        </div>
-        <div className="mt-4 text-xs text-muted-foreground break-all text-center">
-          {url}
-        </div>
-      </Card>
-    </div>
+          {/* Gear */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold tracking-tight inline-flex items-center gap-2">
+                <Package className="size-4 text-muted-foreground" />
+                Upcoming Gear
+              </h2>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/admin/requests-gear">
+                  View all <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            </div>
+            {loading ? (
+              <Card className="p-6 text-sm text-muted-foreground">Loading…</Card>
+            ) : upcomingGear.length === 0 ? (
+              <Card className="p-8 text-center border-dashed">
+                <Inbox className="size-6 mx-auto text-muted-foreground/60 mb-2" />
+                <div className="text-sm text-muted-foreground">
+                  No gear requests in the next 30 days.
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {upcomingGear.slice(0, 6).map((g) => {
+                  const count = itemCountFor(g.id);
+                  return (
+                    <Link key={g.id} to="/admin/requests-gear" className="block">
+                      <Card className="p-4 hover:border-foreground/30 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span
+                                className={cn(
+                                  "text-xs font-medium px-2 py-0.5 rounded-full border",
+                                  gearRequestBadgeClasses(g.status),
+                                )}
+                              >
+                                {gearRequestStatusLabel(g.status)}
+                              </span>
+                            </div>
+                            <div className="font-semibold truncate">
+                              {g.requestor_name}
+                              <span className="text-muted-foreground font-normal">
+                                {" "}
+                                · {count} item{count === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                              <span>{format(parseISO(g.needed_date), "EEE, MMM d")}</span>
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="size-3" />
+                                {locationLabel(g.location)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

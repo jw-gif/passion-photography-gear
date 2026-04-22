@@ -11,15 +11,22 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestPhotographyRouteImport } from './routes/request-photography'
+import { Route as RequestGearRouteImport } from './routes/request-gear'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
+import { Route as AdminTeamRouteImport } from './routes/admin_.team'
+import { Route as AdminRequestsPhotographyRouteImport } from './routes/admin_.requests-photography'
+import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-gear'
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
 import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
 import { Route as AdminManageRouteImport } from './routes/admin_.manage'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
+import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage'
+import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
+import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -30,6 +37,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RequestPhotographyRoute = RequestPhotographyRouteImport.update({
   id: '/request-photography',
   path: '/request-photography',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestGearRoute = RequestGearRouteImport.update({
+  id: '/request-gear',
+  path: '/request-gear',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RequestRoute = RequestRouteImport.update({
@@ -57,6 +69,22 @@ const ApiAdminsRoute = ApiAdminsRouteImport.update({
   path: '/api/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTeamRoute = AdminTeamRouteImport.update({
+  id: '/admin_/team',
+  path: '/admin/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRequestsPhotographyRoute =
+  AdminRequestsPhotographyRouteImport.update({
+    id: '/admin_/requests-photography',
+    path: '/admin/requests-photography',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminRequestsGearRoute = AdminRequestsGearRouteImport.update({
+  id: '/admin_/requests-gear',
+  path: '/admin/requests-gear',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRequestsRoute = AdminRequestsRouteImport.update({
   id: '/admin_/requests',
   path: '/admin/requests',
@@ -77,6 +105,21 @@ const AdminHistoryRoute = AdminHistoryRouteImport.update({
   path: '/admin/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminGearManageRoute = AdminGearManageRouteImport.update({
+  id: '/admin_/gear-manage',
+  path: '/admin/gear-manage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminGearHistoryRoute = AdminGearHistoryRouteImport.update({
+  id: '/admin_/gear-history',
+  path: '/admin/gear-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminGearRoute = AdminGearRouteImport.update({
+  id: '/admin_/gear',
+  path: '/admin/gear',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAdminsRoute = AdminAdminsRouteImport.update({
   id: '/admin_/admins',
   path: '/admin/admins',
@@ -88,13 +131,20 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
+  '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/gear': typeof AdminGearRoute
+  '/admin/gear-history': typeof AdminGearHistoryRoute
+  '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/requests-gear': typeof AdminRequestsGearRoute
+  '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
 export interface FileRoutesByTo {
@@ -102,13 +152,20 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
+  '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/gear': typeof AdminGearRoute
+  '/admin/gear-history': typeof AdminGearHistoryRoute
+  '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/requests-gear': typeof AdminRequestsGearRoute
+  '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
 export interface FileRoutesById {
@@ -117,13 +174,20 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
+  '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin_/admins': typeof AdminAdminsRoute
+  '/admin_/gear': typeof AdminGearRoute
+  '/admin_/gear-history': typeof AdminGearHistoryRoute
+  '/admin_/gear-manage': typeof AdminGearManageRoute
   '/admin_/history': typeof AdminHistoryRoute
   '/admin_/manage': typeof AdminManageRoute
   '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin_/requests': typeof AdminRequestsRoute
+  '/admin_/requests-gear': typeof AdminRequestsGearRoute
+  '/admin_/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin_/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
 export interface FileRouteTypes {
@@ -133,13 +197,20 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/request'
+    | '/request-gear'
     | '/request-photography'
     | '/reset-password'
     | '/admin/admins'
+    | '/admin/gear'
+    | '/admin/gear-history'
+    | '/admin/gear-manage'
     | '/admin/history'
     | '/admin/manage'
     | '/admin/photo-requests'
     | '/admin/requests'
+    | '/admin/requests-gear'
+    | '/admin/requests-photography'
+    | '/admin/team'
     | '/api/admins'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -147,13 +218,20 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/request'
+    | '/request-gear'
     | '/request-photography'
     | '/reset-password'
     | '/admin/admins'
+    | '/admin/gear'
+    | '/admin/gear-history'
+    | '/admin/gear-manage'
     | '/admin/history'
     | '/admin/manage'
     | '/admin/photo-requests'
     | '/admin/requests'
+    | '/admin/requests-gear'
+    | '/admin/requests-photography'
+    | '/admin/team'
     | '/api/admins'
   id:
     | '__root__'
@@ -161,13 +239,20 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/request'
+    | '/request-gear'
     | '/request-photography'
     | '/reset-password'
     | '/admin_/admins'
+    | '/admin_/gear'
+    | '/admin_/gear-history'
+    | '/admin_/gear-manage'
     | '/admin_/history'
     | '/admin_/manage'
     | '/admin_/photo-requests'
     | '/admin_/requests'
+    | '/admin_/requests-gear'
+    | '/admin_/requests-photography'
+    | '/admin_/team'
     | '/api/admins'
   fileRoutesById: FileRoutesById
 }
@@ -176,13 +261,20 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
   RequestRoute: typeof RequestRoute
+  RequestGearRoute: typeof RequestGearRoute
   RequestPhotographyRoute: typeof RequestPhotographyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
+  AdminGearRoute: typeof AdminGearRoute
+  AdminGearHistoryRoute: typeof AdminGearHistoryRoute
+  AdminGearManageRoute: typeof AdminGearManageRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminManageRoute: typeof AdminManageRoute
   AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
+  AdminRequestsGearRoute: typeof AdminRequestsGearRoute
+  AdminRequestsPhotographyRoute: typeof AdminRequestsPhotographyRoute
+  AdminTeamRoute: typeof AdminTeamRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
 }
 
@@ -200,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/request-photography'
       fullPath: '/request-photography'
       preLoaderRoute: typeof RequestPhotographyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/request-gear': {
+      id: '/request-gear'
+      path: '/request-gear'
+      fullPath: '/request-gear'
+      preLoaderRoute: typeof RequestGearRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/request': {
@@ -237,6 +336,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/team': {
+      id: '/admin_/team'
+      path: '/admin/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AdminTeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/requests-photography': {
+      id: '/admin_/requests-photography'
+      path: '/admin/requests-photography'
+      fullPath: '/admin/requests-photography'
+      preLoaderRoute: typeof AdminRequestsPhotographyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/requests-gear': {
+      id: '/admin_/requests-gear'
+      path: '/admin/requests-gear'
+      fullPath: '/admin/requests-gear'
+      preLoaderRoute: typeof AdminRequestsGearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/requests': {
       id: '/admin_/requests'
       path: '/admin/requests'
@@ -265,6 +385,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/gear-manage': {
+      id: '/admin_/gear-manage'
+      path: '/admin/gear-manage'
+      fullPath: '/admin/gear-manage'
+      preLoaderRoute: typeof AdminGearManageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/gear-history': {
+      id: '/admin_/gear-history'
+      path: '/admin/gear-history'
+      fullPath: '/admin/gear-history'
+      preLoaderRoute: typeof AdminGearHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/gear': {
+      id: '/admin_/gear'
+      path: '/admin/gear'
+      fullPath: '/admin/gear'
+      preLoaderRoute: typeof AdminGearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/admins': {
       id: '/admin_/admins'
       path: '/admin/admins'
@@ -280,13 +421,20 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
   RequestRoute: RequestRoute,
+  RequestGearRoute: RequestGearRoute,
   RequestPhotographyRoute: RequestPhotographyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminAdminsRoute: AdminAdminsRoute,
+  AdminGearRoute: AdminGearRoute,
+  AdminGearHistoryRoute: AdminGearHistoryRoute,
+  AdminGearManageRoute: AdminGearManageRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminManageRoute: AdminManageRoute,
   AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
   AdminRequestsRoute: AdminRequestsRoute,
+  AdminRequestsGearRoute: AdminRequestsGearRoute,
+  AdminRequestsPhotographyRoute: AdminRequestsPhotographyRoute,
+  AdminTeamRoute: AdminTeamRoute,
   ApiAdminsRoute: ApiAdminsRoute,
 }
 export const routeTree = rootRouteImport
