@@ -308,7 +308,7 @@ function RequestPhotographyPage() {
             <Field label="Please tell us what team you're on" required>
               <Select value={company} onValueChange={(v) => { setCompany(v); setTeam(""); }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
+                  <SelectValue placeholder="Select a team" />
                 </SelectTrigger>
                 <SelectContent>
                   {COMPANIES.map((c) => (
