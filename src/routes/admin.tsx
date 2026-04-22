@@ -8,7 +8,7 @@ import { HubHeader } from "@/components/hub-header";
 import { HubCalendar, type CalendarEvent } from "@/components/hub-calendar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Package, ArrowRight, Inbox, MapPin, User as UserIcon } from "lucide-react";
+import { Camera, Wrench, ArrowRight, Inbox, MapPin, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   statusBadgeClasses,
