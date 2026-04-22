@@ -92,7 +92,7 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
-                <Package className="size-4" />
+                <Wrench className="size-4" />
                 <span className="hidden md:inline">Gear</span>
                 <ChevronDown className="size-3 opacity-60" />
               </Button>
