@@ -6,7 +6,8 @@ import { locationClasses, locationLabel } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { isAdmin, setAdmin, ADMIN_PASSWORD } from "@/lib/admin-auth";
+import { useAuth } from "@/lib/auth";
+import { RequireAdmin } from "@/components/require-admin";
 import { Input } from "@/components/ui/input";
 import { GearIcon } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
@@ -64,61 +65,11 @@ interface GearRow {
 }
 
 function RequestsRoute() {
-  const [authed, setAuthed] = useState(false);
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    setAuthed(isAdmin());
-    setChecked(true);
-  }, []);
-
-  if (!checked) return null;
-  if (!authed) return <LoginGate onSuccess={() => setAuthed(true)} />;
-  return <RequestsView onLogout={() => { setAdmin(false); setAuthed(false); }} />;
-}
-
-function LoginGate({ onSuccess }: { onSuccess: () => void }) {
-  const [pw, setPw] = useState("");
-  const [error, setError] = useState("");
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (pw === ADMIN_PASSWORD) {
-      setAdmin(true);
-      onSuccess();
-    } else {
-      setError("Incorrect password");
-    }
-  }
-
+  const { signOut } = useAuth();
   return (
-    <main className="min-h-screen flex items-center justify-center px-4">
-      <Card className="w-full max-w-sm p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="size-8 rounded-full bg-primary flex items-center justify-center">
-            <Camera className="size-4" />
-          </div>
-          <span className="font-semibold tracking-tight">Admin sign in</span>
-        </div>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium block mb-2" htmlFor="pw">Password</label>
-            <Input
-              id="pw"
-              type="password"
-              value={pw}
-              onChange={(e) => { setPw(e.target.value); setError(""); }}
-              autoFocus
-            />
-            {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-          </div>
-          <Button type="submit" className="w-full">Sign in</Button>
-          <Link to="/" className="block text-center text-sm text-muted-foreground hover:text-foreground">
-            ← Back to home
-          </Link>
-        </form>
-      </Card>
-    </main>
+    <RequireAdmin>
+      <RequestsView onLogout={() => signOut()} />
+    </RequireAdmin>
   );
 }
 
