@@ -66,7 +66,7 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
               activeProps={{ className: "bg-muted" }}
             >
               <LayoutDashboard className="size-4" />
-              <span className="hidden md:inline">Hub</span>
+              <span className="hidden md:inline">Dashboard</span>
             </Link>
           </Button>
 
