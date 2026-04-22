@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox, Users } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox, Users, ImageIcon } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
 import { toast } from "sonner";
@@ -159,8 +159,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </Link>
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/photo-requests">
+                <ImageIcon className="size-4" /> <span className="hidden sm:inline">Photo Requests</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
               <Link to="/admin/requests">
-                <Inbox className="size-4" /> <span className="hidden sm:inline">Requests</span>
+                <Inbox className="size-4" /> <span className="hidden sm:inline">Gear Requests</span>
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">

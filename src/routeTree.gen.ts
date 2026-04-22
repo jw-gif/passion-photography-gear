@@ -17,6 +17,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
+import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
 import { Route as AdminManageRouteImport } from './routes/admin_.manage'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
@@ -61,6 +62,11 @@ const AdminRequestsRoute = AdminRequestsRouteImport.update({
   path: '/admin/requests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPhotoRequestsRoute = AdminPhotoRequestsRouteImport.update({
+  id: '/admin_/photo-requests',
+  path: '/admin/photo-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminManageRoute = AdminManageRouteImport.update({
   id: '/admin_/manage',
   path: '/admin/manage',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
+  '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/api/admins': typeof ApiAdminsRoute
 }
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
+  '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/api/admins': typeof ApiAdminsRoute
 }
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/admin_/admins': typeof AdminAdminsRoute
   '/admin_/history': typeof AdminHistoryRoute
   '/admin_/manage': typeof AdminManageRoute
+  '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin_/requests': typeof AdminRequestsRoute
   '/api/admins': typeof ApiAdminsRoute
 }
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/history'
     | '/admin/manage'
+    | '/admin/photo-requests'
     | '/admin/requests'
     | '/api/admins'
   fileRoutesByTo: FileRoutesByTo
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/admin/admins'
     | '/admin/history'
     | '/admin/manage'
+    | '/admin/photo-requests'
     | '/admin/requests'
     | '/api/admins'
   id:
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/admin_/admins'
     | '/admin_/history'
     | '/admin_/manage'
+    | '/admin_/photo-requests'
     | '/admin_/requests'
     | '/api/admins'
   fileRoutesById: FileRoutesById
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminManageRoute: typeof AdminManageRoute
+  AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
 }
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/photo-requests': {
+      id: '/admin_/photo-requests'
+      path: '/admin/photo-requests'
+      fullPath: '/admin/photo-requests'
+      preLoaderRoute: typeof AdminPhotoRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/manage': {
       id: '/admin_/manage'
       path: '/admin/manage'
@@ -265,6 +285,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAdminsRoute: AdminAdminsRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminManageRoute: AdminManageRoute,
+  AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
   AdminRequestsRoute: AdminRequestsRoute,
   ApiAdminsRoute: ApiAdminsRoute,
 }

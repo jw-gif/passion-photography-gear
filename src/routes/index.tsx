@@ -69,6 +69,11 @@ function Landing() {
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
+            <Link to="/request-photography">
+              <Button size="lg" variant="secondary">
+                Request photography
+              </Button>
+            </Link>
             <Link to="/admin">
               <Button size="lg" variant="outline">
                 Admin dashboard
