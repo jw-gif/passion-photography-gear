@@ -1,66 +1,131 @@
 
 
-## 1. Line-drawing icons for each gear item
+## Plan: Real authentication + role-based access + display name everywhere
 
-Build a small library of hand-crafted inline SVG icons keyed by gear type, not per-item. The 14 items naturally fall into 5 visual categories — one shape per category, instantly recognizable, consistent stroke weight, matches the existing minimal aesthetic.
-
-### Icon library
-
-New file `src/lib/gear-icons.tsx` exporting a `<GearIcon name={...} />` component that maps each gear name to one of these line drawings:
-
-| Icon | Items |
-|---|---|
-| **Telephoto zoom** (long barrel + lens hood) | Canon 70-200 (×2), Nikon 70-200mm |
-| **Standard zoom** (medium barrel) | Canon 24-105mm, Canon 16-35mm, Nikon 14-24mm |
-| **Prime lens** (short, stout barrel) | Canon 35mm, Canon 85mm |
-| **Wide prime** (short with bulbous front element) | Canon 14mm, Nikon 14mm |
-| **Mirrorless body** (rectangular body + lens mount + grip) | Canon R5, Canon R6 |
-| **On-camera flash** (rectangular head on hot-shoe foot) | Profoto A10 for Canon |
-| **Studio strobe** (cylindrical head + reflector dish) | Profoto B10 |
-
-Each SVG: ~24×24 viewBox, `stroke="currentColor"`, stroke-width 1.5, no fill. Inherits text color so it reads clean on any background. Lookup by lowercased name keyword (`includes("70-200")` → telephoto, etc.) with a sensible fallback.
-
-### Where icons appear
-
-- **Admin gear cards** (`src/routes/admin.tsx`) — small icon (size-5) left of the gear name.
-- **Public gear page** (`src/routes/index.tsx`) — larger icon (size-12) above the gear name as a visual identifier when someone scans a QR.
-- **History page** (`src/routes/admin_.history.tsx`) — small icon next to the gear name in each row, for quicker scanning.
-
-### Why hand-crafted SVG instead of AI-generated images
-
-AI image generation for 14 separate items would be slow, inconsistent in line weight, require storage, and break the crisp vector aesthetic. Inline SVG renders instantly, scales perfectly, inherits theme colors, and stays consistent with the lucide-react icons already used elsewhere.
+This replaces the shared `passion.268!` password with proper email/password sign-in, adds an admins table with display names, hardens the database, and uses the signed-in person's name in QR/update flows.
 
 ---
 
-## 2. Drag-and-drop gear between location columns (admin)
+### 1. Authentication system
 
-Make the three location columns on `/admin` into drop targets so gear cards can be dragged between **515**, **Cumberland**, and **Trilith** for fast bulk reorganization.
+**Sign-in method**: Email + password (no Google, since this is a small internal team — but I'll leave that easy to add later). New admins are created from inside the app by an existing admin.
 
-### Interaction
+**New page**: `/login`
+- Email + password fields.
+- Show/hide password toggle (eye icon button on the right of the field) — applies to every password field in the app.
+- "Forgot password?" link → triggers a Supabase reset email → user lands on `/reset-password` to set a new one.
+- Redirects back to where you came from after success (`?redirect=...`).
 
-- Each gear card becomes draggable (cursor-grab on hover, ring + lifted shadow while dragging).
-- Each location column becomes a drop zone (highlighted border + tinted background while a card is being dragged over it).
-- Dropping a card on a different column:
-  1. Optimistically moves the card to the new column in the UI.
-  2. Updates `gear.current_location` in the database.
-  3. Inserts a `gear_history` row with `moved_by = "Admin"` and `note = "Moved via admin drag"` so the activity log stays complete and consistent with the existing constraint logic.
-  4. On error, reverts the optimistic move and shows a toast.
-- Dropping on the same column or outside any column: no-op.
-- Expand-to-view-history (the existing chevron click) still works — only the card's drag handle area triggers DnD; clicking the title still expands.
+**New page**: `/reset-password`
+- Reads the recovery token, lets the user set a new password (with show/hide).
 
-### Implementation
+**Removed**: `src/lib/admin-auth.ts` and the four `LoginGate` components in admin routes. The hardcoded `passion.268!` is gone from the bundle.
 
-- Native HTML5 drag-and-drop (`draggable`, `onDragStart`, `onDragOver`, `onDrop`) — no new dependency. Works well on desktop, which is where admins do bulk reorganization.
-- A small `dragGearId` state in the dashboard tracks the in-flight item; column components receive `isDropTarget` based on whether something is being dragged.
-- The QR button and chevron toggle remain click-only; only the card body is the drag source, so accidental drags from action buttons don't fire.
-- Mobile note: HTML5 DnD doesn't work on touch. The existing per-card flow (open public page → pick location → submit) remains the mobile path; drag-and-drop is a desktop power-user shortcut.
+**Initial admin**: I'll seed one admin row for you to claim. You'll get a sign-up link once and set your password — then you create the rest of the team from inside the Manage page.
 
-### Files touched
+---
 
-- New: `src/lib/gear-icons.tsx`
-- Edit: `src/routes/admin.tsx` (drag-and-drop + icons in cards)
-- Edit: `src/routes/index.tsx` (icon on public gear view)
-- Edit: `src/routes/admin_.history.tsx` (icon next to gear name in log)
+### 2. Database changes
 
-No database, RLS, or auth changes.
+**New tables**:
+
+- `admin_profiles` — stores display name per admin user.
+  - `id uuid` (FK → `auth.users.id`, cascade delete)
+  - `display_name text not null` (e.g. "Jacob", "Jenna")
+  - `created_at`, `updated_at`
+- `user_roles` — separate table per security best practice.
+  - `id uuid pk`, `user_id uuid` (FK → `auth.users.id`, cascade), `role app_role not null`
+  - Unique on `(user_id, role)`
+- New enum `app_role` with one value: `admin`. (Easy to extend later.)
+
+**New SECURITY DEFINER function**: `public.has_role(_user_id uuid, _role app_role) returns boolean` — used in all admin RLS checks. Avoids recursive RLS.
+
+**Trigger**: when a new row is added to `auth.users` for someone we've pre-authorized, auto-create their `admin_profiles` row. (For simplicity, I'll just have the admin invite flow insert both rows together.)
+
+**RLS policy overhaul** (replaces all the current `true` policies):
+
+| Table | Public can | Admin can |
+|---|---|---|
+| `gear` | SELECT, UPDATE (location fields only — see #3) | INSERT, DELETE, full UPDATE |
+| `gear_history` | SELECT, INSERT | (no changes needed) |
+| `gear_requests` | SELECT, INSERT | UPDATE, DELETE |
+| `gear_request_items` | SELECT, INSERT | UPDATE, DELETE |
+| `admin_profiles` | SELECT (so we can show names on history) | UPDATE own, admin can UPDATE all |
+| `user_roles` | nothing | SELECT, INSERT, DELETE (admins only) |
+
+---
+
+### 3. Lock down public gear updates (Input validation finding)
+
+A DB trigger on `gear` UPDATE rejects unauthenticated edits to anything except `current_location`, `sub_location`, `last_note`, `moved_by`, `last_updated`. Also caps lengths (sub_location ≤ 100, note ≤ 200, moved_by ≤ 50) and validates `current_location` is one of `'515' | 'Cumberland' | 'Trilith'`. Authenticated admins bypass these checks.
+
+---
+
+### 4. Use the signed-in admin's display name everywhere
+
+**On `/admin` (drag & drop)**: when logged-in, use the admin's `display_name` for `moved_by` instead of the literal string `"Admin"`.
+
+**On `/?gear=<id>` (public QR update form)**:
+- If signed in as an admin, the **"Your name"** dropdown is pre-selected to the admin's `display_name` (added to the dropdown if not already in `MOVERS`). The form still lets them change it if they're updating on someone else's behalf.
+- If not signed in, the form behaves exactly as today.
+
+**On `/admin/history`, `/admin/requests`, gear card history popovers**: anywhere the code currently renders the literal `"Admin"`, swap to the actual person's name (already stored in `moved_by` from the writes above).
+
+**Approve/deny on `/admin/requests`**: `reviewed_by` gets the admin's display name instead of `"Admin"`.
+
+---
+
+### 5. Show/hide password toggle (your request)
+
+A small reusable `<PasswordInput />` component with an eye icon button on the right that toggles `type="password"` ↔ `type="text"`. Used on:
+- `/login`
+- `/reset-password`
+- Manage admins page (when creating new admin or changing password)
+
+---
+
+### 6. Manage admins (under `/admin/manage`)
+
+A new "Admins" tab/section on the existing manage page so you can:
+- See all admins (email + display name)
+- Invite a new admin (email + display name → sends magic invite link)
+- Rename / remove admins
+- Reset your own password from inside the app
+
+---
+
+### Files
+
+**New**:
+- `src/routes/login.tsx`
+- `src/routes/reset-password.tsx`
+- `src/components/password-input.tsx`
+- `src/lib/auth.tsx` — `useAuth()` hook + provider wrapping the app, exposes `user`, `displayName`, `isAdmin`, `signIn`, `signOut`
+- `src/routes/_authenticated.tsx` — pathless layout route that gates `/admin*` behind auth + admin role
+- Migration: `admin_profiles`, `user_roles`, `app_role` enum, `has_role()`, RLS policies, gear-update validation trigger
+
+**Edited**:
+- `src/routes/__root.tsx` — wrap in auth provider
+- `src/routes/admin.tsx`, `admin_.manage.tsx`, `admin_.history.tsx`, `admin_.requests.tsx` — move under `_authenticated`, drop `LoginGate`, use display name for `moved_by` / `reviewed_by`
+- `src/routes/index.tsx` — auto-fill mover name when admin is signed in
+- `src/router.tsx` — pass auth context to router
+
+**Deleted**:
+- `src/lib/admin-auth.ts`
+
+---
+
+### Initial setup (one-time, after this lands)
+
+1. I'll seed one admin row with your email — you'll get an invite email, set your password, and you're in.
+2. From `/admin/manage` → Admins tab, you invite the rest of the team.
+3. The old shared password no longer works.
+
+### What this fixes from the security scan
+
+- ✅ `SECRETS_EXPOSED` — hardcoded password gone
+- ✅ `CLIENT_SIDE_AUTH` — replaced with real Supabase Auth
+- ✅ `PUBLIC_DATA_EXPOSURE` — RLS policies now require admin role for destructive ops
+- ✅ `UNRESTRICTED_WRITE_ACCESS` — same
+- ✅ `INPUT_VALIDATION` — DB trigger caps what public QR scans can write
 
