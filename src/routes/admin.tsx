@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox, Users } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
 import { toast } from "sonner";
@@ -171,6 +171,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/history">
                 <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/admins">
+                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>

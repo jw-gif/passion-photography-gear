@@ -30,6 +30,7 @@ import {
   Inbox,
   Eye,
   EyeOff,
+  Users,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
@@ -535,6 +536,11 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/history">
                 <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/admins">
+                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>

@@ -25,6 +25,7 @@ import {
   Trash2,
   Calendar as CalendarIcon,
   ClipboardList,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -211,6 +212,11 @@ function RequestsView({ onLogout }: { onLogout: () => void }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/history">
                 <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/admins">
+                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>
