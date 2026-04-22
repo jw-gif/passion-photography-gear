@@ -24,7 +24,7 @@ import { locationLabel } from "@/lib/locations";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Hub · Passion Photography Hub" },
+      { title: "Dashboard · Passion Photography Hub" },
       { name: "description", content: "Centralized view of upcoming photography and gear requests." },
     ],
   }),
