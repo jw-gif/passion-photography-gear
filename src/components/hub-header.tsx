@@ -11,7 +11,7 @@ import {
 import {
   LayoutDashboard,
   Camera,
-  Package,
+  Wrench,
   ChevronDown,
   Users,
   LogOut,
