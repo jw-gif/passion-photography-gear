@@ -111,6 +111,13 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
           </Button>
         </div>
         <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+            <Camera className="size-3.5" /> Photo
+          </span>
+          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+            <Wrench className="size-3.5" /> Gear
+          </span>
+          <span className="h-3 w-px bg-border mx-1" />
           {LEGEND.map((l) => (
             <span key={l.label} className="inline-flex items-center gap-1.5">
               <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
