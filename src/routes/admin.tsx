@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
-import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox } from "lucide-react";
+import { Camera, Search, QrCode, ChevronDown, LogOut, X, History, GripVertical, Settings, ArrowLeft, Inbox, Users } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
 import { toast } from "sonner";
