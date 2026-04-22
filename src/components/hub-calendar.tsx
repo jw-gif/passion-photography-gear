@@ -131,25 +131,38 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const dayEvents = eventsByDay.get(key) ?? [];
-          const inMonth = isSameMonth(day, cursor);
+          const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
           const isToday = isSameDay(day, new Date());
           return (
             <div
               key={key}
               className={cn(
                 "bg-background min-h-[120px] sm:min-h-[140px] p-1.5 flex flex-col gap-1 relative",
-                !inMonth && "bg-muted/20",
+                isPast && "bg-muted/20",
               )}
             >
               <div
                 className={cn(
-                  "text-xs font-semibold tabular-nums leading-none self-start",
-                  !inMonth && "text-muted-foreground/60",
-                  isToday &&
-                    "inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground",
+                  "text-xs font-semibold tabular-nums leading-none self-start flex items-center gap-1",
+                  isPast && "text-muted-foreground/60",
                 )}
               >
-                {format(day, "d")}
+                <span
+                  className={cn(
+                    isToday &&
+                      "inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground",
+                  )}
+                >
+                  {format(day, "d")}
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] uppercase tracking-wider font-medium text-muted-foreground",
+                    isPast && "text-muted-foreground/50",
+                  )}
+                >
+                  {format(day, "MMM")}
+                </span>
               </div>
               <div className="flex flex-col gap-1 overflow-hidden">
                 {dayEvents.slice(0, 3).map((ev) => {
@@ -193,6 +206,22 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+          <Camera className="size-3.5" /> Photo
+        </span>
+        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+          <Wrench className="size-3.5" /> Gear
+        </span>
+        <span className="h-3 w-px bg-border mx-1" />
+        {LEGEND.map((l) => (
+          <span key={l.label} className="inline-flex items-center gap-1.5">
+            <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
+            {l.label}
+          </span>
+        ))}
       </div>
     </div>
   );
