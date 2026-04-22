@@ -13,7 +13,7 @@ import {
   subMonths,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Camera, Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CalendarEventKind = "photo" | "gear";
@@ -111,6 +111,13 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
           </Button>
         </div>
         <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+            <Camera className="size-3.5" /> Photo
+          </span>
+          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+            <Wrench className="size-3.5" /> Gear
+          </span>
+          <span className="h-3 w-px bg-border mx-1" />
           {LEGEND.map((l) => (
             <span key={l.label} className="inline-flex items-center gap-1.5">
               <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
@@ -138,13 +145,13 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
             <div
               key={key}
               className={cn(
-                "bg-background min-h-[96px] sm:min-h-[110px] p-1.5 flex flex-col gap-1 relative",
+                "bg-background min-h-[120px] sm:min-h-[140px] p-1.5 flex flex-col gap-1 relative",
                 !inMonth && "bg-muted/20",
               )}
             >
               <div
                 className={cn(
-                  "text-xs font-semibold tabular-nums leading-none",
+                  "text-xs font-semibold tabular-nums leading-none self-start",
                   !inMonth && "text-muted-foreground/60",
                   isToday &&
                     "inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground",
@@ -152,21 +159,36 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
               >
                 {format(day, "d")}
               </div>
-              <div className="flex flex-col gap-0.5 overflow-hidden">
+              <div className="flex flex-col gap-1 overflow-hidden">
                 {dayEvents.slice(0, 3).map((ev) => {
-                  const Icon = ev.kind === "photo" ? Camera : Package;
+                  const isPhoto = ev.kind === "photo";
+                  const Icon = isPhoto ? Camera : Wrench;
                   return (
                     <button
                       key={ev.id + key}
                       onClick={() => onEventClick?.(ev)}
                       className={cn(
-                        "group flex items-center gap-1 w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight font-medium text-white truncate transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        ev.statusColor,
+                        "group flex items-stretch w-full text-left rounded-md overflow-hidden border border-border/60 bg-card hover:bg-accent/40 hover:border-foreground/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       )}
-                      title={`${ev.statusLabel} · ${ev.title}`}
+                      title={`${isPhoto ? "Photography" : "Gear"} · ${ev.statusLabel} · ${ev.title}`}
                     >
-                      <Icon className="size-2.5 shrink-0" />
-                      <span className="truncate">{ev.title}</span>
+                      <span
+                        className={cn(
+                          "flex items-center justify-center px-1.5 shrink-0",
+                          ev.statusColor,
+                        )}
+                        aria-hidden
+                      >
+                        <Icon className="size-3 text-white" strokeWidth={2.5} />
+                      </span>
+                      <span className="flex-1 min-w-0 px-1.5 py-1 flex flex-col gap-0.5">
+                        <span className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground leading-none">
+                          {isPhoto ? "Photo" : "Gear"}
+                        </span>
+                        <span className="text-[11px] font-medium truncate leading-tight text-foreground">
+                          {ev.title}
+                        </span>
+                      </span>
                     </button>
                   );
                 })}

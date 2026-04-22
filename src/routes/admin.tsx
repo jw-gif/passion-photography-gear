@@ -8,7 +8,7 @@ import { HubHeader } from "@/components/hub-header";
 import { HubCalendar, type CalendarEvent } from "@/components/hub-calendar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Package, ArrowRight, Inbox, MapPin, User as UserIcon } from "lucide-react";
+import { Camera, Wrench, ArrowRight, Inbox, MapPin, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   statusBadgeClasses,
@@ -24,7 +24,7 @@ import { locationLabel } from "@/lib/locations";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Hub · Passion Photography Hub" },
+      { title: "Dashboard · Passion Photography Hub" },
       { name: "description", content: "Centralized view of upcoming photography and gear requests." },
     ],
   }),
@@ -181,20 +181,11 @@ function HubView({ onLogout }: { onLogout: () => void }) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Hub</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Upcoming photography and gear requests across the team.
           </p>
         </div>
-
-        {/* Calendar */}
-        <section>
-          {loading ? (
-            <div className="text-sm text-muted-foreground">Loading calendar…</div>
-          ) : (
-            <HubCalendar events={events} />
-          )}
-        </section>
 
         {/* Upcoming lists */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -276,7 +267,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold tracking-tight inline-flex items-center gap-2">
-                <Package className="size-4 text-muted-foreground" />
+                <Wrench className="size-4 text-muted-foreground" />
                 Upcoming Gear
               </h2>
               <Button asChild variant="ghost" size="sm">
@@ -336,6 +327,15 @@ function HubView({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
           </div>
+        </section>
+
+        {/* Calendar */}
+        <section>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading calendar…</div>
+          ) : (
+            <HubCalendar events={events} />
+          )}
         </section>
       </div>
     </main>
