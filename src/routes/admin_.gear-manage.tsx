@@ -13,7 +13,6 @@ import QRCode from "qrcode";
 import {
   Camera,
   ArrowLeft,
-  LogOut,
   Plus,
   Trash2,
   Pencil,
@@ -33,7 +32,7 @@ import {
   Users,
 } from "lucide-react";
 import { GearIcon, ICON_KINDS, ICON_LABELS, autoIconKindFor, type IconKind } from "@/lib/gear-icons";
-import pccLogo from "@/assets/pcc-logo.png";
+import { HubHeader } from "@/components/hub-header";
 import {
   Select,
   SelectContent,
@@ -64,7 +63,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin_/gear-manage")({
   head: () => ({
     meta: [
-      { title: "Manage Gear · Passion Gear Tracking" },
+      { title: "Manage Gear · Passion Photography Hub" },
       {
         name: "description",
         content: "Add, rename, retire, and manage availability of photography gear.",
@@ -510,45 +509,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
 
   return (
     <main className="min-h-screen">
-      <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <Link to="/admin" className="group flex items-center gap-2 rounded-md hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <div className="size-8 rounded-full bg-primary flex items-center justify-center relative overflow-hidden">
-              <img src={pccLogo} alt="PCC" className="size-5 object-contain transition-opacity duration-200 group-hover:opacity-0" style={{ filter: "brightness(0) invert(1)" }} />
-              <ArrowLeft className="size-4 text-primary-foreground absolute opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            </div>
-            <div>
-              <div className="font-semibold tracking-tight leading-tight">Manage Gear</div>
-              <div className="text-xs text-muted-foreground">Add, rename, retire</div>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin">
-                <ArrowLeft className="size-4" /> <span className="hidden sm:inline">Dashboard</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/requests">
-                <Inbox className="size-4" /> <span className="hidden sm:inline">Requests</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/history">
-                <History className="size-4" /> <span className="hidden sm:inline">Activity log</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/admins">
-                <Users className="size-4" /> <span className="hidden sm:inline">Admins</span>
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onLogout}>
-              <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <HubHeader onLogout={onLogout} title="Manage Gear" subtitle="Add, rename, retire" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Summary chips */}

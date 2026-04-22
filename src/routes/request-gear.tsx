@@ -26,9 +26,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/request-gear")({
   head: () => ({
     meta: [
-      { title: "Request Gear · Passion Photography" },
+      { title: "Request Gear · Passion Photography Hub" },
       { name: "description", content: "Submit a request for photography gear at a specific location and date." },
-      { property: "og:title", content: "Request Gear · Passion Photography" },
+      { property: "og:title", content: "Request Gear · Passion Photography Hub" },
       { property: "og:description", content: "Submit a request for photography gear at a specific location and date." },
     ],
   }),
@@ -168,7 +168,7 @@ function RequestPage() {
             </div>
             <div>
               <div className="font-semibold tracking-tight leading-tight">Request Gear</div>
-              <div className="text-xs text-muted-foreground">Passion Photography</div>
+              <div className="text-xs text-muted-foreground">Passion Photography Hub</div>
             </div>
           </Link>
         </div>

@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
-  LogOut,
   UserPlus,
   Pencil,
   Trash2,
@@ -33,12 +32,12 @@ import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import pccLogo from "@/assets/pcc-logo.png";
+import { HubHeader } from "@/components/hub-header";
 
 export const Route = createFileRoute("/admin_/team")({
   head: () => ({
     meta: [
-      { title: "Manage Admins · Passion Gear Tracking" },
+      { title: "Team · Passion Photography Hub" },
       { name: "description", content: "Invite and manage admin team members." },
     ],
   }),
@@ -192,60 +191,7 @@ function AdminsView({ onLogout }: { onLogout: () => void }) {
 
   return (
     <main className="min-h-screen">
-      <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <Link
-            to="/admin"
-            className="group flex items-center gap-2 rounded-md hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <div className="size-8 rounded-full bg-primary flex items-center justify-center relative overflow-hidden">
-              <img
-                src={pccLogo}
-                alt="PCC"
-                className="size-5 object-contain transition-opacity duration-200 group-hover:opacity-0"
-                style={{ filter: "brightness(0) invert(1)" }}
-              />
-              <ArrowLeft className="size-4 text-primary-foreground absolute opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            </div>
-            <div>
-              <div className="font-semibold tracking-tight leading-tight">Manage Admins</div>
-              <div className="text-xs text-muted-foreground">
-                Invite, rename, remove team members
-              </div>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin">
-                <ArrowLeft className="size-4" />{" "}
-                <span className="hidden sm:inline">Dashboard</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/manage">
-                <Wrench className="size-4" />{" "}
-                <span className="hidden sm:inline">Gear</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/requests">
-                <Inbox className="size-4" />{" "}
-                <span className="hidden sm:inline">Requests</span>
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/history">
-                <History className="size-4" />{" "}
-                <span className="hidden sm:inline">Activity log</span>
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={onLogout}>
-              <LogOut className="size-4" />{" "}
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <HubHeader onLogout={onLogout} title="Team" subtitle="Invite, rename, remove admins" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
