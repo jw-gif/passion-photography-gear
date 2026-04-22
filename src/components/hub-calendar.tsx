@@ -97,40 +97,25 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCursor((c) => subMonths(c, 1))}
-            aria-label="Previous month"
+            onClick={() => setCursor((c) => addDays(c, -7))}
+            aria-label="Previous week"
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <h2 className="text-lg sm:text-xl font-semibold tracking-tight tabular-nums min-w-[160px] text-center">
-            {format(cursor, "MMMM yyyy")}
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight tabular-nums min-w-[180px] text-center">
+            {rangeLabel}
           </h2>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCursor((c) => addMonths(c, 1))}
-            aria-label="Next month"
+            onClick={() => setCursor((c) => addDays(c, 7))}
+            aria-label="Next week"
           >
             <ChevronRight className="size-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setCursor(new Date())}>
-            Today
+            This week
           </Button>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-            <Camera className="size-3.5" /> Photo
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-            <Wrench className="size-3.5" /> Gear
-          </span>
-          <span className="h-3 w-px bg-border mx-1" />
-          {LEGEND.map((l) => (
-            <span key={l.label} className="inline-flex items-center gap-1.5">
-              <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
-              {l.label}
-            </span>
-          ))}
         </div>
       </div>
 
