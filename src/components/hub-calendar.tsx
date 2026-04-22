@@ -1,16 +1,11 @@
 import { useMemo, useState } from "react";
 import {
   addDays,
-  addMonths,
-  endOfMonth,
-  endOfWeek,
   format,
   isSameDay,
   isSameMonth,
   parseISO,
-  startOfMonth,
   startOfWeek,
-  subMonths,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Camera, Wrench } from "lucide-react";
@@ -48,13 +43,10 @@ const LEGEND: { color: string; label: string }[] = [
 export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
   const [cursor, setCursor] = useState<Date>(new Date());
 
-  const monthStart = useMemo(() => startOfMonth(cursor), [cursor]);
-  const monthEnd = useMemo(() => endOfMonth(cursor), [cursor]);
-  const gridStart = useMemo(
-    () => startOfWeek(monthStart, { weekStartsOn: 0 }),
-    [monthStart],
-  );
-  const gridEnd = useMemo(() => endOfWeek(monthEnd, { weekStartsOn: 0 }), [monthEnd]);
+  // Always anchor the grid to the current week as the top row.
+  // `cursor` advances/retreats by week (not month) so navigation slides forward in time.
+  const gridStart = useMemo(() => startOfWeek(cursor, { weekStartsOn: 0 }), [cursor]);
+  const gridEnd = useMemo(() => addDays(gridStart, 7 * 5 - 1), [gridStart]); // 5 weeks visible
 
   const days = useMemo(() => {
     const arr: Date[] = [];
@@ -64,6 +56,16 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
       d = addDays(d, 1);
     }
     return arr;
+  }, [gridStart, gridEnd]);
+
+  // Label for the visible range header
+  const rangeLabel = useMemo(() => {
+    const sameMonth = isSameMonth(gridStart, gridEnd);
+    if (sameMonth) return format(gridStart, "MMMM yyyy");
+    if (gridStart.getFullYear() === gridEnd.getFullYear()) {
+      return `${format(gridStart, "MMM")} – ${format(gridEnd, "MMM yyyy")}`;
+    }
+    return `${format(gridStart, "MMM yyyy")} – ${format(gridEnd, "MMM yyyy")}`;
   }, [gridStart, gridEnd]);
 
   const eventsByDay = useMemo(() => {
@@ -90,40 +92,25 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCursor((c) => subMonths(c, 1))}
-            aria-label="Previous month"
+            onClick={() => setCursor((c) => addDays(c, -7))}
+            aria-label="Previous week"
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <h2 className="text-lg sm:text-xl font-semibold tracking-tight tabular-nums min-w-[160px] text-center">
-            {format(cursor, "MMMM yyyy")}
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight tabular-nums min-w-[180px] text-center">
+            {rangeLabel}
           </h2>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCursor((c) => addMonths(c, 1))}
-            aria-label="Next month"
+            onClick={() => setCursor((c) => addDays(c, 7))}
+            aria-label="Next week"
           >
             <ChevronRight className="size-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setCursor(new Date())}>
-            Today
+            This week
           </Button>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-            <Camera className="size-3.5" /> Photo
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-            <Wrench className="size-3.5" /> Gear
-          </span>
-          <span className="h-3 w-px bg-border mx-1" />
-          {LEGEND.map((l) => (
-            <span key={l.label} className="inline-flex items-center gap-1.5">
-              <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
-              {l.label}
-            </span>
-          ))}
         </div>
       </div>
 
@@ -139,25 +126,38 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const dayEvents = eventsByDay.get(key) ?? [];
-          const inMonth = isSameMonth(day, cursor);
+          const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
           const isToday = isSameDay(day, new Date());
           return (
             <div
               key={key}
               className={cn(
                 "bg-background min-h-[120px] sm:min-h-[140px] p-1.5 flex flex-col gap-1 relative",
-                !inMonth && "bg-muted/20",
+                isPast && "bg-muted/20",
               )}
             >
               <div
                 className={cn(
-                  "text-xs font-semibold tabular-nums leading-none self-start",
-                  !inMonth && "text-muted-foreground/60",
-                  isToday &&
-                    "inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground",
+                  "text-xs font-semibold tabular-nums leading-none self-start flex items-center gap-1",
+                  isPast && "text-muted-foreground/60",
                 )}
               >
-                {format(day, "d")}
+                <span
+                  className={cn(
+                    isToday &&
+                      "inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground",
+                  )}
+                >
+                  {format(day, "d")}
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] uppercase tracking-wider font-medium text-muted-foreground",
+                    isPast && "text-muted-foreground/50",
+                  )}
+                >
+                  {format(day, "MMM")}
+                </span>
               </div>
               <div className="flex flex-col gap-1 overflow-hidden">
                 {dayEvents.slice(0, 3).map((ev) => {
@@ -201,6 +201,22 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+          <Camera className="size-3.5" /> Photo
+        </span>
+        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+          <Wrench className="size-3.5" /> Gear
+        </span>
+        <span className="h-3 w-px bg-border mx-1" />
+        {LEGEND.map((l) => (
+          <span key={l.label} className="inline-flex items-center gap-1.5">
+            <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
+            {l.label}
+          </span>
+        ))}
       </div>
     </div>
   );
