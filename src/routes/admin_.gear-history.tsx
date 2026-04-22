@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/admin_/history")({
+export const Route = createFileRoute("/admin_/gear-history")({
   head: () => ({
     meta: [
       { title: "Activity Log · Passion Gear Tracking" },

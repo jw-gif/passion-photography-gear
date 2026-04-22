@@ -13,7 +13,7 @@ import { GearIcon } from "@/lib/gear-icons";
 import pccLogo from "@/assets/pcc-logo.png";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin_/gear")({
   head: () => ({
     meta: [
       { title: "Admin · Passion Gear Tracking" },

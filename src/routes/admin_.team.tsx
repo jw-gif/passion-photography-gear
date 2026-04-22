@@ -35,7 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import pccLogo from "@/assets/pcc-logo.png";
 
-export const Route = createFileRoute("/admin_/admins")({
+export const Route = createFileRoute("/admin_/team")({
   head: () => ({
     meta: [
       { title: "Manage Admins · Passion Gear Tracking" },

@@ -11,16 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestPhotographyRouteImport } from './routes/request-photography'
-import { Route as RequestRouteImport } from './routes/request'
+import { Route as RequestGearRouteImport } from './routes/request-gear'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
-import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
-import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
-import { Route as AdminManageRouteImport } from './routes/admin_.manage'
-import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
-import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
+import { Route as AdminTeamRouteImport } from './routes/admin_.team'
+import { Route as AdminRequestsPhotographyRouteImport } from './routes/admin_.requests-photography'
+import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-gear'
+import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage'
+import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
+import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -32,19 +32,14 @@ const RequestPhotographyRoute = RequestPhotographyRouteImport.update({
   path: '/request-photography',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RequestRoute = RequestRouteImport.update({
-  id: '/request',
-  path: '/request',
+const RequestGearRoute = RequestGearRouteImport.update({
+  id: '/request-gear',
+  path: '/request-gear',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -57,132 +52,138 @@ const ApiAdminsRoute = ApiAdminsRouteImport.update({
   path: '/api/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRequestsRoute = AdminRequestsRouteImport.update({
-  id: '/admin_/requests',
-  path: '/admin/requests',
+const AdminTeamRoute = AdminTeamRouteImport.update({
+  id: '/admin_/team',
+  path: '/admin/team',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPhotoRequestsRoute = AdminPhotoRequestsRouteImport.update({
-  id: '/admin_/photo-requests',
-  path: '/admin/photo-requests',
+const AdminRequestsPhotographyRoute =
+  AdminRequestsPhotographyRouteImport.update({
+    id: '/admin_/requests-photography',
+    path: '/admin/requests-photography',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminRequestsGearRoute = AdminRequestsGearRouteImport.update({
+  id: '/admin_/requests-gear',
+  path: '/admin/requests-gear',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminManageRoute = AdminManageRouteImport.update({
-  id: '/admin_/manage',
-  path: '/admin/manage',
+const AdminGearManageRoute = AdminGearManageRouteImport.update({
+  id: '/admin_/gear-manage',
+  path: '/admin/gear-manage',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminHistoryRoute = AdminHistoryRouteImport.update({
-  id: '/admin_/history',
-  path: '/admin/history',
+const AdminGearHistoryRoute = AdminGearHistoryRouteImport.update({
+  id: '/admin_/gear-history',
+  path: '/admin/gear-history',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAdminsRoute = AdminAdminsRouteImport.update({
-  id: '/admin_/admins',
-  path: '/admin/admins',
+const AdminGearRoute = AdminGearRouteImport.update({
+  id: '/admin_/gear',
+  path: '/admin/gear',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
-  '/request': typeof RequestRoute
+  '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin/admins': typeof AdminAdminsRoute
-  '/admin/history': typeof AdminHistoryRoute
-  '/admin/manage': typeof AdminManageRoute
-  '/admin/photo-requests': typeof AdminPhotoRequestsRoute
-  '/admin/requests': typeof AdminRequestsRoute
+  '/admin/gear': typeof AdminGearRoute
+  '/admin/gear-history': typeof AdminGearHistoryRoute
+  '/admin/gear-manage': typeof AdminGearManageRoute
+  '/admin/requests-gear': typeof AdminRequestsGearRoute
+  '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
-  '/request': typeof RequestRoute
+  '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin/admins': typeof AdminAdminsRoute
-  '/admin/history': typeof AdminHistoryRoute
-  '/admin/manage': typeof AdminManageRoute
-  '/admin/photo-requests': typeof AdminPhotoRequestsRoute
-  '/admin/requests': typeof AdminRequestsRoute
+  '/admin/gear': typeof AdminGearRoute
+  '/admin/gear-history': typeof AdminGearHistoryRoute
+  '/admin/gear-manage': typeof AdminGearManageRoute
+  '/admin/requests-gear': typeof AdminRequestsGearRoute
+  '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
-  '/request': typeof RequestRoute
+  '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin_/admins': typeof AdminAdminsRoute
-  '/admin_/history': typeof AdminHistoryRoute
-  '/admin_/manage': typeof AdminManageRoute
-  '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
-  '/admin_/requests': typeof AdminRequestsRoute
+  '/admin_/gear': typeof AdminGearRoute
+  '/admin_/gear-history': typeof AdminGearHistoryRoute
+  '/admin_/gear-manage': typeof AdminGearManageRoute
+  '/admin_/requests-gear': typeof AdminRequestsGearRoute
+  '/admin_/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin_/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/login'
-    | '/request'
+    | '/request-gear'
     | '/request-photography'
     | '/reset-password'
-    | '/admin/admins'
-    | '/admin/history'
-    | '/admin/manage'
-    | '/admin/photo-requests'
-    | '/admin/requests'
+    | '/admin/gear'
+    | '/admin/gear-history'
+    | '/admin/gear-manage'
+    | '/admin/requests-gear'
+    | '/admin/requests-photography'
+    | '/admin/team'
     | '/api/admins'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/login'
-    | '/request'
+    | '/request-gear'
     | '/request-photography'
     | '/reset-password'
-    | '/admin/admins'
-    | '/admin/history'
-    | '/admin/manage'
-    | '/admin/photo-requests'
-    | '/admin/requests'
+    | '/admin/gear'
+    | '/admin/gear-history'
+    | '/admin/gear-manage'
+    | '/admin/requests-gear'
+    | '/admin/requests-photography'
+    | '/admin/team'
     | '/api/admins'
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/login'
-    | '/request'
+    | '/request-gear'
     | '/request-photography'
     | '/reset-password'
-    | '/admin_/admins'
-    | '/admin_/history'
-    | '/admin_/manage'
-    | '/admin_/photo-requests'
-    | '/admin_/requests'
+    | '/admin_/gear'
+    | '/admin_/gear-history'
+    | '/admin_/gear-manage'
+    | '/admin_/requests-gear'
+    | '/admin_/requests-photography'
+    | '/admin_/team'
     | '/api/admins'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
-  RequestRoute: typeof RequestRoute
+  RequestGearRoute: typeof RequestGearRoute
   RequestPhotographyRoute: typeof RequestPhotographyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  AdminAdminsRoute: typeof AdminAdminsRoute
-  AdminHistoryRoute: typeof AdminHistoryRoute
-  AdminManageRoute: typeof AdminManageRoute
-  AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
-  AdminRequestsRoute: typeof AdminRequestsRoute
+  AdminGearRoute: typeof AdminGearRoute
+  AdminGearHistoryRoute: typeof AdminGearHistoryRoute
+  AdminGearManageRoute: typeof AdminGearManageRoute
+  AdminRequestsGearRoute: typeof AdminRequestsGearRoute
+  AdminRequestsPhotographyRoute: typeof AdminRequestsPhotographyRoute
+  AdminTeamRoute: typeof AdminTeamRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
 }
 
@@ -202,11 +203,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RequestPhotographyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/request': {
-      id: '/request'
-      path: '/request'
-      fullPath: '/request'
-      preLoaderRoute: typeof RequestRouteImport
+    '/request-gear': {
+      id: '/request-gear'
+      path: '/request-gear'
+      fullPath: '/request-gear'
+      preLoaderRoute: typeof RequestGearRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -214,13 +215,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -237,39 +231,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin_/requests': {
-      id: '/admin_/requests'
-      path: '/admin/requests'
-      fullPath: '/admin/requests'
-      preLoaderRoute: typeof AdminRequestsRouteImport
+    '/admin_/team': {
+      id: '/admin_/team'
+      path: '/admin/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AdminTeamRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin_/photo-requests': {
-      id: '/admin_/photo-requests'
-      path: '/admin/photo-requests'
-      fullPath: '/admin/photo-requests'
-      preLoaderRoute: typeof AdminPhotoRequestsRouteImport
+    '/admin_/requests-photography': {
+      id: '/admin_/requests-photography'
+      path: '/admin/requests-photography'
+      fullPath: '/admin/requests-photography'
+      preLoaderRoute: typeof AdminRequestsPhotographyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin_/manage': {
-      id: '/admin_/manage'
-      path: '/admin/manage'
-      fullPath: '/admin/manage'
-      preLoaderRoute: typeof AdminManageRouteImport
+    '/admin_/requests-gear': {
+      id: '/admin_/requests-gear'
+      path: '/admin/requests-gear'
+      fullPath: '/admin/requests-gear'
+      preLoaderRoute: typeof AdminRequestsGearRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin_/history': {
-      id: '/admin_/history'
-      path: '/admin/history'
-      fullPath: '/admin/history'
-      preLoaderRoute: typeof AdminHistoryRouteImport
+    '/admin_/gear-manage': {
+      id: '/admin_/gear-manage'
+      path: '/admin/gear-manage'
+      fullPath: '/admin/gear-manage'
+      preLoaderRoute: typeof AdminGearManageRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin_/admins': {
-      id: '/admin_/admins'
-      path: '/admin/admins'
-      fullPath: '/admin/admins'
-      preLoaderRoute: typeof AdminAdminsRouteImport
+    '/admin_/gear-history': {
+      id: '/admin_/gear-history'
+      path: '/admin/gear-history'
+      fullPath: '/admin/gear-history'
+      preLoaderRoute: typeof AdminGearHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/gear': {
+      id: '/admin_/gear'
+      path: '/admin/gear'
+      fullPath: '/admin/gear'
+      preLoaderRoute: typeof AdminGearRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -277,16 +278,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
-  RequestRoute: RequestRoute,
+  RequestGearRoute: RequestGearRoute,
   RequestPhotographyRoute: RequestPhotographyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  AdminAdminsRoute: AdminAdminsRoute,
-  AdminHistoryRoute: AdminHistoryRoute,
-  AdminManageRoute: AdminManageRoute,
-  AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
-  AdminRequestsRoute: AdminRequestsRoute,
+  AdminGearRoute: AdminGearRoute,
+  AdminGearHistoryRoute: AdminGearHistoryRoute,
+  AdminGearManageRoute: AdminGearManageRoute,
+  AdminRequestsGearRoute: AdminRequestsGearRoute,
+  AdminRequestsPhotographyRoute: AdminRequestsPhotographyRoute,
+  AdminTeamRoute: AdminTeamRoute,
   ApiAdminsRoute: ApiAdminsRoute,
 }
 export const routeTree = rootRouteImport

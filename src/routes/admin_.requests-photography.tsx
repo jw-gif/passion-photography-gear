@@ -55,7 +55,7 @@ import {
   type PhotoRequestStatus,
 } from "@/lib/orgs";
 
-export const Route = createFileRoute("/admin_/photo-requests")({
+export const Route = createFileRoute("/admin_/requests-photography")({
   head: () => ({
     meta: [
       { title: "Photo Requests · Admin" },

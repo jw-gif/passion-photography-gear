@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin_/requests")({
+export const Route = createFileRoute("/admin_/requests-gear")({
   head: () => ({
     meta: [
       { title: "Requests · Passion Gear Tracking" },

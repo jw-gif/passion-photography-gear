@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin_/manage")({
+export const Route = createFileRoute("/admin_/gear-manage")({
   head: () => ({
     meta: [
       { title: "Manage Gear · Passion Gear Tracking" },

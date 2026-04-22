@@ -23,7 +23,7 @@ import pccLogo from "@/assets/pcc-logo.png";
 import { Calendar as CalendarIcon, Check, Search, Send } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/request")({
+export const Route = createFileRoute("/request-gear")({
   head: () => ({
     meta: [
       { title: "Request Gear · Passion Photography" },
