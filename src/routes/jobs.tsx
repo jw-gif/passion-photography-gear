@@ -317,6 +317,18 @@ function ShootGroup({
   onClaim: (id: string) => void;
 }) {
   const first = jobs[0];
+
+  // Visibility rule for Point-tier photographers:
+  // - If a Point opening is still available on this shoot, only show that one.
+  //   Hide door_holder / training_door_holder openings until Point is filled.
+  // - If Point is already taken, show the remaining openings with a heads-up banner.
+  const visibleJobs = useMemo(() => {
+    if (myTier !== "point") return jobs;
+    const pointOpening = jobs.find((j) => j.role === "point");
+    if (pointOpening) return [pointOpening];
+    return jobs;
+  }, [jobs, myTier]);
+
   const showPointTakenBanner =
     myTier === "point" &&
     first.point_taken &&
@@ -331,18 +343,20 @@ function ShootGroup({
         <ShootMeta job={first} />
       </div>
 
+      <ShootDetails job={first} />
+
       {showPointTakenBanner && (
         <div className="flex items-start gap-2 px-3 py-2 rounded-md border bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
           <Info className="size-4 shrink-0 mt-0.5" />
           <span>
             Heads up — the Point spot for this shoot is already taken. The
-            openings below are <strong>unpaid Door Holder coverage</strong>.
+            openings below are <strong>Door Holder coverage</strong> only.
           </span>
         </div>
       )}
 
       <div className="space-y-2">
-        {jobs.map((j) => (
+        {visibleJobs.map((j) => (
           <OpeningCard
             key={j.opening_id}
             job={j}
@@ -367,10 +381,10 @@ function OpeningCard({
   const paid = isPaidRole(job.role);
   const claimLabel =
     job.role === "point"
-      ? "Claim paid Point spot"
+      ? "Claim Point spot"
       : job.role === "door_holder"
-        ? "Sign up as Door Holder (unpaid)"
-        : "Sign up as Training (unpaid)";
+        ? "Sign up as Door Holder"
+        : "Sign up as Training";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-md bg-muted/30">
@@ -383,13 +397,9 @@ function OpeningCard({
         >
           {tierLabel(job.role)}
         </span>
-        {paid && job.budget_cents != null ? (
+        {paid && job.budget_cents != null && (
           <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-            {formatBudget(job.budget_cents)} · Paid
-          </span>
-        ) : (
-          <span className="text-xs px-2 py-0.5 rounded-full border bg-muted text-muted-foreground">
-            Unpaid coverage
+            {formatBudget(job.budget_cents)}
           </span>
         )}
       </div>
@@ -444,7 +454,7 @@ function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void })
           </span>
           {paid && job.budget_cents != null && (
             <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-              {formatBudget(job.budget_cents)} · Paid
+              {formatBudget(job.budget_cents)}
             </span>
           )}
         </div>
@@ -535,7 +545,7 @@ function ShootMeta({ job }: { job: OpenJobRow | MyJobRow }) {
       {(job.start_time || job.end_time) && (
         <span className="inline-flex items-center gap-1">
           <Clock className="size-3.5" />
-          {job.start_time?.slice(0, 5)} – {job.end_time?.slice(0, 5)}
+          {formatTime12(job.start_time)} – {formatTime12(job.end_time)}
         </span>
       )}
       {job.event_location && (
@@ -546,6 +556,84 @@ function ShootMeta({ job }: { job: OpenJobRow | MyJobRow }) {
       )}
     </div>
   );
+}
+
+function ShootDetails({ job }: { job: OpenJobRow }) {
+  const hasContact = job.on_site_contact_name || job.on_site_contact_phone;
+  const hasCoverage = job.coverage_types && job.coverage_types.length > 0;
+  if (!hasContact && !hasCoverage && !job.notes) return null;
+
+  return (
+    <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-sm">
+      {hasCoverage && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+            Coverage:
+          </span>
+          {job.coverage_types.map((c) => (
+            <span
+              key={c}
+              className="inline-flex text-[11px] px-1.5 py-0.5 rounded border bg-background text-foreground"
+            >
+              {coverageLabel(c)}
+            </span>
+          ))}
+        </div>
+      )}
+      {hasContact && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
+          <span className="text-xs uppercase tracking-wide font-semibold">
+            On-site:
+          </span>
+          {job.on_site_contact_name && (
+            <span className="inline-flex items-center gap-1">
+              <UserIcon className="size-3.5" />
+              {job.on_site_contact_name}
+            </span>
+          )}
+          {job.on_site_contact_phone && (
+            <a
+              href={`tel:${job.on_site_contact_phone}`}
+              className="inline-flex items-center gap-1 hover:underline text-foreground"
+            >
+              <Phone className="size-3.5" />
+              {job.on_site_contact_phone}
+            </a>
+          )}
+        </div>
+      )}
+      {job.notes && (
+        <p className="text-sm whitespace-pre-wrap text-muted-foreground border-l-2 border-border pl-3">
+          {job.notes}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function formatTime12(t: string | null | undefined): string {
+  if (!t) return "";
+  const [hStr, mStr] = t.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return t;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const mPad = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
+  return `${h12}${mPad} ${period}`;
+}
+
+function coverageLabel(c: string): string {
+  switch (c) {
+    case "live_event":
+      return "Live event";
+    case "photo_booth":
+      return "Photo booth";
+    case "other":
+      return "Other";
+    default:
+      return c;
+  }
 }
 
 function CenteredMessage({ children }: { children: React.ReactNode }) {
