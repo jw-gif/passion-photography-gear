@@ -110,7 +110,7 @@ function RequestsView({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   const gearMap = useMemo(() => {
-    const m = new Map<number, GearRow>();
+    const m = new Map<string, GearRow>();
     for (const g of gear) m.set(g.id, g);
     return m;
   }, [gear]);

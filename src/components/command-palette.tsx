@@ -27,7 +27,7 @@ interface SearchResults {
   photo: { id: string; title: string; date: string | null }[];
   gear: { id: string; title: string; date: string }[];
   photographers: { id: string; name: string; email: string }[];
-  gearItems: { id: number; name: string }[];
+  gearItems: { id: string; name: string }[];
 }
 
 const empty: SearchResults = { photo: [], gear: [], photographers: [], gearItems: [] };

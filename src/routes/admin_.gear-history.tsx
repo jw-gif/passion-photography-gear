@@ -99,7 +99,7 @@ function HistoryView({ onLogout }: { onLogout: () => void }) {
   }, [limit]);
 
   const gearMap = useMemo(() => {
-    const m = new Map<number, { name: string; icon_kind: string | null }>();
+    const m = new Map<string, { name: string; icon_kind: string | null }>();
     for (const g of gear) m.set(g.id, { name: g.name, icon_kind: g.icon_kind });
     return m;
   }, [gear]);
