@@ -88,7 +88,7 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/admin/photographers">
+                <Link to="/admin/team" search={{ tab: "photographers" }}>
                   <Users className="size-4" /> Photographers
                 </Link>
               </DropdownMenuItem>

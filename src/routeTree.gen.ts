@@ -13,10 +13,12 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestPhotographyRouteImport } from './routes/request-photography'
 import { Route as RequestGearRouteImport } from './routes/request-gear'
 import { Route as RequestRouteImport } from './routes/request'
+import { Route as PhotographerLinkRouteImport } from './routes/photographer-link'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPhotographerLinkRouteImport } from './routes/api.photographer-link'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
 import { Route as AdminTeamRouteImport } from './routes/admin_.team'
 import { Route as AdminShotListGeneratorRouteImport } from './routes/admin_.shot-list-generator'
@@ -52,6 +54,11 @@ const RequestRoute = RequestRouteImport.update({
   path: '/request',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PhotographerLinkRoute = PhotographerLinkRouteImport.update({
+  id: '/photographer-link',
+  path: '/photographer-link',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -70,6 +77,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPhotographerLinkRoute = ApiPhotographerLinkRouteImport.update({
+  id: '/api/photographer-link',
+  path: '/api/photographer-link',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminsRoute = ApiAdminsRouteImport.update({
@@ -149,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
@@ -167,12 +180,14 @@ export interface FileRoutesByFullPath {
   '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
+  '/api/photographer-link': typeof ApiPhotographerLinkRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
@@ -191,6 +206,7 @@ export interface FileRoutesByTo {
   '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
+  '/api/photographer-link': typeof ApiPhotographerLinkRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -198,6 +214,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
   '/request-photography': typeof RequestPhotographyRoute
@@ -216,6 +233,7 @@ export interface FileRoutesById {
   '/admin_/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin_/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
+  '/api/photographer-link': typeof ApiPhotographerLinkRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -224,6 +242,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/photographer-link'
     | '/request'
     | '/request-gear'
     | '/request-photography'
@@ -242,12 +261,14 @@ export interface FileRouteTypes {
     | '/admin/shot-list-generator'
     | '/admin/team'
     | '/api/admins'
+    | '/api/photographer-link'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/photographer-link'
     | '/request'
     | '/request-gear'
     | '/request-photography'
@@ -266,12 +287,14 @@ export interface FileRouteTypes {
     | '/admin/shot-list-generator'
     | '/admin/team'
     | '/api/admins'
+    | '/api/photographer-link'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/photographer-link'
     | '/request'
     | '/request-gear'
     | '/request-photography'
@@ -290,6 +313,7 @@ export interface FileRouteTypes {
     | '/admin_/shot-list-generator'
     | '/admin_/team'
     | '/api/admins'
+    | '/api/photographer-link'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -297,6 +321,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   JobsRoute: typeof JobsRoute
   LoginRoute: typeof LoginRoute
+  PhotographerLinkRoute: typeof PhotographerLinkRoute
   RequestRoute: typeof RequestRoute
   RequestGearRoute: typeof RequestGearRoute
   RequestPhotographyRoute: typeof RequestPhotographyRoute
@@ -315,6 +340,7 @@ export interface RootRouteChildren {
   AdminShotListGeneratorRoute: typeof AdminShotListGeneratorRoute
   AdminTeamRoute: typeof AdminTeamRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
+  ApiPhotographerLinkRoute: typeof ApiPhotographerLinkRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -347,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RequestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/photographer-link': {
+      id: '/photographer-link'
+      path: '/photographer-link'
+      fullPath: '/photographer-link'
+      preLoaderRoute: typeof PhotographerLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -373,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/photographer-link': {
+      id: '/api/photographer-link'
+      path: '/api/photographer-link'
+      fullPath: '/api/photographer-link'
+      preLoaderRoute: typeof ApiPhotographerLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admins': {
@@ -481,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   JobsRoute: JobsRoute,
   LoginRoute: LoginRoute,
+  PhotographerLinkRoute: PhotographerLinkRoute,
   RequestRoute: RequestRoute,
   RequestGearRoute: RequestGearRoute,
   RequestPhotographyRoute: RequestPhotographyRoute,
@@ -499,6 +540,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminShotListGeneratorRoute: AdminShotListGeneratorRoute,
   AdminTeamRoute: AdminTeamRoute,
   ApiAdminsRoute: ApiAdminsRoute,
+  ApiPhotographerLinkRoute: ApiPhotographerLinkRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

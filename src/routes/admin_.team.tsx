@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   UserPlus,
@@ -13,10 +13,36 @@ import {
   Wrench,
   History,
   Inbox,
+  Mail,
+  Plus,
+  Search,
+  Upload,
+  ExternalLink,
+  Camera,
+  ShieldCheck,
 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PasswordInput } from "@/components/password-input";
 import {
   AlertDialog,
@@ -32,17 +58,492 @@ import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { HubHeader } from "@/components/hub-header";
+import {
+  PHOTOGRAPHER_TIERS,
+  type PhotographerTier,
+  tierLabel,
+  tierBadgeClasses,
+  generatePhotographerToken,
+} from "@/lib/photographers";
+import { PhotographerBulkImportDialog } from "@/components/photographer-bulk-import-dialog";
+
+type TeamTab = "photographers" | "admins";
+
+interface TeamSearch {
+  tab?: TeamTab;
+}
 
 export const Route = createFileRoute("/admin_/team")({
+  validateSearch: (search: Record<string, unknown>): TeamSearch => {
+    const t = search.tab;
+    return {
+      tab: t === "admins" || t === "photographers" ? t : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Team · Passion Photography Hub" },
-      { name: "description", content: "Invite and manage admin team members." },
+      {
+        name: "description",
+        content: "Manage photographers and admins.",
+      },
     ],
   }),
-  component: AdminsPage,
+  component: TeamPage,
 });
+
+function TeamPage() {
+  const { signOut } = useAuth();
+  return (
+    <RequireAdmin>
+      <TeamView onLogout={() => signOut()} />
+    </RequireAdmin>
+  );
+}
+
+function TeamView({ onLogout }: { onLogout: () => void }) {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const initialTab: TeamTab = search.tab ?? "photographers";
+  const [tab, setTab] = useState<TeamTab>(initialTab);
+
+  useEffect(() => {
+    if (search.tab && search.tab !== tab) setTab(search.tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.tab]);
+
+  function handleTabChange(value: string) {
+    const t = (value === "admins" ? "admins" : "photographers") as TeamTab;
+    setTab(t);
+    navigate({ search: { tab: t }, replace: true });
+  }
+
+  return (
+    <main className="min-h-screen">
+      <HubHeader onLogout={onLogout} title="Team" subtitle="Photographers & admins" />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">Team</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage who has access to the hub and who shoots for it.
+          </p>
+        </div>
+
+        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsTrigger value="photographers" className="gap-2">
+              <Camera className="size-4" /> Photographers
+            </TabsTrigger>
+            <TabsTrigger value="admins" className="gap-2">
+              <ShieldCheck className="size-4" /> Admins
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="photographers" className="mt-0">
+            <PhotographersPanel />
+          </TabsContent>
+          <TabsContent value="admins" className="mt-0">
+            <AdminsPanel />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Photographers panel
+// ---------------------------------------------------------------------------
+
+interface Photographer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  tier: PhotographerTier;
+  token: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+function PhotographersPanel() {
+  const [photographers, setPhotographers] = useState<Photographer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [editing, setEditing] = useState<Photographer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Photographer | null>(null);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("photographers")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setPhotographers((data ?? []) as Photographer[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel("photographers_team")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "photographers" },
+        () => load()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? photographers.filter((p) =>
+          [p.name, p.email, p.phone ?? "", p.tier].join(" ").toLowerCase().includes(q),
+        )
+      : photographers;
+    // Group by tier rank: Point → Door Holder → Training, then by name.
+    const tierOrder: Record<PhotographerTier, number> = {
+      point: 0,
+      door_holder: 1,
+      training_door_holder: 2,
+    };
+    return [...list].sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      const tr = tierOrder[a.tier] - tierOrder[b.tier];
+      if (tr !== 0) return tr;
+      return a.name.localeCompare(b.name);
+    });
+  }, [photographers, query]);
+
+  async function toggleActive(p: Photographer) {
+    const { error } = await supabase
+      .from("photographers")
+      .update({ active: !p.active })
+      .eq("id", p.id);
+    if (error) toast.error(error.message);
+    else toast.success(p.active ? "Deactivated" : "Activated");
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const p = deleteTarget;
+    setDeleteTarget(null);
+    const { error } = await supabase.from("photographers").delete().eq("id", p.id);
+    if (error) toast.error(error.message);
+    else toast.success(`Removed ${p.name}`);
+  }
+
+  function jobsLink(token: string): string {
+    if (typeof window === "undefined") return `/jobs?t=${token}`;
+    return `${window.location.origin}/jobs?t=${token}`;
+  }
+
+  async function copyLink(p: Photographer) {
+    const url = jobsLink(p.token);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(`Link copied for ${p.name}`);
+    } catch {
+      toast.error("Couldn't copy. Long-press to copy manually.");
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="size-4" />
+          {loading
+            ? "Loading…"
+            : `${photographers.length} photographer${photographers.length === 1 ? "" : "s"}`}
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="pl-9"
+            />
+          </div>
+          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+            <Upload className="size-4" />
+            <span className="hidden sm:inline">Bulk import</span>
+          </Button>
+          <Button onClick={() => setAddOpen(true)}>
+            <UserPlus className="size-4" /> Add
+          </Button>
+        </div>
+      </div>
+
+      <div className="text-xs text-muted-foreground mb-4 px-3 py-2 rounded-md border bg-muted/30">
+        ⚠️ Personal links — anyone with one can claim shoots as that
+        photographer. Send via email/SMS only to the intended person.
+      </div>
+
+      {loading ? (
+        <Card className="p-12 text-center text-sm text-muted-foreground">Loading…</Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center">
+          <Users className="size-8 mx-auto text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">
+            {photographers.length === 0
+              ? "No photographers yet. Add one to get started."
+              : "No matches."}
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((p) => {
+            const initials = p.name
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((s) => s[0]?.toUpperCase() ?? "")
+              .join("");
+            return (
+              <Card key={p.id} className={cn("p-4", !p.active && "opacity-60")}>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="size-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold shrink-0">
+                    {initials || "?"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold truncate">{p.name}</span>
+                      <span
+                        className={cn(
+                          "text-xs font-medium px-2 py-0.5 rounded-full border",
+                          tierBadgeClasses(p.tier),
+                        )}
+                      >
+                        {tierLabel(p.tier)}
+                      </span>
+                      {!p.active && (
+                        <span className="text-xs px-2 py-0.5 rounded-full border bg-muted text-muted-foreground">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                      <a
+                        href={`mailto:${p.email}`}
+                        className="hover:underline inline-flex items-center gap-1"
+                      >
+                        <Mail className="size-3.5" />
+                        {p.email}
+                      </a>
+                      {p.phone && (
+                        <>
+                          <span className="text-muted-foreground/60">·</span>
+                          <span>{p.phone}</span>
+                        </>
+                      )}
+                      <span className="text-muted-foreground/60">·</span>
+                      <span>Added {format(parseISO(p.created_at), "MMM d, yyyy")}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => copyLink(p)}>
+                      <Copy className="size-4" /> Copy link
+                    </Button>
+                    <Button size="sm" variant="ghost" asChild>
+                      <a href={jobsLink(p.token)} target="_blank" rel="noreferrer">
+                        <ExternalLink className="size-4" /> Open
+                      </a>
+                    </Button>
+                    <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
+                    <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDeleteTarget(p)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <PhotographerDialog open={addOpen} onClose={() => setAddOpen(false)} photographer={null} />
+      <PhotographerDialog open={!!editing} onClose={() => setEditing(null)} photographer={editing} />
+      <PhotographerBulkImportDialog open={bulkOpen} onClose={() => setBulkOpen(false)} />
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Their personal link will stop working. Past assignments are preserved
+              but they won't be able to claim new shoots. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function PhotographerDialog({
+  open,
+  onClose,
+  photographer,
+}: {
+  open: boolean;
+  onClose: () => void;
+  photographer: Photographer | null;
+}) {
+  const isEdit = !!photographer;
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [tier, setTier] = useState<PhotographerTier>("door_holder");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(photographer?.name ?? "");
+    setEmail(photographer?.email ?? "");
+    setPhone(photographer?.phone ?? "");
+    setTier(photographer?.tier ?? "door_holder");
+  }, [photographer, open]);
+
+  async function save() {
+    if (!name.trim() || !email.trim()) {
+      toast.error("Name and email are required");
+      return;
+    }
+    setSaving(true);
+    if (isEdit && photographer) {
+      const { error } = await supabase
+        .from("photographers")
+        .update({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim() || null,
+          tier,
+        })
+        .eq("id", photographer.id);
+      if (error) toast.error(error.message);
+      else {
+        toast.success("Saved");
+        onClose();
+      }
+    } else {
+      const { error } = await supabase.from("photographers").insert({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim() || null,
+        tier,
+        token: generatePhotographerToken(),
+      });
+      if (error) toast.error(error.message);
+      else {
+        toast.success(`${name} added`);
+        onClose();
+      }
+    }
+    setSaving(false);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Edit photographer" : "Add photographer"}</DialogTitle>
+          <DialogDescription>
+            {isEdit
+              ? "Update name, email, phone, or tier. Their personal link does not change."
+              : "We'll generate a personal link you can send via email or SMS."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="ph-name">Name</Label>
+            <Input id="ph-name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="ph-email">Email</Label>
+            <Input
+              id="ph-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="ph-phone">Phone (optional)</Label>
+            <Input
+              id="ph-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 555 555 5555"
+            />
+          </div>
+          <div>
+            <Label>Tier</Label>
+            <Select value={tier} onValueChange={(v) => setTier(v as PhotographerTier)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PHOTOGRAPHER_TIERS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Point sees paid Point shoots and can also pick up unpaid Door Holder
+              spots. Door Holder sees Door Holder + Training. Training only sees
+              Training spots.
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            <Plus className="size-4" />
+            {isEdit ? "Save" : "Add photographer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Admins panel
+// ---------------------------------------------------------------------------
 
 interface AdminItem {
   id: string;
@@ -50,15 +551,6 @@ interface AdminItem {
   display_name: string;
   created_at: string;
   last_sign_in_at: string | null;
-}
-
-function AdminsPage() {
-  const { signOut } = useAuth();
-  return (
-    <RequireAdmin>
-      <AdminsView onLogout={() => signOut()} />
-    </RequireAdmin>
-  );
 }
 
 async function authedFetch(input: string, init: RequestInit = {}) {
@@ -74,7 +566,7 @@ async function authedFetch(input: string, init: RequestInit = {}) {
   });
 }
 
-function AdminsView({ onLogout }: { onLogout: () => void }) {
+function AdminsPanel() {
   const { user, displayName, refreshProfile } = useAuth();
   const [admins, setAdmins] = useState<AdminItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,129 +682,137 @@ function AdminsView({ onLogout }: { onLogout: () => void }) {
   }
 
   return (
-    <main className="min-h-screen">
-      <HubHeader onLogout={onLogout} title="Team" subtitle="Invite, rename, remove admins" />
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="size-4" />
-            {loading ? "Loading…" : `${admins.length} admin${admins.length === 1 ? "" : "s"}`}
-            {displayName && (
-              <span className="ml-2 text-foreground/70">
-                · Signed in as <span className="font-medium text-foreground">{displayName}</span>
-              </span>
-            )}
-          </div>
-          <Button onClick={() => setShowInvite(true)}>
-            <UserPlus className="size-4" /> Add admin
-          </Button>
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <ShieldCheck className="size-4" />
+          {loading
+            ? "Loading…"
+            : `${admins.length} admin${admins.length === 1 ? "" : "s"}`}
+          {displayName && (
+            <span className="ml-2 text-foreground/70">
+              · Signed in as <span className="font-medium text-foreground">{displayName}</span>
+            </span>
+          )}
         </div>
-
-        {loading ? (
-          <div className="text-muted-foreground text-sm">Loading admins…</div>
-        ) : admins.length === 0 ? (
-          <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg py-12 text-center">
-            No admins yet.
-          </div>
-        ) : (
-          <Card className="overflow-hidden p-0">
-            <ul className="divide-y divide-border">
-              {admins.map((a) => {
-                const isEditing = editingId === a.id;
-                const isMe = a.id === user?.id;
-                return (
-                  <li
-                    key={a.id}
-                    className="p-4 flex items-center gap-3 flex-wrap sm:flex-nowrap"
-                  >
-                    <div className="size-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold shrink-0">
-                      {(a.display_name[0] ?? "?").toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleRenameSave(a);
-                              if (e.key === "Escape") setEditingId(null);
-                            }}
-                            autoFocus
-                            className="h-8 max-w-[240px]"
-                            maxLength={50}
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => handleRenameSave(a)}>
-                            <Check className="size-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                            <X className="size-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="font-medium flex items-center gap-2">
-                            <span className="truncate">{a.display_name}</span>
-                            {isMe && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">
-                                you
-                              </span>
-                            )}
-                            <button
-                              onClick={() => {
-                                setEditingId(a.id);
-                                setEditName(a.display_name);
-                              }}
-                              className="text-muted-foreground/50 hover:text-foreground transition-colors"
-                              aria-label="Rename"
-                            >
-                              <Pencil className="size-3.5" />
-                            </button>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {a.email ?? "(no email)"}
-                            {a.last_sign_in_at && (
-                              <>
-                                {" · "}
-                                Last sign-in {new Date(a.last_sign_in_at).toLocaleDateString()}
-                              </>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setPwTarget(a)}
-                      aria-label={`Set password for ${a.display_name}`}
-                      title={isMe ? "Change your password" : `Set password for ${a.display_name}`}
-                    >
-                      <KeyRound className="size-4" />
-                      <span className="hidden sm:inline ml-1.5">
-                        {isMe ? "Change password" : "Set password"}
-                      </span>
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteTarget(a)}
-                      disabled={isMe}
-                      title={isMe ? "You can't remove your own account" : `Remove ${a.display_name}`}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-30"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          </Card>
-        )}
+        <Button onClick={() => setShowInvite(true)}>
+          <UserPlus className="size-4" /> Add admin
+        </Button>
       </div>
+
+      {loading ? (
+        <Card className="p-12 text-center text-sm text-muted-foreground">Loading admins…</Card>
+      ) : admins.length === 0 ? (
+        <Card className="p-12 text-center">
+          <ShieldCheck className="size-8 mx-auto text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">No admins yet.</p>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden p-0">
+          <ul className="divide-y divide-border">
+            {admins.map((a) => {
+              const isEditing = editingId === a.id;
+              const isMe = a.id === user?.id;
+              const initials = (a.display_name || a.email || "?")
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((s) => s[0]?.toUpperCase() ?? "")
+                .join("");
+              return (
+                <li
+                  key={a.id}
+                  className="p-4 flex items-center gap-3 flex-wrap sm:flex-nowrap"
+                >
+                  <div className="size-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold shrink-0">
+                    {initials || "?"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameSave(a);
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          autoFocus
+                          className="h-8 max-w-[240px]"
+                          maxLength={50}
+                        />
+                        <Button size="sm" variant="ghost" onClick={() => handleRenameSave(a)}>
+                          <Check className="size-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                          <X className="size-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="font-medium flex items-center gap-2">
+                          <span className="truncate">{a.display_name}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20 font-semibold">
+                            Admin
+                          </span>
+                          {isMe && (
+                            <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">
+                              you
+                            </span>
+                          )}
+                          <button
+                            onClick={() => {
+                              setEditingId(a.id);
+                              setEditName(a.display_name);
+                            }}
+                            className="text-muted-foreground/50 hover:text-foreground transition-colors"
+                            aria-label="Rename"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {a.email ?? "(no email)"}
+                          {a.last_sign_in_at && (
+                            <>
+                              {" · "}
+                              Last sign-in {new Date(a.last_sign_in_at).toLocaleDateString()}
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPwTarget(a)}
+                    aria-label={`Set password for ${a.display_name}`}
+                    title={isMe ? "Change your password" : `Set password for ${a.display_name}`}
+                  >
+                    <KeyRound className="size-4" />
+                    <span className="hidden sm:inline ml-1.5">
+                      {isMe ? "Change password" : "Set password"}
+                    </span>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteTarget(a)}
+                    disabled={isMe}
+                    title={isMe ? "You can't remove your own account" : `Remove ${a.display_name}`}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-30"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       {showInvite && (
         <InviteAdminDialog onInvite={handleInvite} onClose={() => setShowInvite(false)} />
@@ -353,7 +853,7 @@ function AdminsView({ onLogout }: { onLogout: () => void }) {
           onClose={() => setCreatedSummary(null)}
         />
       )}
-    </main>
+    </div>
   );
 }
 
@@ -400,26 +900,17 @@ function InviteAdminDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center px-4"
-      onClick={onClose}
-    >
-      <Card className="p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold tracking-tight">Add admin</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add admin</DialogTitle>
+          <DialogDescription>
+            Invite a new admin. You'll see their temporary password once.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label htmlFor="invite-name" className="text-sm font-medium block mb-2">
-              Display name
-            </label>
+            <Label htmlFor="invite-name">Display name</Label>
             <Input
               id="invite-name"
               value={displayName}
@@ -427,12 +918,11 @@ function InviteAdminDialog({
               placeholder="e.g. Jenna"
               autoFocus
               maxLength={50}
+              className="mt-1.5"
             />
           </div>
           <div>
-            <label htmlFor="invite-email" className="text-sm font-medium block mb-2">
-              Email
-            </label>
+            <Label htmlFor="invite-email">Email</Label>
             <Input
               id="invite-email"
               type="email"
@@ -440,13 +930,12 @@ function InviteAdminDialog({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@passioncitychurch.com"
               autoComplete="off"
+              className="mt-1.5"
             />
           </div>
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="invite-pw" className="text-sm font-medium">
-                Temporary password
-              </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <Label htmlFor="invite-pw">Temporary password</Label>
               <button
                 type="button"
                 onClick={generatePassword}
@@ -468,17 +957,17 @@ function InviteAdminDialog({
             </p>
           </div>
           {error && <p className="text-destructive text-sm">{error}</p>}
-          <div className="flex gap-2 justify-end">
+          <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? "Adding…" : "Add admin"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -514,59 +1003,45 @@ function PasswordDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center px-4"
-      onClick={onClose}
-    >
-      <Card className="p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold tracking-tight">
-            Set password for {target.display_name}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Set password for {target.display_name}</DialogTitle>
+        </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label htmlFor="set-pw" className="text-sm font-medium block mb-2">
-              New password
-            </label>
+            <Label htmlFor="set-pw">New password</Label>
             <PasswordInput
               id="set-pw"
               autoComplete="new-password"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               autoFocus
+              className="mt-1.5"
             />
           </div>
           <div>
-            <label htmlFor="set-pw2" className="text-sm font-medium block mb-2">
-              Confirm password
-            </label>
+            <Label htmlFor="set-pw2">Confirm password</Label>
             <PasswordInput
               id="set-pw2"
               autoComplete="new-password"
               value={pw2}
               onChange={(e) => setPw2(e.target.value)}
+              className="mt-1.5"
             />
           </div>
           {error && <p className="text-destructive text-sm">{error}</p>}
-          <div className="flex gap-2 justify-end">
+          <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? "Updating…" : "Update password"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -587,22 +1062,16 @@ function CredentialsDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center px-4">
-      <Card className="p-6 max-w-md w-full">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold tracking-tight">Admin created</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Share these credentials with them. {summary.password ? "This password" : "The password they were given"}{" "}
-          won't be shown again.
-        </p>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Admin created</DialogTitle>
+          <DialogDescription>
+            Share these credentials.{" "}
+            {summary.password ? "This password" : "The password they were given"} won't be shown
+            again.
+          </DialogDescription>
+        </DialogHeader>
         <div className="space-y-3">
           <div>
             <div className="text-xs font-medium text-muted-foreground mb-1">Email</div>
@@ -610,11 +1079,7 @@ function CredentialsDialog({
               <code className="flex-1 text-sm bg-muted rounded px-3 py-2 truncate">
                 {summary.email}
               </code>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => copy(summary.email, "email")}
-              >
+              <Button size="sm" variant="outline" onClick={() => copy(summary.email, "email")}>
                 <Copy className="size-3.5" />
                 {copied === "email" ? "Copied" : "Copy"}
               </Button>
@@ -641,10 +1106,10 @@ function CredentialsDialog({
             </div>
           )}
         </div>
-        <div className="flex justify-end mt-6">
+        <DialogFooter>
           <Button onClick={onClose}>Done</Button>
-        </div>
-      </Card>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
