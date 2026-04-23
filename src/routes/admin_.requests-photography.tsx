@@ -451,6 +451,85 @@ function RequestRow({
   );
 }
 
+function RosterPills({
+  roster,
+  totalFilled,
+  totalOpenings,
+}: {
+  roster: RosterCounts;
+  totalFilled: number;
+  totalOpenings: number;
+}) {
+  const totalPoint = roster.filledPoint + roster.openPoint;
+  const totalDoor = roster.filledDoor + roster.openDoor;
+  const allFilled = totalFilled === totalOpenings;
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {totalPoint > 0 && (
+        <RolePill label="Point" filled={roster.filledPoint} total={totalPoint} accent="amber" />
+      )}
+      {totalDoor > 0 && (
+        <RolePill label="Door Holder" filled={roster.filledDoor} total={totalDoor} accent="sky" />
+      )}
+      {allFilled && (
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+          Fully staffed
+        </span>
+      )}
+    </div>
+  );
+}
+
+function RolePill({
+  label,
+  filled,
+  total,
+  accent,
+}: {
+  label: string;
+  filled: number;
+  total: number;
+  accent: "amber" | "sky";
+}) {
+  const complete = filled === total;
+  const accentClasses =
+    accent === "amber"
+      ? "border-amber-500/40 text-amber-800 dark:text-amber-200 bg-amber-500/10"
+      : "border-sky-500/40 text-sky-800 dark:text-sky-200 bg-sky-500/10";
+  const dotFilledClass = complete
+    ? "bg-emerald-600 dark:bg-emerald-400"
+    : accent === "amber"
+      ? "bg-amber-600 dark:bg-amber-400"
+      : "bg-sky-600 dark:bg-sky-400";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border",
+        complete
+          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+          : accentClasses,
+      )}
+      title={`${filled} of ${total} ${label} ${total === 1 ? "spot" : "spots"} filled`}
+    >
+      <span className="flex items-center gap-0.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "size-1.5 rounded-full",
+              i < filled ? dotFilledClass : "bg-current opacity-25",
+            )}
+          />
+        ))}
+      </span>
+      <span>
+        {filled}/{total} {label}
+      </span>
+    </span>
+  );
+}
+
 function RequestDetailDialog({
   request,
   onClose,
