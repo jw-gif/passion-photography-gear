@@ -62,7 +62,7 @@ export const REQUEST_TYPES = [
     value: "photography_team",
     label: "Photography Team",
     description:
-      "Book a team for your Gathering/Event (Community Groups, The Rising, Christmas Smile, etc.) or a Sunday event that needs additional photographers — Photo Booths, Team Headshots, Celebrations, Team Meetings, etc.",
+      "Book a team for your Gathering/Event (Community Groups, The Rising, etc.) or a Sunday event that needs additional photographers — Photo Booths, Team Headshots, Celebrations, Team Meetings, etc.",
   },
   {
     value: "shot_list_addition",
