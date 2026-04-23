@@ -47,6 +47,7 @@ interface EventGearPanelProps {
   defaultLocation: string | null;
   defaultDate: string | null;
   defaultNotes?: string | null;
+  canDelete?: boolean;
 }
 
 const STATUS_BADGE: Record<LinkedRequest["status"], string> = {
@@ -70,6 +71,7 @@ export function EventGearPanel({
   defaultLocation,
   defaultDate,
   defaultNotes,
+  canDelete = true,
 }: EventGearPanelProps) {
   const [gear, setGear] = useState<GearRow[]>([]);
   const [linked, setLinked] = useState<LinkedRequest[]>([]);
@@ -256,15 +258,17 @@ export function EventGearPanel({
                       </p>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeRequest(r.id)}
-                    className="text-destructive hover:text-destructive shrink-0"
-                    title="Delete request"
-                  >
-                    <X className="size-4" />
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeRequest(r.id)}
+                      className="text-destructive hover:text-destructive shrink-0"
+                      title="Delete request"
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  )}
                 </div>
                 {reqItems.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">

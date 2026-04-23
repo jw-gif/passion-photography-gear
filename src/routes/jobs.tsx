@@ -9,6 +9,7 @@ import {
   Clock,
   Info,
   MapPin,
+  Package,
   Phone,
   User as UserIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ import {
   priorityLabel,
   roleShort,
 } from "@/lib/shot-list";
+import { EventGearPanel } from "@/components/event-gear-panel";
 
 const searchSchema = z.object({
   t: z.string().min(1).optional(),
@@ -295,7 +297,12 @@ function JobBoardPage() {
               </Card>
             ) : (
               myJobs.map((j) => (
-                <MyJobCard key={j.assignment_id} job={j} onRelease={() => release(j.opening_id)} />
+                <MyJobCard
+                  key={j.assignment_id}
+                  job={j}
+                  photographerName={me.name}
+                  onRelease={() => release(j.opening_id)}
+                />
               ))
             )}
           </TabsContent>
@@ -410,10 +417,19 @@ function OpeningCard({
   );
 }
 
-function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void }) {
+function MyJobCard({
+  job,
+  photographerName,
+  onRelease,
+}: {
+  job: MyJobRow;
+  photographerName: string;
+  onRelease: () => void;
+}) {
   const [brief, setBrief] = useState<Brief | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
+  const [gearOpen, setGearOpen] = useState(false);
   const { t } = useSearch({ from: "/jobs" });
 
   async function loadBrief() {
@@ -509,6 +525,29 @@ function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void })
             ) : (
               <BriefReadOnly brief={brief} />
             )}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t pt-2">
+        <button
+          type="button"
+          onClick={() => setGearOpen((v) => !v)}
+          className="text-sm font-medium hover:underline inline-flex items-center gap-1"
+        >
+          <Package className="size-4" />
+          {gearOpen ? "▾ Hide gear request" : "▸ Request gear for this shoot"}
+        </button>
+        {gearOpen && (
+          <div className="mt-3">
+            <EventGearPanel
+              photoRequestId={job.request_id}
+              defaultRequestor={photographerName}
+              defaultLocation={job.event_location}
+              defaultDate={job.event_date}
+              defaultNotes={job.event_name ? `For: ${job.event_name}` : null}
+              canDelete={false}
+            />
           </div>
         )}
       </div>
