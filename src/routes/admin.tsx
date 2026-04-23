@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { HubHeader } from "@/components/hub-header";
 import { HubCalendar, type CalendarEvent } from "@/components/hub-calendar";
+import { EventDetailDialog, type DetailEvent } from "@/components/event-detail-dialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Camera, Wrench, ArrowRight, Inbox, MapPin, User as UserIcon } from "lucide-react";
@@ -70,6 +71,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
   const [gearReqs, setGearReqs] = useState<GearReqRow[]>([]);
   const [gearItems, setGearItems] = useState<GearReqItemRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<DetailEvent | null>(null);
 
   async function loadAll() {
     const today = format(new Date(), "yyyy-MM-dd");
@@ -334,10 +336,25 @@ function HubView({ onLogout }: { onLogout: () => void }) {
           {loading ? (
             <div className="text-sm text-muted-foreground">Loading calendar…</div>
           ) : (
-            <HubCalendar events={events} />
+            <HubCalendar
+              events={events}
+              onEventClick={(ev) => {
+                const isPhoto = ev.id.startsWith("p-");
+                setSelected({
+                  kind: isPhoto ? "photo" : "gear",
+                  id: ev.id.slice(2),
+                });
+              }}
+            />
           )}
         </section>
       </div>
+
+      <EventDetailDialog
+        event={selected}
+        onClose={() => setSelected(null)}
+        onChanged={() => loadAll()}
+      />
     </main>
   );
 }

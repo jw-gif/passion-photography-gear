@@ -132,7 +132,7 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
             <div
               key={key}
               className={cn(
-                "bg-background min-h-[120px] sm:min-h-[140px] p-1.5 flex flex-col gap-1 relative",
+                "bg-background min-h-[160px] sm:min-h-[200px] p-2 flex flex-col gap-1.5 relative",
                 isPast && "bg-muted/20",
               )}
             >
@@ -159,8 +159,8 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
                   {format(day, "MMM")}
                 </span>
               </div>
-              <div className="flex flex-col gap-1 overflow-hidden">
-                {dayEvents.slice(0, 3).map((ev) => {
+              <div className="flex flex-col gap-1.5 overflow-hidden">
+                {dayEvents.slice(0, 4).map((ev) => {
                   const isPhoto = ev.kind === "photo";
                   const Icon = isPhoto ? Camera : Wrench;
                   return (
@@ -168,33 +168,33 @@ export function HubCalendar({ events, onEventClick }: HubCalendarProps) {
                       key={ev.id + key}
                       onClick={() => onEventClick?.(ev)}
                       className={cn(
-                        "group flex items-stretch w-full text-left rounded-md overflow-hidden border border-border/60 bg-card hover:bg-accent/40 hover:border-foreground/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        "group flex items-stretch w-full text-left rounded-md overflow-hidden border border-border/60 bg-card hover:bg-accent/40 hover:border-foreground/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       )}
                       title={`${isPhoto ? "Photography" : "Gear"} · ${ev.statusLabel} · ${ev.title}`}
                     >
                       <span
                         className={cn(
-                          "flex items-center justify-center px-1.5 shrink-0",
+                          "flex items-center justify-center px-2 shrink-0",
                           ev.statusColor,
                         )}
                         aria-hidden
                       >
-                        <Icon className="size-3 text-white" strokeWidth={2.5} />
+                        <Icon className="size-3.5 text-white" strokeWidth={2.5} />
                       </span>
-                      <span className="flex-1 min-w-0 px-1.5 py-1 flex flex-col gap-0.5">
-                        <span className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground leading-none">
-                          {isPhoto ? "Photo" : "Gear"}
+                      <span className="flex-1 min-w-0 px-2 py-1.5 flex flex-col gap-0.5">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground leading-none">
+                          {isPhoto ? "Photo" : "Gear"} · {ev.statusLabel}
                         </span>
-                        <span className="text-[11px] font-medium truncate leading-tight text-foreground">
+                        <span className="text-xs font-medium truncate leading-tight text-foreground">
                           {ev.title}
                         </span>
                       </span>
                     </button>
                   );
                 })}
-                {dayEvents.length > 3 && (
-                  <div className="text-[10px] text-muted-foreground px-1">
-                    +{dayEvents.length - 3} more
+                {dayEvents.length > 4 && (
+                  <div className="text-[10px] text-muted-foreground px-1 font-medium">
+                    +{dayEvents.length - 4} more
                   </div>
                 )}
               </div>
