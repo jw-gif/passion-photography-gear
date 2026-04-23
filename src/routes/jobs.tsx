@@ -33,6 +33,7 @@ import {
   priorityLabel,
   roleShort,
 } from "@/lib/shot-list";
+import { EventGearPanel } from "@/components/event-gear-panel";
 
 const searchSchema = z.object({
   t: z.string().min(1).optional(),
