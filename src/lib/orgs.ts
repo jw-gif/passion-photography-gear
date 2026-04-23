@@ -83,8 +83,6 @@ export const PHOTO_RATE_CARD = [
     amount: 200,
     label: "$200",
     examples: [
-      "Sunday Gatherings – 9:30a + 11:45a",
-      "Sunday Gatherings – 5p",
       "Sunday After Parties",
       "Child Dedications",
       "Post-gathering baptisms / events / meetings",
@@ -109,7 +107,7 @@ export const PHOTO_RATE_CARD = [
       "The Rising",
       "The Grove",
       "Fight Night",
-      "Summer / Christmas In The City",
+      "Summer In The City",
     ],
   },
 ] as const;
