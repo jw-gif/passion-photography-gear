@@ -545,10 +545,22 @@ function MyJobCard({
   photographerName: string;
   onRelease: () => void;
 }) {
+  const paid = isPaidRole(job.role);
+  const claimedAt = parseISO(job.claimed_at);
+  const within48h = Date.now() - claimedAt.getTime() < 48 * 60 * 60 * 1000;
+  // Auto-expand the gear request panel when the shoot is within 7 days,
+  // so photographers don't forget to request gear.
+  const within7Days = useMemo(() => {
+    if (!job.event_date) return false;
+    const d = parseISO(job.event_date);
+    const diff = (d.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return diff >= 0 && diff <= 7;
+  }, [job.event_date]);
+
   const [brief, setBrief] = useState<Brief | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
-  const [gearOpen, setGearOpen] = useState(false);
+  const [gearOpen, setGearOpen] = useState(within7Days);
   const { t } = useSearch({ from: "/jobs" });
 
   async function loadBrief() {
@@ -568,9 +580,7 @@ function MyJobCard({
       setBrief(normalizeBrief(data));
     }
   }
-  const paid = isPaidRole(job.role);
-  const claimedAt = parseISO(job.claimed_at);
-  const within48h = Date.now() - claimedAt.getTime() < 48 * 60 * 60 * 1000;
+
   return (
     <Card className="p-4 space-y-2">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -592,6 +602,17 @@ function MyJobCard({
               {formatBudget(job.budget_cents)}
             </span>
           )}
+          <IcsExportButton
+            uid={`assignment-${job.assignment_id}@passion-photography`}
+            title={job.event_name || "Photography shoot"}
+            description={job.notes ?? null}
+            location={job.event_location ?? null}
+            startDate={job.event_date ?? ""}
+            startTime={job.start_time}
+            endDate={job.event_end_date ?? job.event_date ?? null}
+            endTime={job.end_time}
+            disabled={!job.event_date}
+          />
         </div>
       </div>
 
