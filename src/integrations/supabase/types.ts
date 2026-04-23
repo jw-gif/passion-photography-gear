@@ -594,6 +594,11 @@ export type Database = {
         | "completed"
         | "declined"
         | "archived"
+        | "pending"
+        | "approved_job_board"
+        | "approved_shot_list"
+        | "needs_revisions"
+        | "denied"
       photo_request_type:
         | "photography_team"
         | "shot_list_addition"
@@ -737,6 +742,11 @@ export const Constants = {
         "completed",
         "declined",
         "archived",
+        "pending",
+        "approved_job_board",
+        "approved_shot_list",
+        "needs_revisions",
+        "denied",
       ],
       photo_request_type: [
         "photography_team",
