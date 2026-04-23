@@ -317,6 +317,18 @@ function ShootGroup({
   onClaim: (id: string) => void;
 }) {
   const first = jobs[0];
+
+  // Visibility rule for Point-tier photographers:
+  // - If a Point opening is still available on this shoot, only show that one.
+  //   Hide door_holder / training_door_holder openings until Point is filled.
+  // - If Point is already taken, show the remaining openings with a heads-up banner.
+  const visibleJobs = useMemo(() => {
+    if (myTier !== "point") return jobs;
+    const pointOpening = jobs.find((j) => j.role === "point");
+    if (pointOpening) return [pointOpening];
+    return jobs;
+  }, [jobs, myTier]);
+
   const showPointTakenBanner =
     myTier === "point" &&
     first.point_taken &&
@@ -331,18 +343,20 @@ function ShootGroup({
         <ShootMeta job={first} />
       </div>
 
+      <ShootDetails job={first} />
+
       {showPointTakenBanner && (
         <div className="flex items-start gap-2 px-3 py-2 rounded-md border bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
           <Info className="size-4 shrink-0 mt-0.5" />
           <span>
             Heads up — the Point spot for this shoot is already taken. The
-            openings below are <strong>unpaid Door Holder coverage</strong>.
+            openings below are <strong>Door Holder coverage</strong> only.
           </span>
         </div>
       )}
 
       <div className="space-y-2">
-        {jobs.map((j) => (
+        {visibleJobs.map((j) => (
           <OpeningCard
             key={j.opening_id}
             job={j}
@@ -367,10 +381,10 @@ function OpeningCard({
   const paid = isPaidRole(job.role);
   const claimLabel =
     job.role === "point"
-      ? "Claim paid Point spot"
+      ? "Claim Point spot"
       : job.role === "door_holder"
-        ? "Sign up as Door Holder (unpaid)"
-        : "Sign up as Training (unpaid)";
+        ? "Sign up as Door Holder"
+        : "Sign up as Training";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-md bg-muted/30">
@@ -383,13 +397,9 @@ function OpeningCard({
         >
           {tierLabel(job.role)}
         </span>
-        {paid && job.budget_cents != null ? (
+        {paid && job.budget_cents != null && (
           <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-            {formatBudget(job.budget_cents)} · Paid
-          </span>
-        ) : (
-          <span className="text-xs px-2 py-0.5 rounded-full border bg-muted text-muted-foreground">
-            Unpaid coverage
+            {formatBudget(job.budget_cents)}
           </span>
         )}
       </div>
