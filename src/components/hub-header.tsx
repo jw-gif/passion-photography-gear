@@ -39,9 +39,7 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
   // Highlight dropdown triggers when on any of their sub-routes.
   const photographyActive =
     pathname.startsWith("/admin/requests-photography") ||
-    pathname.startsWith("/admin/photographers") ||
-    pathname.startsWith("/admin/shot-list-generator") ||
-    (pathname.startsWith("/admin/team") && pathname.includes("photographers"));
+    pathname.startsWith("/admin/shot-list-generator");
   const gearActive =
     pathname.startsWith("/admin/gear") ||
     pathname.startsWith("/admin/requests-gear");
@@ -102,11 +100,6 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
               <DropdownMenuItem asChild>
                 <Link to="/admin/requests-photography">
                   <ImageIcon className="size-4" /> Requests
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin/team" search={{ tab: "photographers" }}>
-                  <Users className="size-4" /> Photographers
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
