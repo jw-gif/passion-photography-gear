@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Upload,
   UserPlus,
   Users,
 } from "lucide-react";
