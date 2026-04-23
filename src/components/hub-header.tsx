@@ -110,15 +110,6 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* placeholder removed below */}
-              <DropdownMenuItem asChild>
-                <Link to="/admin/shot-list-generator">
-                  <ListChecks className="size-4" /> Shot list generator
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
