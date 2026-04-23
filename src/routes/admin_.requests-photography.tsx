@@ -728,7 +728,25 @@ function RequestDetailDialog({
             <CoverageRoster requestId={request.id} />
           </DetailSection>
 
-          {/* Brief / shot list */}
+          {/* Event gear — only after a photographer has accepted */}
+          {hasAccepted && (
+            <DetailSection title="Gear for this event">
+              <p className="text-xs text-muted-foreground mb-3">
+                Reserve gear from the inventory for this shoot. Submitted requests appear
+                in the Gear Requests queue and are linked back to this event.
+              </p>
+              <EventGearPanel
+                photoRequestId={request.id}
+                defaultRequestor={`${request.first_name} ${request.last_name}`.trim()}
+                defaultLocation={request.event_location}
+                defaultDate={request.event_date}
+                defaultNotes={
+                  request.event_name ? `For: ${request.event_name}` : null
+                }
+              />
+            </DetailSection>
+          )}
+
           <DetailSection title="Brief / shot list">
             <p className="text-xs text-muted-foreground mb-3">
               Generate an AI call sheet for this shoot. Photographers see only the
