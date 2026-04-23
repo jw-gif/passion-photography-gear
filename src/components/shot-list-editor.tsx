@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
