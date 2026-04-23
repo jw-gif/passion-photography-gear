@@ -546,11 +546,31 @@ function RequestDetailDialog({
 }) {
   const [adminNotes, setAdminNotes] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
+  const [hasAccepted, setHasAccepted] = useState(false);
 
   useEffect(() => {
     setAdminNotes(request?.admin_notes ?? "");
     setAssignedTo(request?.assigned_to ?? "");
   }, [request?.id, request?.admin_notes, request?.assigned_to]);
+
+  useEffect(() => {
+    if (!request?.id) {
+      setHasAccepted(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { count } = await supabase
+        .from("photo_request_assignments")
+        .select("id", { count: "exact", head: true })
+        .eq("request_id", request.id)
+        .is("released_at", null);
+      if (!cancelled) setHasAccepted((count ?? 0) > 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [request?.id]);
 
   if (!request) return null;
 
