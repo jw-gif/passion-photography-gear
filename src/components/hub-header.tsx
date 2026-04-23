@@ -20,6 +20,7 @@ import {
   Settings,
   History,
   ArrowLeft,
+  ListChecks,
 } from "lucide-react";
 import pccLogo from "@/assets/pcc-logo.png";
 
@@ -89,6 +90,11 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
               <DropdownMenuItem asChild>
                 <Link to="/admin/photographers">
                   <Users className="size-4" /> Photographers
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/shot-list-generator">
+                  <ListChecks className="size-4" /> Shot list generator
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

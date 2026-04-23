@@ -26,6 +26,12 @@ import {
   formatBudget,
   isPaidRole,
 } from "@/lib/photographers";
+import {
+  type Brief,
+  priorityClasses,
+  priorityLabel,
+  roleShort,
+} from "@/lib/shot-list";
 
 const searchSchema = z.object({
   t: z.string().min(1).optional(),
@@ -395,6 +401,28 @@ function OpeningCard({
 }
 
 function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void }) {
+  const [brief, setBrief] = useState<Brief | null>(null);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const { t } = useSearch({ from: "/jobs" });
+
+  async function loadBrief() {
+    if (brief || briefLoading) return;
+    setBriefLoading(true);
+    const { data, error } = await supabase.rpc("get_shot_list", {
+      _token: t ?? "",
+      _opening_id: job.opening_id,
+    });
+    setBriefLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (data) {
+      const { normalizeBrief } = await import("@/lib/shot-list");
+      setBrief(normalizeBrief(data));
+    }
+  }
   const paid = isPaidRole(job.role);
   const claimedAt = parseISO(job.claimed_at);
   const within48h = Date.now() - claimedAt.getTime() < 48 * 60 * 60 * 1000;
@@ -447,6 +475,33 @@ function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void })
           {job.notes}
         </p>
       )}
+
+      <div className="border-t pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            const next = !briefOpen;
+            setBriefOpen(next);
+            if (next) loadBrief();
+          }}
+          className="text-sm font-medium hover:underline"
+        >
+          {briefOpen ? "▾ Hide brief" : "▸ View brief / shot list"}
+        </button>
+        {briefOpen && (
+          <div className="mt-2">
+            {briefLoading ? (
+              <p className="text-xs text-muted-foreground">Loading…</p>
+            ) : !brief ? (
+              <p className="text-xs text-muted-foreground italic">
+                No brief has been published for this shoot yet.
+              </p>
+            ) : (
+              <BriefReadOnly brief={brief} />
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center justify-between gap-3 pt-1">
         <span className="text-xs text-muted-foreground">

@@ -277,6 +277,38 @@ export type Database = {
           },
         ]
       }
+      photo_request_shot_lists: {
+        Row: {
+          brief: Json
+          created_at: string
+          id: string
+          request_id: string
+          updated_at: string
+        }
+        Insert: {
+          brief?: Json
+          created_at?: string
+          id?: string
+          request_id: string
+          updated_at?: string
+        }
+        Update: {
+          brief?: Json
+          created_at?: string
+          id?: string
+          request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_request_shot_lists_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "photo_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photo_requests: {
         Row: {
           admin_notes: string | null
@@ -485,6 +517,10 @@ export type Database = {
           name: string
           tier: Database["public"]["Enums"]["photographer_tier"]
         }[]
+      }
+      get_shot_list: {
+        Args: { _opening_id: string; _token: string }
+        Returns: Json
       }
       has_role: {
         Args: {

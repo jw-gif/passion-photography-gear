@@ -46,6 +46,7 @@ import { RequireAdmin } from "@/components/require-admin";
 import { toast } from "sonner";
 import { HubHeader } from "@/components/hub-header";
 import { CoverageRoster } from "@/components/coverage-roster";
+import { RequestBriefPanel } from "@/components/request-brief-panel";
 import {
   PHOTO_REQUEST_STATUSES,
   REQUEST_TYPES,
@@ -544,6 +545,15 @@ function RequestDetailDialog({
               see only the openings they're eligible for.
             </p>
             <CoverageRoster requestId={request.id} />
+          </DetailSection>
+
+          {/* Brief / shot list */}
+          <DetailSection title="Brief / shot list">
+            <p className="text-xs text-muted-foreground mb-3">
+              Generate an AI call sheet for this shoot. Photographers see only the
+              segments their role is on.
+            </p>
+            <RequestBriefPanel requestId={request.id} eventName={request.event_name} />
           </DetailSection>
 
           {/* Admin workspace */}
