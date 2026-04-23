@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isWithinInterval, addDays } from "date-fns";
 import {
   Calendar as CalendarIcon,
   Camera,
@@ -12,14 +12,26 @@ import {
   Package,
   Phone,
   User as UserIcon,
+  Filter,
+  X,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { IcsExportButton } from "@/components/ics-export-button";
+import { ListSkeleton } from "@/components/list-skeleton";
 import {
   type PhotographerTier,
   tierLabel,
