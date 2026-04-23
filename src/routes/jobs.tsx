@@ -529,6 +529,29 @@ function MyJobCard({
         )}
       </div>
 
+      <div className="border-t pt-2">
+        <button
+          type="button"
+          onClick={() => setGearOpen((v) => !v)}
+          className="text-sm font-medium hover:underline inline-flex items-center gap-1"
+        >
+          <Package className="size-4" />
+          {gearOpen ? "▾ Hide gear request" : "▸ Request gear for this shoot"}
+        </button>
+        {gearOpen && (
+          <div className="mt-3">
+            <EventGearPanel
+              photoRequestId={job.request_id}
+              defaultRequestor={photographerName}
+              defaultLocation={job.event_location}
+              defaultDate={job.event_date}
+              defaultNotes={job.event_name ? `For: ${job.event_name}` : null}
+              canDelete={false}
+            />
+          </div>
+        )}
+      </div>
+
       <div className="flex items-center justify-between gap-3 pt-1">
         <span className="text-xs text-muted-foreground">
           Claimed {format(claimedAt, "MMM d, h:mm a")}
