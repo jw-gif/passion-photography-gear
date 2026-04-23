@@ -62,7 +62,7 @@ export const REQUEST_TYPES = [
     value: "photography_team",
     label: "Photography Team",
     description:
-      "Book a team for your Gathering/Event (Community Groups, The Rising, Christmas Smile, etc.) or a Sunday event that needs additional photographers — Photo Booths, Team Headshots, Celebrations, Team Meetings, etc.",
+      "Book a team for your Gathering/Event (Community Groups, The Rising, etc.) or a Sunday event that needs additional photographers — Photo Booths, Team Headshots, Celebrations, Team Meetings, etc.",
   },
   {
     value: "shot_list_addition",
@@ -83,8 +83,6 @@ export const PHOTO_RATE_CARD = [
     amount: 200,
     label: "$200",
     examples: [
-      "Sunday Gatherings – 9:30a + 11:45a",
-      "Sunday Gatherings – 5p",
       "Sunday After Parties",
       "Child Dedications",
       "Post-gathering baptisms / events / meetings",
@@ -109,7 +107,7 @@ export const PHOTO_RATE_CARD = [
       "The Rising",
       "The Grove",
       "Fight Night",
-      "Summer / Christmas In The City",
+      "Summer In The City",
     ],
   },
 ] as const;

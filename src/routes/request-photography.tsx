@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
+
 import {
   Select,
   SelectContent,
@@ -107,7 +107,6 @@ function RequestPhotographyPage() {
   const [coverageTypes, setCoverageTypes] = useState<CoverageType[]>([]);
   const [coverageOther, setCoverageOther] = useState("");
 
-  const [expensing, setExpensing] = useState(false);
   const [budget, setBudget] = useState("");
   const [concurApprover, setConcurApprover] = useState("");
   const [concurCompany, setConcurCompany] = useState("");
@@ -167,6 +166,13 @@ function RequestPhotographyPage() {
       if (coverageTypes.includes("other") && !coverageOther.trim())
         m.push("Coverage other");
       if (!budget.trim()) m.push("Budget");
+      if (!concurApprover.trim()) m.push("Concur Budget Approver");
+      if (!concurCompany.trim()) m.push("Concur Company");
+      if (!concurClass.trim()) m.push("Concur Class");
+      if (!concurDepartment.trim()) m.push("Concur Department");
+      if (!concurExpenseCategory.trim()) m.push("Concur Expense Category");
+      if (!concurProject.trim()) m.push("Concur Project");
+      if (!concurPeopleResource.trim()) m.push("Concur People/Resource Type");
     }
     return m;
   }, [
@@ -188,6 +194,13 @@ function RequestPhotographyPage() {
     coverageTypes,
     coverageOther,
     budget,
+    concurApprover,
+    concurCompany,
+    concurClass,
+    concurDepartment,
+    concurExpenseCategory,
+    concurProject,
+    concurPeopleResource,
   ]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -256,13 +269,13 @@ function RequestPhotographyPage() {
       coverage_types: coverageTypes,
       coverage_other: coverageOther || null,
       budget: budget || null,
-      concur_budget_approver: expensing ? concurApprover || null : null,
-      concur_company: expensing ? concurCompany || null : null,
-      concur_class: expensing ? concurClass || null : null,
-      concur_department: expensing ? concurDepartment || null : null,
-      concur_expense_category: expensing ? concurExpenseCategory || null : null,
-      concur_project: expensing ? concurProject || null : null,
-      concur_people_resource_type: expensing ? concurPeopleResource || null : null,
+      concur_budget_approver: concurApprover || null,
+      concur_company: concurCompany || null,
+      concur_class: concurClass || null,
+      concur_department: concurDepartment || null,
+      concur_expense_category: concurExpenseCategory || null,
+      concur_project: concurProject || null,
+      concur_people_resource_type: concurPeopleResource || null,
       notes: notes || null,
     });
     setSubmitting(false);
@@ -290,7 +303,6 @@ function RequestPhotographyPage() {
     setCoverageTypes([]);
     setCoverageOther("");
     setBudget("");
-    setExpensing(false);
     setConcurApprover("");
     setConcurCompany("");
     setConcurClass("");
@@ -583,7 +595,7 @@ function RequestPhotographyPage() {
             </Section>
           )}
 
-          {/* Budget + Concur (collapsed behind expensing toggle) */}
+          {/* Budget + Concur */}
           {showEventDetails && (
             <Section
               step={sectionStep(showShotListNotes ? 5 : 4)}
@@ -593,74 +605,67 @@ function RequestPhotographyPage() {
                 <BudgetPicker value={budget} onChange={setBudget} />
               </Field>
 
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <Receipt className="size-5 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm font-medium">I'll be expensing this</div>
-                    <div className="text-xs text-muted-foreground">
-                      Shows additional Concur fields for accounting.
-                    </div>
-                  </div>
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
+                <Receipt className="size-5 text-muted-foreground shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  Concur accounting details — required so we can bill the shoot
+                  to the correct budget.
                 </div>
-                <Switch checked={expensing} onCheckedChange={setExpensing} />
               </div>
 
-              {expensing && (
-                <div className="space-y-4 pt-2">
-                  <Field label="Concur Budget Approver">
+              <div className="space-y-4 pt-2">
+                <Field label="Concur Budget Approver" required>
+                  <Input
+                    value={concurApprover}
+                    onChange={(e) => setConcurApprover(e.target.value)}
+                    maxLength={200}
+                  />
+                </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Company" required>
                     <Input
-                      value={concurApprover}
-                      onChange={(e) => setConcurApprover(e.target.value)}
+                      value={concurCompany}
+                      onChange={(e) => setConcurCompany(e.target.value)}
                       maxLength={200}
                     />
                   </Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Company">
-                      <Input
-                        value={concurCompany}
-                        onChange={(e) => setConcurCompany(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Class">
-                      <Input
-                        value={concurClass}
-                        onChange={(e) => setConcurClass(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Department">
-                      <Input
-                        value={concurDepartment}
-                        onChange={(e) => setConcurDepartment(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Expense Category">
-                      <Input
-                        value={concurExpenseCategory}
-                        onChange={(e) => setConcurExpenseCategory(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Project">
-                      <Input
-                        value={concurProject}
-                        onChange={(e) => setConcurProject(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="People/Resource Type">
-                      <Input
-                        value={concurPeopleResource}
-                        onChange={(e) => setConcurPeopleResource(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                  </div>
+                  <Field label="Class" required>
+                    <Input
+                      value={concurClass}
+                      onChange={(e) => setConcurClass(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="Department" required>
+                    <Input
+                      value={concurDepartment}
+                      onChange={(e) => setConcurDepartment(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="Expense Category" required>
+                    <Input
+                      value={concurExpenseCategory}
+                      onChange={(e) => setConcurExpenseCategory(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="Project" required>
+                    <Input
+                      value={concurProject}
+                      onChange={(e) => setConcurProject(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="People/Resource Type" required>
+                    <Input
+                      value={concurPeopleResource}
+                      onChange={(e) => setConcurPeopleResource(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
                 </div>
-              )}
+              </div>
             </Section>
           )}
         </form>
@@ -843,7 +848,7 @@ function BudgetPicker({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
         {PHOTO_RATE_CARD.map((tier) => {
           const selected = value === tier.label;
           return (
@@ -852,14 +857,18 @@ function BudgetPicker({
               type="button"
               onClick={() => onChange(tier.label)}
               className={cn(
-                "text-left rounded-lg border p-4 transition-colors",
+                "flex h-full flex-col text-left rounded-lg border overflow-hidden transition-colors",
                 selected
                   ? "border-primary bg-primary/5 ring-1 ring-primary"
                   : "border-border hover:border-foreground/30"
               )}
             >
-              <div className="text-xl font-bold tracking-tight">{tier.label}</div>
-              <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+              <div className="px-4 py-3 border-b bg-muted/40">
+                <div className="text-xl font-bold tracking-tight leading-none">
+                  {tier.label}
+                </div>
+              </div>
+              <ul className="flex-1 px-4 py-3 space-y-0.5 text-xs text-muted-foreground">
                 {tier.examples.map((ex) => (
                   <li key={ex}>• {ex}</li>
                 ))}
