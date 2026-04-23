@@ -19,6 +19,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
 import { Route as AdminTeamRouteImport } from './routes/admin_.team'
+import { Route as AdminShotListGeneratorRouteImport } from './routes/admin_.shot-list-generator'
 import { Route as AdminRequestsPhotographyRouteImport } from './routes/admin_.requests-photography'
 import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-gear'
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
@@ -79,6 +80,11 @@ const ApiAdminsRoute = ApiAdminsRouteImport.update({
 const AdminTeamRoute = AdminTeamRouteImport.update({
   id: '/admin_/team',
   path: '/admin/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminShotListGeneratorRoute = AdminShotListGeneratorRouteImport.update({
+  id: '/admin_/shot-list-generator',
+  path: '/admin/shot-list-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRequestsPhotographyRoute =
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/requests-gear': typeof AdminRequestsGearRoute
   '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/requests-gear': typeof AdminRequestsGearRoute
   '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/admin_/requests': typeof AdminRequestsRoute
   '/admin_/requests-gear': typeof AdminRequestsGearRoute
   '/admin_/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin_/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin_/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
 }
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/requests-gear'
     | '/admin/requests-photography'
+    | '/admin/shot-list-generator'
     | '/admin/team'
     | '/api/admins'
   fileRoutesByTo: FileRoutesByTo
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/requests-gear'
     | '/admin/requests-photography'
+    | '/admin/shot-list-generator'
     | '/admin/team'
     | '/api/admins'
   id:
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/admin_/requests'
     | '/admin_/requests-gear'
     | '/admin_/requests-photography'
+    | '/admin_/shot-list-generator'
     | '/admin_/team'
     | '/api/admins'
   fileRoutesById: FileRoutesById
@@ -300,6 +312,7 @@ export interface RootRouteChildren {
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminRequestsGearRoute: typeof AdminRequestsGearRoute
   AdminRequestsPhotographyRoute: typeof AdminRequestsPhotographyRoute
+  AdminShotListGeneratorRoute: typeof AdminShotListGeneratorRoute
   AdminTeamRoute: typeof AdminTeamRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
 }
@@ -374,6 +387,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/team'
       fullPath: '/admin/team'
       preLoaderRoute: typeof AdminTeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/shot-list-generator': {
+      id: '/admin_/shot-list-generator'
+      path: '/admin/shot-list-generator'
+      fullPath: '/admin/shot-list-generator'
+      preLoaderRoute: typeof AdminShotListGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin_/requests-photography': {
@@ -476,6 +496,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRequestsRoute: AdminRequestsRoute,
   AdminRequestsGearRoute: AdminRequestsGearRoute,
   AdminRequestsPhotographyRoute: AdminRequestsPhotographyRoute,
+  AdminShotListGeneratorRoute: AdminShotListGeneratorRoute,
   AdminTeamRoute: AdminTeamRoute,
   ApiAdminsRoute: ApiAdminsRoute,
 }
