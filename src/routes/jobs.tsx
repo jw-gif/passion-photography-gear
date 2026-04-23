@@ -454,7 +454,7 @@ function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void })
           </span>
           {paid && job.budget_cents != null && (
             <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-              {formatBudget(job.budget_cents)} · Paid
+              {formatBudget(job.budget_cents)}
             </span>
           )}
         </div>
