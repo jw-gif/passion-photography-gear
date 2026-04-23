@@ -114,6 +114,9 @@ interface MyJobRow {
   request_status: string;
 }
 
+type DateFilter = "any" | "next7" | "next30";
+type RoleFilter = "any" | "point" | "door_holder" | "training_door_holder";
+
 function JobBoardPage() {
   const { t } = useSearch({ from: "/jobs" });
   const token = t ?? "";
@@ -124,6 +127,12 @@ function JobBoardPage() {
   const [myJobs, setMyJobs] = useState<MyJobRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [releaseTarget, setReleaseTarget] = useState<{ openingId: string; eventName: string } | null>(null);
+
+  // Filters
+  const [filterLocation, setFilterLocation] = useState<string>("any");
+  const [filterDate, setFilterDate] = useState<DateFilter>("any");
+  const [filterRole, setFilterRole] = useState<RoleFilter>("any");
 
   const loadMe = useCallback(async () => {
     if (!token) {
@@ -186,12 +195,6 @@ function JobBoardPage() {
   }
 
   async function release(opening_id: string) {
-    if (
-      !confirm(
-        "Release this shoot? It will go back on the board for someone else to pick up."
-      )
-    )
-      return;
     const { data, error } = await supabase.rpc("release_job", {
       _token: token,
       _opening_id: opening_id,
@@ -202,17 +205,43 @@ function JobBoardPage() {
     }
     const result = data as { ok: boolean; error?: string } | null;
     if (result?.ok) {
-      toast.success("Released");
+      // Offer one-tap re-claim within the toast as an "undo".
+      toast.success("Released — back on the board", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void claim(opening_id);
+          },
+        },
+      });
       await loadJobs();
     } else {
       toast.error(errorMessage(result?.error ?? "unknown"));
     }
   }
 
-  // Group open jobs by request so we can render the "Point taken" banner once.
+  // Filter logic on open jobs
+  const visibleOpenJobs = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const horizon =
+      filterDate === "next7" ? addDays(today, 7) : filterDate === "next30" ? addDays(today, 30) : null;
+
+    return openJobs.filter((j) => {
+      if (filterLocation !== "any" && (j.event_location ?? "") !== filterLocation) return false;
+      if (filterRole !== "any" && j.role !== filterRole) return false;
+      if (horizon && j.event_date) {
+        const d = parseISO(j.event_date);
+        if (!isWithinInterval(d, { start: today, end: horizon })) return false;
+      }
+      return true;
+    });
+  }, [openJobs, filterLocation, filterDate, filterRole]);
+
+  // Group filtered open jobs by request so we can render the "Point taken" banner once.
   const groupedOpen = useMemo(() => {
     const groups = new Map<string, OpenJobRow[]>();
-    for (const j of openJobs) {
+    for (const j of visibleOpenJobs) {
       const arr = groups.get(j.request_id) ?? [];
       arr.push(j);
       groups.set(j.request_id, arr);
