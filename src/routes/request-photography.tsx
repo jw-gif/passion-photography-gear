@@ -167,6 +167,13 @@ function RequestPhotographyPage() {
       if (coverageTypes.includes("other") && !coverageOther.trim())
         m.push("Coverage other");
       if (!budget.trim()) m.push("Budget");
+      if (!concurApprover.trim()) m.push("Concur Budget Approver");
+      if (!concurCompany.trim()) m.push("Concur Company");
+      if (!concurClass.trim()) m.push("Concur Class");
+      if (!concurDepartment.trim()) m.push("Concur Department");
+      if (!concurExpenseCategory.trim()) m.push("Concur Expense Category");
+      if (!concurProject.trim()) m.push("Concur Project");
+      if (!concurPeopleResource.trim()) m.push("Concur People/Resource Type");
     }
     return m;
   }, [
@@ -188,6 +195,13 @@ function RequestPhotographyPage() {
     coverageTypes,
     coverageOther,
     budget,
+    concurApprover,
+    concurCompany,
+    concurClass,
+    concurDepartment,
+    concurExpenseCategory,
+    concurProject,
+    concurPeopleResource,
   ]);
 
   async function handleSubmit(e: React.FormEvent) {
