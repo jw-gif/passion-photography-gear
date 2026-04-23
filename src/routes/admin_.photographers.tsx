@@ -303,6 +303,10 @@ function PhotographersView({ onLogout }: { onLogout: () => void }) {
         onClose={() => setEditing(null)}
         photographer={editing}
       />
+      <PhotographerBulkImportDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+      />
     </main>
   );
 }
