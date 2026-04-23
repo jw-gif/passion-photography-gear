@@ -46,6 +46,7 @@ import { RequireAdmin } from "@/components/require-admin";
 import { toast } from "sonner";
 import { HubHeader } from "@/components/hub-header";
 import { CoverageRoster } from "@/components/coverage-roster";
+import { RequestBriefPanel } from "@/components/request-brief-panel";
 import {
   PHOTO_REQUEST_STATUSES,
   REQUEST_TYPES,
