@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Wand2 } from "lucide-react";
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,8 +21,6 @@ import { PHOTOGRAPHER_TIERS } from "@/lib/photographers";
 interface ShotListEditorProps {
   brief: Brief;
   onChange: (brief: Brief) => void;
-  onRegenerate?: (focus: string) => Promise<void> | void;
-  generating?: boolean;
 }
 
 const ROLE_OPTIONS: { value: SegmentRole; label: string }[] = [
@@ -32,9 +30,7 @@ const ROLE_OPTIONS: { value: SegmentRole; label: string }[] = [
 
 const PRIORITY_CYCLE: ShotPriority[] = ["should", "must", "nice"];
 
-export function ShotListEditor({ brief, onChange, onRegenerate, generating }: ShotListEditorProps) {
-  const [focusInput, setFocusInput] = useState("");
-
+export function ShotListEditor({ brief, onChange }: ShotListEditorProps) {
   function setMeta<K extends keyof Brief>(key: K, value: Brief[K]) {
     onChange({ ...brief, [key]: value });
   }
@@ -155,35 +151,6 @@ export function ShotListEditor({ brief, onChange, onRegenerate, generating }: Sh
         </div>
       </div>
 
-      {/* Regenerate */}
-      {onRegenerate && (
-        <div className="border rounded-lg p-4 bg-card/50 space-y-2">
-          <Label htmlFor="focus" className="text-xs">
-            Focus (optional) — anything special this time?
-          </Label>
-          <Textarea
-            id="focus"
-            value={focusInput}
-            onChange={(e) => setFocusInput(e.target.value)}
-            placeholder="e.g. baptism Sunday, sponsor signage, new building tour"
-            rows={2}
-          />
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => onRegenerate(focusInput)}
-            disabled={generating}
-          >
-            <Wand2 className="size-4" />
-            {generating
-              ? "Generating…"
-              : brief.segments.length
-                ? "Regenerate brief"
-                : "Generate brief"}
-          </Button>
-        </div>
-      )}
-
       {/* Segments */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -197,7 +164,7 @@ export function ShotListEditor({ brief, onChange, onRegenerate, generating }: Sh
 
         {brief.segments.length === 0 ? (
           <div className="border border-dashed rounded-lg p-6 text-center text-sm text-muted-foreground">
-            No segments yet. {onRegenerate ? "Generate a brief or add segments manually." : "Add a segment to get started."}
+            No segments yet. Add a segment to get started.
           </div>
         ) : (
           brief.segments.map((seg, idx) => (

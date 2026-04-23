@@ -1,37 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Copy, Download, FileText, Wand2 } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Download, FileText, Settings2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { HubHeader } from "@/components/hub-header";
-import { supabase } from "@/integrations/supabase/client";
 import { ShotListEditor } from "@/components/shot-list-editor";
 import {
   type Brief,
   emptyBrief,
-  normalizeBrief,
   renderBriefAsSlack,
   renderBriefAsMarkdown,
 } from "@/lib/shot-list";
-import { LOCATIONS } from "@/lib/locations";
-import { COMMON_SEGMENTS, getRoomsForLocation } from "@/lib/segments";
 import { PHOTOGRAPHER_TIERS } from "@/lib/photographers";
+import {
+  type LocationBlockRow,
+  type SegmentBlockRow,
+  type TemplateRow,
+  fetchLocationBlocks,
+  fetchSegmentBlocks,
+  fetchTemplates,
+  assembleBrief,
+} from "@/lib/shot-list-blocks";
 
 export const Route = createFileRoute("/admin_/shot-list-generator")({
   head: () => ({
@@ -40,7 +38,7 @@ export const Route = createFileRoute("/admin_/shot-list-generator")({
       {
         name: "description",
         content:
-          "Pick a location, rooms, and segments and generate a Passion-style photographer brief you can copy and paste.",
+          "Pick a template, tweak this week's details, and copy a Slack-ready brief. No AI — just curated blocks.",
       },
     ],
   }),
@@ -56,96 +54,100 @@ function ShotListGeneratorRoute() {
   );
 }
 
-interface FormState {
-  eventName: string;
-  location: string;
-  rooms: string[];
-  customRoom: string;
-  segments: string[];
-  customSegment: string;
-  roles: string[];
-  callTime: string;
-  wrapTime: string;
-  doorCode: string;
-  focus: string;
-}
-
-function emptyForm(): FormState {
-  return {
-    eventName: "",
-    location: "",
-    rooms: [],
-    customRoom: "",
-    segments: [],
-    customSegment: "",
-    roles: ["point", "door_holder"],
-    callTime: "",
-    wrapTime: "",
-    doorCode: "",
-    focus: "",
-  };
-}
-
 function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
-  const [form, setForm] = useState<FormState>(emptyForm());
+  const [locations, setLocations] = useState<LocationBlockRow[]>([]);
+  const [segments, setSegments] = useState<SegmentBlockRow[]>([]);
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [eventName, setEventName] = useState("");
+  const [locationKey, setLocationKey] = useState<string>("");
+  const [selectedSegmentKeys, setSelectedSegmentKeys] = useState<string[]>([]);
+  const [roles, setRoles] = useState<string[]>(["point", "door_holder"]);
+  const [callTime, setCallTime] = useState("");
+  const [wrapTime, setWrapTime] = useState("");
+  const [doorCode, setDoorCode] = useState("");
+  const [focus, setFocus] = useState("");
+  const [activeTemplateId, setActiveTemplateId] = useState<string>("");
+
   const [brief, setBrief] = useState<Brief>(emptyBrief());
-  const [generating, setGenerating] = useState(false);
+  const [hasBuilt, setHasBuilt] = useState(false);
 
-  const availableRooms = useMemo(() => getRoomsForLocation(form.location), [form.location]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [loc, seg, tpl] = await Promise.all([
+          fetchLocationBlocks(),
+          fetchSegmentBlocks(),
+          fetchTemplates(),
+        ]);
+        if (cancelled) return;
+        setLocations(loc);
+        setSegments(seg);
+        setTemplates(tpl);
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : "Couldn't load blocks");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
+  const selectedLocation = useMemo(
+    () => locations.find((l) => l.key === locationKey) ?? null,
+    [locations, locationKey],
+  );
+
+  function applyTemplate(t: TemplateRow) {
+    setActiveTemplateId(t.id);
+    setLocationKey(t.location_key ?? "");
+    setSelectedSegmentKeys(t.segment_keys);
+    setRoles(t.roles);
+    setCallTime(t.call_time ?? "");
+    setWrapTime(t.wrap_time ?? "");
+    toast.success(`Template "${t.name}" loaded — tweak and build`);
+  }
+
+  function build() {
+    if (selectedSegmentKeys.length === 0) {
+      toast.error("Pick at least one segment first");
+      return;
+    }
+    const next = assembleBrief(selectedLocation, segments, {
+      segmentKeys: selectedSegmentKeys,
+      roles,
+      callTime,
+      wrapTime,
+      doorCode,
+      focus,
+    });
+    setBrief(next);
+    setHasBuilt(true);
+    toast.success("Brief built");
+  }
+
+  function clearBrief() {
+    setBrief(emptyBrief());
+    setHasBuilt(false);
   }
 
   function toggleArr<T extends string>(arr: T[], val: T): T[] {
     return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
   }
 
-  async function generate() {
-    setGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-shot-list-standalone", {
-        body: {
-          event_name: form.eventName || undefined,
-          location: form.location || undefined,
-          rooms: form.rooms,
-          segments: form.segments,
-          roles: form.roles,
-          call_time: form.callTime || undefined,
-          wrap_time: form.wrapTime || undefined,
-          door_code: form.doorCode || undefined,
-          focus: form.focus || undefined,
-        },
-      });
-      if (error) {
-        // Edge function returns the error in `data` for non-2xx responses too
-        const msg =
-          (data as { error?: string } | null)?.error ?? error.message ?? "Generation failed";
-        toast.error(msg);
-        return;
-      }
-      const d = data as { brief?: unknown; error?: string };
-      if (d.error) {
-        toast.error(d.error);
-        return;
-      }
-      if (d.brief) {
-        setBrief(normalizeBrief(d.brief));
-        toast.success("Brief generated");
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generation failed");
-    } finally {
-      setGenerating(false);
-    }
+  function toggleSegment(key: string) {
+    setSelectedSegmentKeys((prev) => toggleArr(prev, key));
+    setActiveTemplateId(""); // user is diverging from the template
   }
 
-  function clearBrief() {
-    setBrief(emptyBrief());
-  }
-
-  const slackText = useMemo(() => renderBriefAsSlack(brief, form.eventName), [brief, form.eventName]);
-  const markdown = useMemo(() => renderBriefAsMarkdown(brief, form.eventName), [brief, form.eventName]);
+  const slackText = useMemo(() => renderBriefAsSlack(brief, eventName), [brief, eventName]);
+  const markdown = useMemo(() => renderBriefAsMarkdown(brief, eventName), [brief, eventName]);
 
   async function copyText(text: string, label: string) {
     try {
@@ -161,7 +163,7 @@ function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const slug = (form.eventName || "shot-list")
+    const slug = (eventName || "shot-list")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
@@ -172,307 +174,266 @@ function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
     URL.revokeObjectURL(url);
   }
 
-  function addCustomRoom() {
-    const v = form.customRoom.trim();
-    if (!v) return;
-    if (!form.rooms.includes(v)) patch("rooms", [...form.rooms, v]);
-    patch("customRoom", "");
-  }
-
-  function addCustomSegment() {
-    const v = form.customSegment.trim();
-    if (!v) return;
-    if (!form.segments.includes(v)) patch("segments", [...form.segments, v]);
-    patch("customSegment", "");
-  }
-
   return (
     <main className="min-h-screen">
-      <HubHeader onLogout={onLogout} title="Shot List Generator" subtitle="Quick brief builder" />
+      <HubHeader onLogout={onLogout} title="Shot List Generator" subtitle="Template-driven brief builder" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold tracking-tight">Shot List Generator</h1>
-          <p className="text-sm text-muted-foreground">
-            Pick a location, rooms, and segments. Generate a Passion-style brief you can edit and
-            copy to Slack, email, or your call sheet doc.
-          </p>
+        <div className="mb-5 flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Shot List Generator</h1>
+            <p className="text-sm text-muted-foreground">
+              Pick a template, tweak this week's details, and copy a Slack-ready brief.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/shot-list-blocks">
+              <Settings2 className="size-4" /> Manage blocks &amp; templates
+            </Link>
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Inputs */}
-          <Card className="p-4 space-y-4 lg:col-span-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Inputs
-            </h2>
-
-            <div>
-              <Label htmlFor="event-name" className="text-xs">Event name (optional)</Label>
-              <Input
-                id="event-name"
-                value={form.eventName}
-                onChange={(e) => patch("eventName", e.target.value)}
-                placeholder="Sunday Gathering"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs">Location</Label>
-              <Select
-                value={form.location}
-                onValueChange={(v) => {
-                  patch("location", v);
-                  patch("rooms", []);
-                }}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Pick a location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATIONS.map((l) => (
-                    <SelectItem key={l} value={l}>
-                      {l}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {form.location && (
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading blocks…</p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Inputs */}
+            <Card className="p-4 space-y-4 lg:col-span-3">
               <div>
-                <Label className="text-xs">Rooms / spaces</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {availableRooms.map((r) => (
-                    <ChipToggle
-                      key={r}
-                      active={form.rooms.includes(r)}
-                      onClick={() => patch("rooms", toggleArr(form.rooms, r))}
-                    >
-                      {r}
-                    </ChipToggle>
-                  ))}
-                  {form.rooms
-                    .filter((r) => !availableRooms.includes(r))
-                    .map((r) => (
-                      <ChipToggle key={r} active onClick={() => patch("rooms", toggleArr(form.rooms, r))}>
-                        {r}
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Templates
+                </h2>
+                {templates.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No templates yet.{" "}
+                    <Link to="/admin/shot-list-blocks" className="underline">
+                      Create one
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {templates.map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        onClick={() => applyTemplate(t)}
+                        className={cn(
+                          "text-xs px-2 py-1 rounded-md border transition-colors",
+                          activeTemplateId === t.id
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background hover:bg-muted text-foreground border-border",
+                        )}
+                      >
+                        <Sparkles className="size-3 inline mr-1 opacity-70" />
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  This shoot
+                </h2>
+
+                <div>
+                  <Label htmlFor="event-name" className="text-xs">Event name</Label>
+                  <Input
+                    id="event-name"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder="Sunday Aug 18"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <Label className="text-xs">Location</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {locations.map((l) => (
+                      <ChipToggle
+                        key={l.key}
+                        active={locationKey === l.key}
+                        onClick={() => {
+                          setLocationKey(locationKey === l.key ? "" : l.key);
+                          setActiveTemplateId("");
+                        }}
+                      >
+                        {l.alias ?? l.label}
                       </ChipToggle>
                     ))}
+                  </div>
                 </div>
-                <div className="flex gap-1 mt-2">
+
+                <div className="mt-3">
+                  <Label className="text-xs">Roles to cover</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {PHOTOGRAPHER_TIERS.map((t) => (
+                      <ChipToggle
+                        key={t.value}
+                        active={roles.includes(t.value)}
+                        onClick={() => {
+                          setRoles((r) => toggleArr(r, t.value));
+                          setActiveTemplateId("");
+                        }}
+                      >
+                        {t.short}
+                      </ChipToggle>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div>
+                    <Label htmlFor="call-time" className="text-xs">Call time</Label>
+                    <Input
+                      id="call-time"
+                      value={callTime}
+                      onChange={(e) => setCallTime(e.target.value)}
+                      placeholder="9:00 AM"
+                      className="mt-1 h-8 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="wrap" className="text-xs">Wrap</Label>
+                    <Input
+                      id="wrap"
+                      value={wrapTime}
+                      onChange={(e) => setWrapTime(e.target.value)}
+                      placeholder="12:30 PM"
+                      className="mt-1 h-8 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <Label htmlFor="door" className="text-xs">Door code</Label>
                   <Input
-                    value={form.customRoom}
-                    onChange={(e) => patch("customRoom", e.target.value)}
-                    placeholder="Add custom room…"
-                    className="h-8 text-xs"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addCustomRoom();
-                      }
-                    }}
+                    id="door"
+                    value={doorCode}
+                    onChange={(e) => setDoorCode(e.target.value)}
+                    placeholder="1234#"
+                    className="mt-1 h-8 text-xs"
                   />
-                  <Button type="button" size="sm" variant="outline" onClick={addCustomRoom}>
-                    Add
+                </div>
+
+                <div className="mt-3">
+                  <Label htmlFor="focus" className="text-xs">
+                    Anything special this week?
+                  </Label>
+                  <Textarea
+                    id="focus"
+                    value={focus}
+                    onChange={(e) => setFocus(e.target.value)}
+                    placeholder="e.g. baptism Sunday, sponsor signage"
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <Label className="text-xs">Segments</Label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {segments.map((s) => (
+                    <ChipToggle
+                      key={s.key}
+                      active={selectedSegmentKeys.includes(s.key)}
+                      onClick={() => toggleSegment(s.key)}
+                    >
+                      {s.title}
+                    </ChipToggle>
+                  ))}
+                </div>
+              </div>
+
+              <Button onClick={build} className="w-full">
+                <FileText className="size-4" />
+                {hasBuilt ? "Rebuild brief" : "Build brief"}
+              </Button>
+            </Card>
+
+            {/* Editor */}
+            <Card className="p-4 lg:col-span-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Brief
+                </h2>
+                {brief.segments.length > 0 && (
+                  <Button type="button" size="sm" variant="ghost" onClick={clearBrief}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+              {brief.segments.length === 0 ? (
+                <div className="border border-dashed rounded-lg p-10 text-center text-sm text-muted-foreground">
+                  <FileText className="size-8 mx-auto mb-2 opacity-50" />
+                  Pick a template (or pick segments manually) and tap{" "}
+                  <strong>Build brief</strong>.
+                </div>
+              ) : (
+                <ShotListEditor brief={brief} onChange={setBrief} />
+              )}
+            </Card>
+
+            {/* Output */}
+            <Card className="p-4 lg:col-span-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Output
+                </h2>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyText(slackText, "Slack")}
+                    disabled={brief.segments.length === 0}
+                  >
+                    <Copy className="size-4" /> Slack
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyText(markdown, "Markdown")}
+                    disabled={brief.segments.length === 0}
+                  >
+                    <Copy className="size-4" /> MD
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={download}
+                    disabled={brief.segments.length === 0}
+                  >
+                    <Download className="size-4" />
                   </Button>
                 </div>
               </div>
-            )}
 
-            <div>
-              <Label className="text-xs">Segments</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {COMMON_SEGMENTS.map((s) => (
-                  <ChipToggle
-                    key={s.title}
-                    active={form.segments.includes(s.title)}
-                    onClick={() => patch("segments", toggleArr(form.segments, s.title))}
-                  >
-                    {s.title}
-                  </ChipToggle>
-                ))}
-                {form.segments
-                  .filter((s) => !COMMON_SEGMENTS.some((c) => c.title === s))
-                  .map((s) => (
-                    <ChipToggle
-                      key={s}
-                      active
-                      onClick={() => patch("segments", toggleArr(form.segments, s))}
-                    >
-                      {s}
-                    </ChipToggle>
-                  ))}
-              </div>
-              <div className="flex gap-1 mt-2">
-                <Input
-                  value={form.customSegment}
-                  onChange={(e) => patch("customSegment", e.target.value)}
-                  placeholder="Add custom segment…"
-                  className="h-8 text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addCustomSegment();
-                    }
-                  }}
-                />
-                <Button type="button" size="sm" variant="outline" onClick={addCustomSegment}>
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-xs">Roles to cover</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {PHOTOGRAPHER_TIERS.map((t) => (
-                  <ChipToggle
-                    key={t.value}
-                    active={form.roles.includes(t.value)}
-                    onClick={() => patch("roles", toggleArr(form.roles, t.value))}
-                  >
-                    {t.short}
-                  </ChipToggle>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="call-time" className="text-xs">Call time</Label>
-                <Input
-                  id="call-time"
-                  value={form.callTime}
-                  onChange={(e) => patch("callTime", e.target.value)}
-                  placeholder="9:00 AM"
-                  className="mt-1 h-8 text-xs"
-                />
-              </div>
-              <div>
-                <Label htmlFor="wrap" className="text-xs">Wrap</Label>
-                <Input
-                  id="wrap"
-                  value={form.wrapTime}
-                  onChange={(e) => patch("wrapTime", e.target.value)}
-                  placeholder="12:30 PM"
-                  className="mt-1 h-8 text-xs"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="door" className="text-xs">Door code</Label>
-              <Input
-                id="door"
-                value={form.doorCode}
-                onChange={(e) => patch("doorCode", e.target.value)}
-                placeholder="1234#"
-                className="mt-1 h-8 text-xs"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="focus" className="text-xs">
-                Anything special this week?
-              </Label>
-              <Textarea
-                id="focus"
-                value={form.focus}
-                onChange={(e) => patch("focus", e.target.value)}
-                placeholder="e.g. baptism Sunday, sponsor signage, new building tour"
-                rows={3}
-                className="mt-1"
-              />
-            </div>
-
-            <Button onClick={generate} disabled={generating} className="w-full">
-              <Wand2 className="size-4" />
-              {generating
-                ? "Generating…"
-                : brief.segments.length
-                  ? "Regenerate brief"
-                  : "Generate brief"}
-            </Button>
-          </Card>
-
-          {/* Editor */}
-          <Card className="p-4 lg:col-span-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Brief
-              </h2>
-              {brief.segments.length > 0 && (
-                <Button type="button" size="sm" variant="ghost" onClick={clearBrief}>
-                  Clear
-                </Button>
-              )}
-            </div>
-            {brief.segments.length === 0 && !generating ? (
-              <div className="border border-dashed rounded-lg p-10 text-center text-sm text-muted-foreground">
-                <FileText className="size-8 mx-auto mb-2 opacity-50" />
-                Pick your inputs and tap <strong>Generate brief</strong> to start.
-              </div>
-            ) : (
-              <ShotListEditor brief={brief} onChange={setBrief} />
-            )}
-          </Card>
-
-          {/* Output */}
-          <Card className="p-4 lg:col-span-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Output
-              </h2>
-              <div className="flex gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyText(slackText, "Slack")}
-                  disabled={brief.segments.length === 0}
-                >
-                  <Copy className="size-4" /> Slack
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyText(markdown, "Markdown")}
-                  disabled={brief.segments.length === 0}
-                >
-                  <Copy className="size-4" /> MD
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={download}
-                  disabled={brief.segments.length === 0}
-                >
-                  <Download className="size-4" />
-                </Button>
-              </div>
-            </div>
-
-            <Tabs defaultValue="slack">
-              <TabsList className="mb-3">
-                <TabsTrigger value="slack">Slack</TabsTrigger>
-                <TabsTrigger value="markdown">Markdown</TabsTrigger>
-              </TabsList>
-              <TabsContent value="slack">
-                <pre className="text-xs whitespace-pre-wrap font-mono bg-muted/30 border rounded-md p-3 max-h-[60vh] overflow-y-auto">
-                  {slackText.trim() || "Generate a brief to see the preview."}
-                </pre>
-              </TabsContent>
-              <TabsContent value="markdown">
-                <pre className="text-xs whitespace-pre-wrap font-mono bg-muted/30 border rounded-md p-3 max-h-[60vh] overflow-y-auto">
-                  {markdown.trim() || "Generate a brief to see the preview."}
-                </pre>
-              </TabsContent>
-            </Tabs>
-          </Card>
-        </div>
+              <Tabs defaultValue="slack">
+                <TabsList className="mb-3">
+                  <TabsTrigger value="slack">Slack</TabsTrigger>
+                  <TabsTrigger value="markdown">Markdown</TabsTrigger>
+                </TabsList>
+                <TabsContent value="slack">
+                  <pre className="text-xs whitespace-pre-wrap font-mono bg-muted/30 border rounded-md p-3 max-h-[60vh] overflow-y-auto">
+                    {slackText.trim() || "Build a brief to see the preview."}
+                  </pre>
+                </TabsContent>
+                <TabsContent value="markdown">
+                  <pre className="text-xs whitespace-pre-wrap font-mono bg-muted/30 border rounded-md p-3 max-h-[60vh] overflow-y-auto">
+                    {markdown.trim() || "Build a brief to see the preview."}
+                  </pre>
+                </TabsContent>
+              </Tabs>
+            </Card>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -495,7 +456,7 @@ function ChipToggle({
         "text-xs px-2 py-1 rounded-full border transition-colors",
         active
           ? "bg-primary text-primary-foreground border-primary"
-          : "bg-background hover:bg-muted text-foreground border-border"
+          : "bg-background hover:bg-muted text-foreground border-border",
       )}
     >
       {children}
