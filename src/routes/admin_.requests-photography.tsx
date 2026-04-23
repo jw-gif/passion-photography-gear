@@ -536,6 +536,16 @@ function RequestDetailDialog({
             </DetailSection>
           )}
 
+          {/* Coverage roster */}
+          <DetailSection title="Coverage roster">
+            <p className="text-xs text-muted-foreground mb-3">
+              Add openings for this shoot. Only Point openings have a budget; Door
+              Holder and Training spots are unpaid coverage. Photographers will
+              see only the openings they're eligible for.
+            </p>
+            <CoverageRoster requestId={request.id} />
+          </DetailSection>
+
           {/* Admin workspace */}
           <DetailSection title="Admin workspace">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
