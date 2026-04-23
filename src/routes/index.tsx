@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LOCATIONS, MOVERS, locationClasses, locationLabel, formatDate, getSubLocations, type Location } from "@/lib/locations";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { Camera, Check, ArrowRight, CircleSlash, Wrench, Package, ImageIcon } from "lucide-react";
+import { Camera, Check, CircleSlash, Wrench } from "lucide-react";
 import { GearIcon } from "@/lib/gear-icons";
 import {
   Select,
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import pccLogo from "@/assets/pcc-logo.png";
+import { GearRequestForm } from "@/components/gear-request-form";
 
 interface Search {
   gear?: number;
@@ -38,10 +38,12 @@ export const Route = createFileRoute("/")({
 function IndexPage() {
   const { gear } = Route.useSearch();
   if (gear) return <PublicGearView gearId={gear} />;
-  return <Landing />;
+  return <GearRequestForm />;
 }
 
-function Landing() {
+// Kept for future reference but no longer referenced from the route.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _LandingDeprecated() {
   return (
     <main className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <header className="px-6 py-5 flex items-center justify-between">
