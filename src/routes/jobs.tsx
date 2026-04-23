@@ -675,6 +675,8 @@ function errorMessage(code: string): string {
       return "You don't have access to this opening.";
     case "already_claimed":
       return "Someone else just claimed this spot.";
+    case "already_on_shoot":
+      return "You're already signed up for this shoot. Release your current spot first to switch roles.";
     case "no_active_claim":
       return "You're not assigned to this shoot.";
     case "release_window_expired":
