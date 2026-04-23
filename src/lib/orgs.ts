@@ -70,12 +70,6 @@ export const REQUEST_TYPES = [
     description:
       "Add specific shots to an existing scheduled shoot — moments, people, or details we should be sure to capture.",
   },
-  {
-    value: "photoshoot",
-    label: "Photoshoot",
-    description:
-      "A scheduled photoshoot (headshots, branded content, environmental portraits, product, etc.) outside of a live event.",
-  },
 ] as const;
 export type RequestType = (typeof REQUEST_TYPES)[number]["value"];
 
