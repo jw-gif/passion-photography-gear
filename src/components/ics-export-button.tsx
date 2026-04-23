@@ -14,6 +14,7 @@ interface Props {
   description?: string | null;
   filename?: string;
   size?: "sm" | "default";
+  disabled?: boolean;
 }
 
 export function IcsExportButton({
@@ -27,6 +28,7 @@ export function IcsExportButton({
   description,
   filename,
   size = "sm",
+  disabled,
 }: Props) {
   function handleDownload() {
     try {
@@ -50,7 +52,7 @@ export function IcsExportButton({
   }
 
   return (
-    <Button type="button" size={size} variant="outline" onClick={handleDownload}>
+    <Button type="button" size={size} variant="outline" onClick={handleDownload} disabled={disabled}>
       <CalendarPlus className="size-4" />
       Add to calendar
     </Button>
