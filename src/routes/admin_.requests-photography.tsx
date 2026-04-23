@@ -49,6 +49,7 @@ import { CoverageRoster } from "@/components/coverage-roster";
 import { RequestBriefPanel } from "@/components/request-brief-panel";
 import {
   PHOTO_REQUEST_STATUSES,
+  CLOSED_PHOTO_REQUEST_STATUSES,
   REQUEST_TYPES,
   COVERAGE_TYPES,
   statusBadgeClasses,
@@ -150,7 +151,10 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return requests.filter((r) => {
-      if (activeTab === "open" && (r.status === "completed" || r.status === "archived" || r.status === "declined")) {
+      if (
+        activeTab === "open" &&
+        (CLOSED_PHOTO_REQUEST_STATUSES as string[]).includes(r.status)
+      ) {
         return false;
       }
       if (!q) return true;
@@ -171,10 +175,26 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   }, [requests, query, activeTab]);
 
   const openCount = requests.filter(
-    (r) => r.status !== "completed" && r.status !== "archived" && r.status !== "declined"
+    (r) => !(CLOSED_PHOTO_REQUEST_STATUSES as string[]).includes(r.status),
   ).length;
 
   const detail = openDetailId ? requests.find((r) => r.id === openDetailId) ?? null : null;
+
+  // Auto-flip "New" → "Pending" the first time an admin opens a request
+  useEffect(() => {
+    if (!detail || detail.status !== "new") return;
+    void supabase
+      .from("photo_requests")
+      .update({
+        status: "pending",
+        reviewed_by: reviewerName,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", detail.id)
+      .then(({ error }) => {
+        if (error) console.error("Auto-pending failed:", error.message);
+      });
+  }, [detail, reviewerName]);
 
   async function setStatus(req: PhotoRequest, status: PhotoRequestStatus) {
     const { error } = await supabase
