@@ -583,7 +583,7 @@ function RequestPhotographyPage() {
             </Section>
           )}
 
-          {/* Budget + Concur (collapsed behind expensing toggle) */}
+          {/* Budget + Concur */}
           {showEventDetails && (
             <Section
               step={sectionStep(showShotListNotes ? 5 : 4)}
@@ -593,74 +593,67 @@ function RequestPhotographyPage() {
                 <BudgetPicker value={budget} onChange={setBudget} />
               </Field>
 
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <Receipt className="size-5 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm font-medium">I'll be expensing this</div>
-                    <div className="text-xs text-muted-foreground">
-                      Shows additional Concur fields for accounting.
-                    </div>
-                  </div>
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
+                <Receipt className="size-5 text-muted-foreground shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  Concur accounting details — required so we can bill the shoot
+                  to the correct budget.
                 </div>
-                <Switch checked={expensing} onCheckedChange={setExpensing} />
               </div>
 
-              {expensing && (
-                <div className="space-y-4 pt-2">
-                  <Field label="Concur Budget Approver">
+              <div className="space-y-4 pt-2">
+                <Field label="Concur Budget Approver" required>
+                  <Input
+                    value={concurApprover}
+                    onChange={(e) => setConcurApprover(e.target.value)}
+                    maxLength={200}
+                  />
+                </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Company" required>
                     <Input
-                      value={concurApprover}
-                      onChange={(e) => setConcurApprover(e.target.value)}
+                      value={concurCompany}
+                      onChange={(e) => setConcurCompany(e.target.value)}
                       maxLength={200}
                     />
                   </Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Company">
-                      <Input
-                        value={concurCompany}
-                        onChange={(e) => setConcurCompany(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Class">
-                      <Input
-                        value={concurClass}
-                        onChange={(e) => setConcurClass(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Department">
-                      <Input
-                        value={concurDepartment}
-                        onChange={(e) => setConcurDepartment(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Expense Category">
-                      <Input
-                        value={concurExpenseCategory}
-                        onChange={(e) => setConcurExpenseCategory(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="Project">
-                      <Input
-                        value={concurProject}
-                        onChange={(e) => setConcurProject(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                    <Field label="People/Resource Type">
-                      <Input
-                        value={concurPeopleResource}
-                        onChange={(e) => setConcurPeopleResource(e.target.value)}
-                        maxLength={200}
-                      />
-                    </Field>
-                  </div>
+                  <Field label="Class" required>
+                    <Input
+                      value={concurClass}
+                      onChange={(e) => setConcurClass(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="Department" required>
+                    <Input
+                      value={concurDepartment}
+                      onChange={(e) => setConcurDepartment(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="Expense Category" required>
+                    <Input
+                      value={concurExpenseCategory}
+                      onChange={(e) => setConcurExpenseCategory(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="Project" required>
+                    <Input
+                      value={concurProject}
+                      onChange={(e) => setConcurProject(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <Field label="People/Resource Type" required>
+                    <Input
+                      value={concurPeopleResource}
+                      onChange={(e) => setConcurPeopleResource(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
                 </div>
-              )}
+              </div>
             </Section>
           )}
         </form>
