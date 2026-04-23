@@ -401,7 +401,7 @@ function OpeningCard({
 }
 
 function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void }) {
-  const [brief, setBrief] = useState<import("@/lib/shot-list").Brief | null>(null);
+  const [brief, setBrief] = useState<Brief | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
   const { t } = useSearch({ from: "/jobs" });
