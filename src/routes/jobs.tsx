@@ -297,7 +297,12 @@ function JobBoardPage() {
               </Card>
             ) : (
               myJobs.map((j) => (
-                <MyJobCard key={j.assignment_id} job={j} onRelease={() => release(j.opening_id)} />
+                <MyJobCard
+                  key={j.assignment_id}
+                  job={j}
+                  photographerName={me.name}
+                  onRelease={() => release(j.opening_id)}
+                />
               ))
             )}
           </TabsContent>
