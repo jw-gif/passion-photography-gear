@@ -20,12 +20,14 @@ import {
 import { GearRequestForm } from "@/components/gear-request-form";
 
 interface Search {
-  gear?: number;
+  gear?: string;
 }
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    gear: search.gear ? Number(search.gear) : undefined,
+    gear: search.gear !== undefined && search.gear !== null && search.gear !== ""
+      ? String(search.gear)
+      : undefined,
   }),
   head: () => ({
     meta: [
