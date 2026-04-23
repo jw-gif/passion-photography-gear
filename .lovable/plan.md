@@ -1,79 +1,71 @@
 
 
-# Phase 2 — Photographer Job Board (revised)
+# Phase 3 — AI Shot List Generator (final scope)
 
-Updates to the previously approved plan based on your feedback. Only the changed parts are listed; everything else from the prior plan stands.
+Two surfaces for shot lists:
 
-## What changed
+1. **Per-request brief** inside the admin photo-request dialog (already scoped in the prior plan — unchanged below).
+2. **Standalone shot list generator page** at `/admin/shot-list-generator` — pick options, generate, copy to clipboard. No request needed.
 
-1. A photo request now has a **mix of role openings** (e.g. 1 Point + 2 Door Holders + 1 Training Door Holder), not a single `min_tier` gate.
-2. Each role opening has its own budget/rate. **Only the Point role is paid**; Door Holder and Training Door Holder are unpaid.
-3. **Only photographers with `point` tier can see the budget** for the Point opening. Door Holders and Training Door Holders never see budget info.
-4. When a higher-tier opening is already filled, lower-tier photographers (or the same Point photographer) can still claim a remaining lower-tier opening — and the UI must make it clear the spot they're signing up for is **unpaid Door Holder coverage**, not a paid Point spot.
+## 1. Standalone generator page (`/admin/shot-list-generator`)
 
-## Data model changes
+Admin-only route. Single screen with three columns on desktop, stacked on mobile.
 
-Replace the `photo_requests.min_tier` column from the prior plan with a new table:
+**Left column — Inputs**
+- Location: select from `EVENT_LOCATIONS` (`src/lib/locations.ts`).
+- Rooms / spaces: multi-select chips populated from a new `LOCATION_ROOMS` map (e.g. 515 → AUD, Lobby, Oval, Outside; bloom → Kids Room, Hallway). Admin can also type a custom room.
+- Segments: multi-select chips of common segments pulled from the uploaded samples — Pre-Gathering, Worship, Hosting + Giving, Talk, Passion Kids + bloom, Middle School, Family Groups, One-Offs / Baptisms, Editing + Uploading. Admin can add a custom segment.
+- Roles to cover: multi-select Point / Door Holder / Training Door Holder / All.
+- Optional fields: Call time, Door code, Wrap time, Event name (free text).
+- Focus textarea: "Anything special this week? e.g. baptism Sunday, sponsor signage, new building tour."
 
-`photo_request_openings`:
-- `id uuid pk`
-- `request_id uuid not null` → photo_requests
-- `role photographer_tier not null` (`point` | `door_holder` | `training_door_holder`)
-- `budget_cents integer` — only allowed when `role = 'point'`; enforced by check constraint and validation trigger
-- `position smallint not null default 1` — disambiguates multiple openings of the same role on one shoot (e.g. Door Holder #1, Door Holder #2)
-- `created_at`
-- Unique on `(request_id, role, position)`
+**Middle column — Generated brief**
+- Generate button → calls a new edge function `generate-shot-list-standalone` with the form payload.
+- Renders the same `Brief` shape used by per-request briefs (reusing the renderer in `src/lib/shot-list.ts`).
+- Each segment is editable inline (rename, edit shots, add/remove, change priority, reassign roles).
+- Regenerate button (keeps current inputs, replaces output).
 
-`photo_request_assignments` (from prior plan) gains:
-- `opening_id uuid not null` → photo_request_openings
-- Partial unique index becomes `(opening_id) where released_at is null` so each opening can only have one active claim.
+**Right column — Output / Copy**
+- Live "Plain text preview" rendered in the Slack/PDF style (`// SECTION //`, role tags, bullet shots) so admin sees exactly what gets copied.
+- Buttons: **Copy as plain text**, **Copy as Markdown**, **Download .txt**.
+- Clipboard uses `navigator.clipboard.writeText` with toast confirmation.
 
-Drop `photo_requests.min_tier` (it isn't created — the prior plan was approved but not yet implemented; this supersedes it).
+The page does NOT save to the database — it's a one-shot generator. A small "Save as template" follow-up is out of scope.
 
-## RPCs (security-definer functions)
+## 2. Per-request brief (unchanged from prior approved plan)
 
-- `list_open_jobs(token)` — returns one row per **open opening** the photographer is eligible for. Eligibility rule: photographer's tier ≥ opening's role (point ≥ door_holder ≥ training_door_holder). Each row carries: request_id, opening_id, role, event details, location, coverage types, on_site_contact, AND `budget_cents` **only when both** the opening's role is `point` AND the calling photographer's tier is `point`. Otherwise budget is returned as `null`.
-- `get_job(token, opening_id)` — same field-level redaction rule for budget.
-- `claim_job(token, opening_id)` — atomic insert into `photo_request_assignments` with the partial unique index preventing double-claims. Validates the photographer's tier covers the opening's role.
-- `release_job(token, opening_id)` — sets `released_at`, only if within 48h of `claimed_at` and the caller owns the active claim.
+- New table `photo_request_shot_lists (request_id unique, brief jsonb)`.
+- New tab "Brief" in the photo-request admin dialog using the same `ShotListEditor` component.
+- New RPC `get_shot_list(_token, _opening_id)` filters segments by photographer role and returns the brief on the photographer job board.
+- Edge function `generate-shot-list` (admin-only, JWT verified).
 
-## Admin UI changes (`/admin/requests-photography` detail)
+Both edge functions use `google/gemini-3-flash-preview` via Lovable AI Gateway with the same `propose_brief` tool schema and the same Passion-style system prompt + few-shot example built from the uploaded samples.
 
-The "Assignment" panel becomes a **Coverage roster builder**:
+## Shared building blocks
 
-- Add Opening button → choose role (Point / Door Holder / Training Door Holder).
-- For Point openings, show a **Budget** input (USD, stored as cents). Door Holder and Training Door Holder rows have no budget field at all (the form simply doesn't render it).
-- Each opening row shows: role badge, budget (Point only), assigned photographer name + claim time, and a Release button.
-- Removing an opening that's already claimed prompts a confirm.
-- Visual roster summary: "1 Point ($300) — assigned · 2 Door Holders — 1 open, 1 assigned · 1 Training Door Holder — open".
+- `src/lib/shot-list.ts` — TypeScript types for `Brief`, `Segment`, `Shot`, plus `renderBriefAsText(brief)` used by both the per-request preview and the standalone copy buttons.
+- `src/lib/segments.ts` — `COMMON_SEGMENTS`, `LOCATION_ROOMS`, default focus copy.
+- `src/components/shot-list-editor.tsx` — reused by both surfaces, accepts `{ brief, onChange, onRegenerate }` so it doesn't care whether the source is a saved request or a transient generator session.
 
-## Photographer board UI changes
+## Files to create / edit
 
-**Open shoots tab**
+Create:
+- `supabase/migrations/<ts>_shot_lists.sql` — table, RLS, `get_shot_list` RPC.
+- `supabase/functions/generate-shot-list/index.ts` (per-request).
+- `supabase/functions/generate-shot-list-standalone/index.ts` (standalone, accepts free-form payload).
+- `src/lib/shot-list.ts`, `src/lib/segments.ts`.
+- `src/components/shot-list-editor.tsx`.
+- `src/routes/admin_.shot-list-generator.tsx`.
 
-- One card per **opening** (so a single shoot with 1 Point + 2 Door Holder slots open shows up as 3 cards).
-- Card title: event name. Below it, a prominent **role badge**:
-  - Point card (visible to Point photographers only): shows budget chip "$300 — Paid".
-  - Door Holder card (visible to Point + Door Holder + Training Door Holder photographers): shows "Door Holder · Unpaid coverage" chip.
-  - Training Door Holder card: shows "Training · Unpaid coverage" chip.
-- Above the cards for a given shoot, a small contextual banner when relevant: "The Point spot for this shoot is already taken — the openings below are unpaid Door Holder coverage." This banner only renders for Point-tier photographers viewing a shoot where the Point opening is filled but Door Holder openings remain. It prevents a Point photographer from accidentally thinking they're claiming a paid spot.
-- Claim button label adapts: "Claim paid Point spot" for Point openings; "Sign up as Door Holder (unpaid)" for Door Holder; "Sign up as Training Door Holder (unpaid)" for Training.
+Edit:
+- `src/routes/admin_.requests-photography.tsx` — add Brief tab inside detail dialog.
+- `src/routes/jobs.tsx` — render filtered brief on claimed jobs.
+- `src/components/hub-header.tsx` — add "Shot list generator" link in admin nav.
 
-**My shoots tab**
+## Out of scope
 
-- Each row shows the role they claimed and, for Point claims only, the budget. A claimed Door Holder spot never shows any budget figure even if the same photographer is a Point-tier user.
-
-**Job detail page (`/jobs/$openingId?t=...`)**
-
-- Same role/budget rules. Confirmation modal before claiming spells out the role and pay status one more time.
-
-## Backend enforcement summary
-
-Budget visibility is enforced **server-side** in the RPC (not just hidden in UI):
-- `list_open_jobs` and `get_job` strip `budget_cents` to `null` whenever the opening role isn't `point` OR the caller isn't a `point`-tier photographer.
-- The browser only ever receives a budget value when both conditions are true. A door holder cannot inspect network traffic and see Point pay.
-
-## Out of scope (unchanged)
-
-- SMS sending, AI shot list generator, drag-to-reschedule, conflict detection, automatic notifications.
+- Saving standalone generator outputs as reusable templates.
+- Photographer "captured" check-offs.
+- AI mood boards / reference imagery.
+- Auto-emailing briefs to claimed photographers.
 
