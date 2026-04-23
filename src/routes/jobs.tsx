@@ -395,6 +395,28 @@ function OpeningCard({
 }
 
 function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void }) {
+  const [brief, setBrief] = useState<import("@/lib/shot-list").Brief | null>(null);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const { t } = useSearch({ from: "/jobs" });
+
+  async function loadBrief() {
+    if (brief || briefLoading) return;
+    setBriefLoading(true);
+    const { data, error } = await supabase.rpc("get_shot_list", {
+      _token: t ?? "",
+      _opening_id: job.opening_id,
+    });
+    setBriefLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (data) {
+      const { normalizeBrief } = await import("@/lib/shot-list");
+      setBrief(normalizeBrief(data));
+    }
+  }
   const paid = isPaidRole(job.role);
   const claimedAt = parseISO(job.claimed_at);
   const within48h = Date.now() - claimedAt.getTime() < 48 * 60 * 60 * 1000;
