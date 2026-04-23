@@ -321,6 +321,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
                   <RequestRow
                     key={r.id}
                     req={r}
+                    roster={rosterByRequest[r.id]}
                     onOpen={() => setOpenDetailId(r.id)}
                     onSetStatus={(s) => setStatus(r, s)}
                   />
