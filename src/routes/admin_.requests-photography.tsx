@@ -389,17 +389,7 @@ function RequestRow({
               {statusLabel(req.status)}
             </span>
             {totalOpenings > 0 && (
-              <span
-                className={cn(
-                  "text-xs font-medium px-2 py-0.5 rounded-full border",
-                  totalFilled === totalOpenings
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                    : "bg-muted text-muted-foreground border-border",
-                )}
-                title={`${roster?.filledPoint ?? 0}/${(roster?.filledPoint ?? 0) + (roster?.openPoint ?? 0)} Point · ${roster?.filledDoor ?? 0}/${(roster?.filledDoor ?? 0) + (roster?.openDoor ?? 0)} Door Holder`}
-              >
-                {totalFilled}/{totalOpenings} filled
-              </span>
+              <RosterPills roster={roster!} totalFilled={totalFilled} totalOpenings={totalOpenings} />
             )}
             <span className="text-xs text-muted-foreground">{types}</span>
           </div>
