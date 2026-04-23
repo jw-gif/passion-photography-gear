@@ -47,6 +47,7 @@ import { toast } from "sonner";
 import { HubHeader } from "@/components/hub-header";
 import { CoverageRoster } from "@/components/coverage-roster";
 import { RequestBriefPanel } from "@/components/request-brief-panel";
+import { EventGearPanel } from "@/components/event-gear-panel";
 import {
   PHOTO_REQUEST_STATUSES,
   CLOSED_PHOTO_REQUEST_STATUSES,
@@ -545,11 +546,31 @@ function RequestDetailDialog({
 }) {
   const [adminNotes, setAdminNotes] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
+  const [hasAccepted, setHasAccepted] = useState(false);
 
   useEffect(() => {
     setAdminNotes(request?.admin_notes ?? "");
     setAssignedTo(request?.assigned_to ?? "");
   }, [request?.id, request?.admin_notes, request?.assigned_to]);
+
+  useEffect(() => {
+    if (!request?.id) {
+      setHasAccepted(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { count } = await supabase
+        .from("photo_request_assignments")
+        .select("id", { count: "exact", head: true })
+        .eq("request_id", request.id)
+        .is("released_at", null);
+      if (!cancelled) setHasAccepted((count ?? 0) > 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [request?.id]);
 
   if (!request) return null;
 
@@ -707,7 +728,25 @@ function RequestDetailDialog({
             <CoverageRoster requestId={request.id} />
           </DetailSection>
 
-          {/* Brief / shot list */}
+          {/* Event gear — only after a photographer has accepted */}
+          {hasAccepted && (
+            <DetailSection title="Gear for this event">
+              <p className="text-xs text-muted-foreground mb-3">
+                Reserve gear from the inventory for this shoot. Submitted requests appear
+                in the Gear Requests queue and are linked back to this event.
+              </p>
+              <EventGearPanel
+                photoRequestId={request.id}
+                defaultRequestor={`${request.first_name} ${request.last_name}`.trim()}
+                defaultLocation={request.event_location}
+                defaultDate={request.event_date}
+                defaultNotes={
+                  request.event_name ? `For: ${request.event_name}` : null
+                }
+              />
+            </DetailSection>
+          )}
+
           <DetailSection title="Brief / shot list">
             <p className="text-xs text-muted-foreground mb-3">
               Generate an AI call sheet for this shoot. Photographers see only the

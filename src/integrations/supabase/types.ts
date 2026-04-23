@@ -158,6 +158,7 @@ export type Database = {
           location: string
           needed_date: string
           notes: string | null
+          photo_request_id: string | null
           requestor_name: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -169,6 +170,7 @@ export type Database = {
           location: string
           needed_date: string
           notes?: string | null
+          photo_request_id?: string | null
           requestor_name: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -180,12 +182,21 @@ export type Database = {
           location?: string
           needed_date?: string
           notes?: string | null
+          photo_request_id?: string | null
           requestor_name?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["gear_request_status"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gear_requests_photo_request_id_fkey"
+            columns: ["photo_request_id"]
+            isOneToOne: false
+            referencedRelation: "photo_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       photo_request_assignments: {
         Row: {
