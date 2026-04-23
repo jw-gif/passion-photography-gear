@@ -71,6 +71,7 @@ export function EventGearPanel({
   defaultLocation,
   defaultDate,
   defaultNotes,
+  canDelete = true,
 }: EventGearPanelProps) {
   const [gear, setGear] = useState<GearRow[]>([]);
   const [linked, setLinked] = useState<LinkedRequest[]>([]);
