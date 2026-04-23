@@ -1,71 +1,137 @@
 
 
-# Phase 3 — AI Shot List Generator (final scope)
+# Approved UX Pass — Implementation Plan
 
-Two surfaces for shot lists:
+Working through your responses point by point. Smart date defaults dropped from #2. Everything else proceeds.
 
-1. **Per-request brief** inside the admin photo-request dialog (already scoped in the prior plan — unchanged below).
-2. **Standalone shot list generator page** at `/admin/shot-list-generator` — pick options, generate, copy to clipboard. No request needed.
+---
 
-## 1. Standalone generator page (`/admin/shot-list-generator`)
+## 1. Landing page — gear-only + photographer self-serve link
 
-Admin-only route. Single screen with three columns on desktop, stacked on mobile.
+**Public landing (`/`) becomes:**
+- Single primary card: "Request gear" → `/request-gear`
+- Secondary text link: "I'm a photographer — find my jobs" → opens a small dialog
+- Tiny "Admin" link in the top-right corner (de-emphasized)
+- Photography request form is **removed from the public landing entirely**
 
-**Left column — Inputs**
-- Location: select from `EVENT_LOCATIONS` (`src/lib/locations.ts`).
-- Rooms / spaces: multi-select chips populated from a new `LOCATION_ROOMS` map (e.g. 515 → AUD, Lobby, Oval, Outside; bloom → Kids Room, Hallway). Admin can also type a custom room.
-- Segments: multi-select chips of common segments pulled from the uploaded samples — Pre-Gathering, Worship, Hosting + Giving, Talk, Passion Kids + bloom, Middle School, Family Groups, One-Offs / Baptisms, Editing + Uploading. Admin can add a custom segment.
-- Roles to cover: multi-select Point / Door Holder / Training Door Holder / All.
-- Optional fields: Call time, Door code, Wrap time, Event name (free text).
-- Focus textarea: "Anything special this week? e.g. baptism Sunday, sponsor signage, new building tour."
+**Photographer self-serve job link (new):**
+- New route `/photographer-link` with an email input
+- New edge function `send-photographer-link`:
+  - Looks up `photographers` by email (case-insensitive, `active = true`)
+  - If found, sends a magic-link email containing `https://.../jobs?token={photographer.token}` via Lovable Emails
+  - Always returns the same generic success message ("If that email is registered, we just sent you a link") to avoid leaking which emails are valid
+- Admins still keep the existing "copy link" flow on the photographers page
 
-**Middle column — Generated brief**
-- Generate button → calls a new edge function `generate-shot-list-standalone` with the form payload.
-- Renders the same `Brief` shape used by per-request briefs (reusing the renderer in `src/lib/shot-list.ts`).
-- Each segment is editable inline (rename, edit shots, add/remove, change priority, reassign roles).
-- Regenerate button (keeps current inputs, replaces output).
+**Photography request form** stays accessible at `/request-photography` (unlinked from public nav, only reachable via direct URL or admin share). Admins can copy/share that URL with staff who need to submit requests. Budget rate-card cards remain on that form — just not exposed to general volunteers.
 
-**Right column — Output / Copy**
-- Live "Plain text preview" rendered in the Slack/PDF style (`// SECTION //`, role tags, bullet shots) so admin sees exactly what gets copied.
-- Buttons: **Copy as plain text**, **Copy as Markdown**, **Download .txt**.
-- Clipboard uses `navigator.clipboard.writeText` with toast confirmation.
+---
 
-The page does NOT save to the database — it's a one-shot generator. A small "Save as template" follow-up is out of scope.
+## 2. Photo request form polish (smart date defaults removed)
 
-## 2. Per-request brief (unchanged from prior approved plan)
+- Split into 3 numbered sections: ① You ② Event ③ Coverage & budget
+- Sticky bottom submit bar with live validation summary ("2 required fields missing")
+- Inline validation on blur
+- "Same as requester" checkbox for on-site contact
+- Concur fields collapsed behind a single "I'll be expensing this" toggle (hides 7 fields by default)
+- Confirmation card on success with "Submit another" / "Back home"
+- ~~Smart end-time auto-suggest~~ — skipped per your call
 
-- New table `photo_request_shot_lists (request_id unique, brief jsonb)`.
-- New tab "Brief" in the photo-request admin dialog using the same `ShotListEditor` component.
-- New RPC `get_shot_list(_token, _opening_id)` filters segments by photographer role and returns the brief on the photographer job board.
-- Edge function `generate-shot-list` (admin-only, JWT verified).
+---
 
-Both edge functions use `google/gemini-3-flash-preview` via Lovable AI Gateway with the same `propose_brief` tool schema and the same Passion-style system prompt + few-shot example built from the uploaded samples.
+## 3. Gear request form
 
-## Shared building blocks
+- Searchable picker with category tabs (Camera, Lens, Audio, Lighting, Accessory) — derived from `icon_kind`
+- Per-item availability indicator pulled from existing approved `gear_requests` overlapping the chosen date
+- Sticky cart summary (right column on desktop, bottom sheet on mobile)
+- "Recently requested" quick-add chips based on the requester's name (last 5 from `gear_requests`)
 
-- `src/lib/shot-list.ts` — TypeScript types for `Brief`, `Segment`, `Shot`, plus `renderBriefAsText(brief)` used by both the per-request preview and the standalone copy buttons.
-- `src/lib/segments.ts` — `COMMON_SEGMENTS`, `LOCATION_ROOMS`, default focus copy.
-- `src/components/shot-list-editor.tsx` — reused by both surfaces, accepts `{ brief, onChange, onRegenerate }` so it doesn't care whether the source is a saved request or a transient generator session.
+---
 
-## Files to create / edit
+## 4. Admin dashboard — extra polish
 
-Create:
-- `supabase/migrations/<ts>_shot_lists.sql` — table, RLS, `get_shot_list` RPC.
-- `supabase/functions/generate-shot-list/index.ts` (per-request).
-- `supabase/functions/generate-shot-list-standalone/index.ts` (standalone, accepts free-form payload).
-- `src/lib/shot-list.ts`, `src/lib/segments.ts`.
-- `src/components/shot-list-editor.tsx`.
-- `src/routes/admin_.shot-list-generator.tsx`.
+**Approved baseline:**
+- "Needs attention" tile strip at top: New requests · Unstaffed in next 7 days · Pending gear (each clickable as a filter)
+- Calendar moved above the lists, defaults to 2-week view on desktop
+- Calendar event dots colored by status: red=needs action, amber=pending, green=staffed
+- Global Cmd+K search across requests/photographers/gear/events
+- Relative dates ("Tomorrow", "In 3 days") next to absolute dates
 
-Edit:
-- `src/routes/admin_.requests-photography.tsx` — add Brief tab inside detail dialog.
-- `src/routes/jobs.tsx` — render filtered brief on claimed jobs.
-- `src/components/hub-header.tsx` — add "Shot list generator" link in admin nav.
+**Extra visual upgrades for the dashboard:**
+- **Hero greeting strip** — "Good morning, {firstName} · 3 things need you today" replacing the plain page title
+- **Calendar density toggle** — Day / Week / 2-Week / Month buttons with smooth transition
+- **Event hover preview** — hovering a calendar dot reveals a popover with event name, location, fill status, claimed photographers (no click needed)
+- **Color-coded location stripes** on calendar events — thin left border per location (515, Bloom, Cumberland, etc.) so location patterns are scannable at a glance
+- **Activity feed sidebar** (right rail on xl screens) — last 10 events: "Jane claimed Sunday AM Worship · 12m ago", "New request from Cole · 1h ago" with relative timestamps, sourced from `gear_requests`/`photo_requests`/`photo_request_assignments` ordered by `created_at`/`reviewed_at`
+- **Empty calendar weekends shaded** lightly so weekday/weekend rhythm reads instantly
+- **Staffing health bar** at the top of "Upcoming photo" — horizontal segmented bar (green=fully staffed, amber=partial, red=empty, grey=denied) for the next 14 days
 
-## Out of scope
+---
 
-- Saving standalone generator outputs as reusable templates.
-- Photographer "captured" check-offs.
-- AI mood boards / reference imagery.
-- Auto-emailing briefs to claimed photographers.
+## 5. Header / nav + unified Team page
+
+- Mobile (<md) nav collapses into hamburger Sheet with grouped sections
+- Active state on dropdown triggers when any child route is active
+- Breadcrumbs row on inner admin pages (Dashboard › Photography › Requests)
+- Sign-out moves into a user avatar menu (initials) in the top-right; surfaces the signed-in display name
+
+**Unified `/admin/team` page** (combines current `/admin/photographers` + `/admin/admins`):
+- Single page titled "Team" with two tabs: **Photographers** | **Admins**
+- Shared search/filter bar at the top
+- Each row shows: avatar (initials), name, email, role badge (Admin / Point / Door Holder / Trainee), status (active/inactive), last activity
+- Photographers tab keeps current actions (toggle active, delete, copy link, bulk import)
+- Admins tab keeps invite/role management
+- Hierarchy is visual: Admins listed first when "All" view is selected, then photographers grouped by tier
+- Old `/admin/photographers` and `/admin/admins` routes redirect to `/admin/team` with the appropriate tab pre-selected
+
+---
+
+## 6. Photo request detail dialog
+
+- Left action rail: Approve to board / Approve to shot list / Needs revisions / Deny (always one click)
+- Roster fill indicator pinned to the top of the dialog
+- Keyboard shortcuts: `J/K` next/prev request, `Esc` close, `A` approve to board
+- History timeline ("Submitted 3d ago → Reviewed 2d ago by Cole → Jane claimed 1h ago") sourced from `created_at`, `reviewed_at`, and `photo_request_assignments.claimed_at`
+
+---
+
+## 7. Photographer "Serving Opportunities"
+
+- Top filter bar: Location, Date range, Role (Point / Door Holder), "Only ones I qualify for" toggle
+- "X spots remaining" prominently on each card
+- Empty state for "My upcoming shoots" with pointer to the open list
+- `.ics` calendar export button per claimed shoot (generated client-side)
+- Gear request section auto-expanded if shoot is within 7 days and no gear has been requested yet
+
+---
+
+## 8. Cross-cutting polish
+
+- Standardize toast copy/duration; add Undo on destructive actions (release shoot, delete request) using sonner's action button
+- Illustrated empty states across all lists
+- Loading skeletons replace "Loading…" text
+- Audit dialogs/dropdowns/calendar for focus traps and tab order
+- Photo request detail dialog → full-screen Sheet on mobile
+- AlertDialog confirms for delete request / release claimed shoot
+
+---
+
+## Technical notes (database & functions)
+
+- **No schema changes** required — everything reuses existing tables
+- New edge function: `send-photographer-link` (uses Lovable Emails infrastructure; will need email domain setup if not already configured — I'll check first and prompt if needed)
+- New route file: `src/routes/photographer-link.tsx`
+- New route file: `src/routes/admin_.team.tsx` (replaces separate photographers/admins pages; old routes become redirects)
+- New shared components: `NeedsAttentionStrip`, `ActivityFeed`, `StaffingHealthBar`, `CommandPalette` (Cmd+K), `BreadcrumbsBar`, `UserMenu`, `RequestActionRail`, `HistoryTimeline`, `JobFiltersBar`, `IcsExportButton`, `EmptyState`, `ListSkeleton`
+
+---
+
+## Suggested rollout order
+
+Given the scope, I'd ship in 3 batches so each is testable:
+
+1. **Batch A** (landing + nav + team merge): #1, #5
+2. **Batch B** (admin dashboard + detail dialog): #4, #6, plus Cmd+K from earlier scope
+3. **Batch C** (forms + photographer page + polish): #2, #3, #7, #8
+
+Reply with **"go batch A"** (or all batches, or any subset) to kick off implementation.
 
