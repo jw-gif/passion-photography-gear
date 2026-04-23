@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import pccLogo from "@/assets/pcc-logo.png";
 
 interface Search {
   gear?: number;
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Passion Photography Hub" },
-      { name: "description", content: "Request photography, request gear, and track everything the team is shooting." },
+      { name: "description", content: "Request photography gear for your event. Quick, simple, and tracked." },
     ],
   }),
   component: IndexPage,
@@ -42,48 +43,101 @@ function IndexPage() {
 
 function Landing() {
   return (
-    <main className="min-h-screen flex flex-col">
-      <header className="px-6 py-5 flex items-center justify-between border-b border-border">
+    <main className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
+      <header className="px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-8 rounded-full bg-primary flex items-center justify-center">
-            <Camera className="size-4" />
+          <div className="size-9 rounded-full bg-primary flex items-center justify-center overflow-hidden">
+            <img
+              src={pccLogo}
+              alt="Passion"
+              className="size-5 object-contain"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
           </div>
           <span className="font-semibold tracking-tight">Passion Photography Hub</span>
         </div>
-        <Link to="/admin">
-          <Button variant="outline" size="sm">Admin</Button>
+        <Link
+          to="/admin"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Admin
         </Link>
       </header>
-      <div className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="max-w-2xl text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            Passion Photography Hub
-          </h1>
-          <p className="mt-4 text-muted-foreground text-lg">
-            Request photography, request gear, and track everything the team is shooting.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/request-photography">
-              <Button size="lg">
-                <ImageIcon className="size-4" />
-                Request photography
-                <ArrowRight className="size-4" />
-              </Button>
+
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-3xl">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+              Reserve gear for your shoot
+            </h1>
+            <p className="mt-4 text-muted-foreground text-lg max-w-xl mx-auto">
+              Browse what's available, pick your dates, and we'll have it ready
+              for pickup.
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <Link to="/request-gear" className="block w-full max-w-md group">
+              <Card className="p-8 hover:shadow-lg transition-all hover:-translate-y-0.5 hover:border-primary/40 cursor-pointer">
+                <div className="flex items-start gap-4">
+                  <div className="size-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                    <Package className="size-7 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h2 className="text-xl font-semibold tracking-tight">
+                        Request gear
+                      </h2>
+                      <ArrowRight className="size-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                    <p className="mt-1.5 text-sm text-muted-foreground">
+                      Cameras, lenses, audio, lighting, and accessories.
+                      Approved within a day.
+                    </p>
+                  </div>
+                </div>
+              </Card>
             </Link>
-            <Link to="/request-gear">
-              <Button size="lg" variant="secondary">
-                <Package className="size-4" />
-                Request gear
-              </Button>
-            </Link>
-            <Link to="/admin">
-              <Button size="lg" variant="outline">
-                Admin hub
-              </Button>
-            </Link>
+          </div>
+
+          <div className="mt-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              Photographer on the team?{" "}
+              <Link
+                to="/photographer-link"
+                className="text-primary font-medium hover:underline"
+              >
+                Find your jobs page →
+              </Link>
+            </p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-center">
+            <div className="space-y-1">
+              <div className="size-8 rounded-full bg-muted mx-auto flex items-center justify-center text-sm font-semibold">
+                1
+              </div>
+              <p className="text-xs text-muted-foreground">Pick your gear and dates</p>
+            </div>
+            <div className="space-y-1">
+              <div className="size-8 rounded-full bg-muted mx-auto flex items-center justify-center text-sm font-semibold">
+                2
+              </div>
+              <p className="text-xs text-muted-foreground">We approve quickly</p>
+            </div>
+            <div className="space-y-1">
+              <div className="size-8 rounded-full bg-muted mx-auto flex items-center justify-center text-sm font-semibold">
+                3
+              </div>
+              <p className="text-xs text-muted-foreground">Pick up at your location</p>
+            </div>
           </div>
         </div>
       </div>
+
+      <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
+        Passion Photography · Internal tool
+      </footer>
     </main>
   );
 }
