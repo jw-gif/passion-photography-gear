@@ -470,6 +470,33 @@ function MyJobCard({ job, onRelease }: { job: MyJobRow; onRelease: () => void })
         </p>
       )}
 
+      <div className="border-t pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            const next = !briefOpen;
+            setBriefOpen(next);
+            if (next) loadBrief();
+          }}
+          className="text-sm font-medium hover:underline"
+        >
+          {briefOpen ? "▾ Hide brief" : "▸ View brief / shot list"}
+        </button>
+        {briefOpen && (
+          <div className="mt-2">
+            {briefLoading ? (
+              <p className="text-xs text-muted-foreground">Loading…</p>
+            ) : !brief ? (
+              <p className="text-xs text-muted-foreground italic">
+                No brief has been published for this shoot yet.
+              </p>
+            ) : (
+              <BriefReadOnly brief={brief} />
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="flex items-center justify-between gap-3 pt-1">
         <span className="text-xs text-muted-foreground">
           Claimed {format(claimedAt, "MMM d, h:mm a")}
