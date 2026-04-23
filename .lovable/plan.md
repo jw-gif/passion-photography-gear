@@ -1,131 +1,79 @@
 
 
-# Photography Hub Restructure
+# Phase 2 — Photographer Job Board (revised)
 
-Transform the app from "gear-tracking-first" to a unified Photography Hub with a centralized admin home, calendar view, and consistent URL structure across photography and gear workflows.
+Updates to the previously approved plan based on your feedback. Only the changed parts are listed; everything else from the prior plan stands.
 
-## URL & naming changes
+## What changed
 
-| Old | New |
-|---|---|
-| `/request` | `/request-gear` |
-| `/request-photography` | `/request-photography` (unchanged) |
-| `/admin` (gear board) | `/admin/gear` |
-| `/admin/requests` | `/admin/requests-gear` |
-| `/admin/photo-requests` | `/admin/requests-photography` |
-| `/admin/manage` | `/admin/gear-manage` |
-| `/admin/history` | `/admin/gear-history` |
-| `/admin/admins` | `/admin/team` |
-| `/admin` (NEW) | Hub home — calendar + upcoming requests |
+1. A photo request now has a **mix of role openings** (e.g. 1 Point + 2 Door Holders + 1 Training Door Holder), not a single `min_tier` gate.
+2. Each role opening has its own budget/rate. **Only the Point role is paid**; Door Holder and Training Door Holder are unpaid.
+3. **Only photographers with `point` tier can see the budget** for the Point opening. Door Holders and Training Door Holders never see budget info.
+4. When a higher-tier opening is already filled, lower-tier photographers (or the same Point photographer) can still claim a remaining lower-tier opening — and the UI must make it clear the spot they're signing up for is **unpaid Door Holder coverage**, not a paid Point spot.
 
-The old `/request` route stays as a thin redirect to `/request-gear` so existing QR codes and links still resolve. (Public gear QR scans use `/?gear=ID`, which is unchanged.)
+## Data model changes
 
-App-wide copy update: "Passion Gear" / "Passion Gear Tracking" → **"Passion Photography Hub"** in headers, page titles, meta descriptions, and the landing page.
+Replace the `photo_requests.min_tier` column from the prior plan with a new table:
 
-## New `/admin` Hub home
+`photo_request_openings`:
+- `id uuid pk`
+- `request_id uuid not null` → photo_requests
+- `role photographer_tier not null` (`point` | `door_holder` | `training_door_holder`)
+- `budget_cents integer` — only allowed when `role = 'point'`; enforced by check constraint and validation trigger
+- `position smallint not null default 1` — disambiguates multiple openings of the same role on one shoot (e.g. Door Holder #1, Door Holder #2)
+- `created_at`
+- Unique on `(request_id, role, position)`
 
-Replaces today's gear board as the admin landing page.
+`photo_request_assignments` (from prior plan) gains:
+- `opening_id uuid not null` → photo_request_openings
+- Partial unique index becomes `(opening_id) where released_at is null` so each opening can only have one active claim.
 
-**Top section — Month calendar**
-- Month grid (week starts Sunday), prev/next/today controls.
-- Each day cell shows compact "pills" for items happening that day:
-  - Gear requests → use `needed_date`
-  - Photography requests → use `event_date` (and span across `event_end_date` when `spans_multiple_days`)
-- Pill color = status, with a shared legend:
-  - Green = approved / scheduled
-  - Amber = pending / in review
-  - Blue = new
-  - Violet = scheduled (photo)
-  - Red = denied / declined
-  - Gray = completed / archived
-- Pill icon distinguishes type (camera vs. gear box). Click a pill → opens existing detail view in the relevant admin route.
+Drop `photo_requests.min_tier` (it isn't created — the prior plan was approved but not yet implemented; this supersedes it).
 
-**Below calendar — Upcoming list (two columns on desktop, stacked on mobile)**
-- **Photography Requests** — next 30 days, sorted by event date, showing status badge, requester, event name, date, location.
-- **Gear Requests** — next 30 days, sorted by needed date, showing status badge, requestor, item count, location, needed date.
-- Each card links to the corresponding admin detail route.
-- Empty states + "View all" links to the full list pages.
+## RPCs (security-definer functions)
 
-**Header** — unified hub nav with grouped sections:
-- Hub (home)
-- Photography → Requests
-- Gear → Board, Requests, Manage, History
-- Team
-- Sign out
+- `list_open_jobs(token)` — returns one row per **open opening** the photographer is eligible for. Eligibility rule: photographer's tier ≥ opening's role (point ≥ door_holder ≥ training_door_holder). Each row carries: request_id, opening_id, role, event details, location, coverage types, on_site_contact, AND `budget_cents` **only when both** the opening's role is `point` AND the calling photographer's tier is `point`. Otherwise budget is returned as `null`.
+- `get_job(token, opening_id)` — same field-level redaction rule for budget.
+- `claim_job(token, opening_id)` — atomic insert into `photo_request_assignments` with the partial unique index preventing double-claims. Validates the photographer's tier covers the opening's role.
+- `release_job(token, opening_id)` — sets `released_at`, only if within 48h of `claimed_at` and the caller owns the active claim.
 
-Use a compact dropdown/segmented nav so it fits on one row at desktop and collapses to a sheet on mobile.
+## Admin UI changes (`/admin/requests-photography` detail)
 
-## Landing page (`/`)
+The "Assignment" panel becomes a **Coverage roster builder**:
 
-Rewrite as a hub entry point:
-- Headline: "Passion Photography Hub"
-- Subhead: "Request photography, request gear, and track everything the team is shooting."
-- Three primary CTAs: **Request photography**, **Request gear**, **Admin hub**.
-- Public gear-QR view (`/?gear=ID`) keeps current behavior, just rebranded header.
+- Add Opening button → choose role (Point / Door Holder / Training Door Holder).
+- For Point openings, show a **Budget** input (USD, stored as cents). Door Holder and Training Door Holder rows have no budget field at all (the form simply doesn't render it).
+- Each opening row shows: role badge, budget (Point only), assigned photographer name + claim time, and a Release button.
+- Removing an opening that's already claimed prompts a confirm.
+- Visual roster summary: "1 Point ($300) — assigned · 2 Door Holders — 1 open, 1 assigned · 1 Training Door Holder — open".
 
-## Technical implementation
+## Photographer board UI changes
 
-**New files**
-- `src/routes/admin.index.tsx` — replaces current `admin.tsx` content; renders the Hub home (calendar + upcoming lists). The current `/admin` root becomes a layout shell with `<Outlet />`.
+**Open shoots tab**
 
-  Actually, since we use flat file-based routing (`admin.tsx` + `admin_.*.tsx`), simpler approach: **rewrite `src/routes/admin.tsx`** to be the Hub home. The existing gear board moves to a new `src/routes/admin_.gear.tsx`.
+- One card per **opening** (so a single shoot with 1 Point + 2 Door Holder slots open shows up as 3 cards).
+- Card title: event name. Below it, a prominent **role badge**:
+  - Point card (visible to Point photographers only): shows budget chip "$300 — Paid".
+  - Door Holder card (visible to Point + Door Holder + Training Door Holder photographers): shows "Door Holder · Unpaid coverage" chip.
+  - Training Door Holder card: shows "Training · Unpaid coverage" chip.
+- Above the cards for a given shoot, a small contextual banner when relevant: "The Point spot for this shoot is already taken — the openings below are unpaid Door Holder coverage." This banner only renders for Point-tier photographers viewing a shoot where the Point opening is filled but Door Holder openings remain. It prevents a Point photographer from accidentally thinking they're claiming a paid spot.
+- Claim button label adapts: "Claim paid Point spot" for Point openings; "Sign up as Door Holder (unpaid)" for Door Holder; "Sign up as Training Door Holder (unpaid)" for Training.
 
-- `src/routes/admin_.gear.tsx` — extracted gear board (Dashboard + GearCard + QrModal from current admin.tsx).
-- `src/routes/admin_.requests-gear.tsx` — copy of `admin_.requests.tsx` at new path.
-- `src/routes/admin_.requests-photography.tsx` — copy of `admin_.photo-requests.tsx` at new path.
-- `src/routes/admin_.gear-manage.tsx`, `admin_.gear-history.tsx`, `admin_.team.tsx` — renames of manage/history/admins.
-- `src/routes/request-gear.tsx` — copy of `request.tsx` at new path.
-- `src/components/hub-header.tsx` — shared admin header (logo, nav, sign out) used across all admin routes.
-- `src/components/hub-calendar.tsx` — month calendar grid component.
+**My shoots tab**
 
-**Deleted/redirected files**
-- `src/routes/admin_.requests.tsx` → replace body with a `<Navigate to="/admin/requests-gear" />` to avoid breaking bookmarks.
-- `src/routes/admin_.photo-requests.tsx` → redirect to `/admin/requests-photography`.
-- `src/routes/admin_.manage.tsx`, `admin_.history.tsx`, `admin_.admins.tsx` → redirects to new paths.
-- `src/routes/request.tsx` → redirect to `/request-gear`.
+- Each row shows the role they claimed and, for Point claims only, the budget. A claimed Door Holder spot never shows any budget figure even if the same photographer is a Point-tier user.
 
-**Data loading for hub**
-- Single combined fetch on hub mount:
-  - `gear_requests` where `needed_date >= today AND needed_date <= today + 60 days`
-  - `photo_requests` where `event_date >= today AND event_date <= today + 60 days`
-- Realtime subscriptions on both tables to refresh automatically.
-- Memoize a unified `events[]` array keyed by date for the calendar.
+**Job detail page (`/jobs/$openingId?t=...`)**
 
-**Status color mapping**
-- Reuse `statusBadgeClasses` from `src/lib/orgs.ts` for photo statuses.
-- Add equivalent helper for gear request statuses (`pending`, `approved`, `denied`).
-- Extract a shared `statusDotColor(status, kind)` util into `src/lib/orgs.ts` so calendar pills and list badges stay consistent.
+- Same role/budget rules. Confirmation modal before claiming spells out the role and pay status one more time.
 
-**Header copy & meta**
-- Update `<title>` and `<meta description>` in `__root.tsx` and every route's `head()` to "Passion Photography Hub" branding.
-- Update landing page hero copy.
+## Backend enforcement summary
 
-## ASCII layout — admin hub home
+Budget visibility is enforced **server-side** in the RPC (not just hidden in UI):
+- `list_open_jobs` and `get_job` strip `budget_cents` to `null` whenever the opening role isn't `point` OR the caller isn't a `point`-tier photographer.
+- The browser only ever receives a budget value when both conditions are true. A door holder cannot inspect network traffic and see Point pay.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ [logo] Passion Photography Hub    Photo · Gear · Team · Out │
-├─────────────────────────────────────────────────────────────┤
-│  ◀  April 2026  ▶                              [Today]      │
-│  Sun  Mon  Tue  Wed  Thu  Fri  Sat                          │
-│  ┌──┬──┬──┬──┬──┬──┬──┐                                     │
-│  │  │  │ 1│ 2│ 3│ 4│ 5│                                     │
-│  │  │  │📷│  │🎒│📷│  │  ← color-coded pills                │
-│  └──┴──┴──┴──┴──┴──┴──┘                                     │
-│  Legend: ● Approved  ● Pending  ● New  ● Declined           │
-├─────────────────────────────────────────────────────────────┤
-│  Upcoming Photography          │  Upcoming Gear              │
-│  ─────────────────────         │  ──────────────────         │
-│  [Scheduled] Easter Service    │  [Approved] Sunday kit      │
-│  Apr 5 · 515 · Jacob W.        │  Apr 4 · 515 · Sarah        │
-│  ...                           │  ...                        │
-└─────────────────────────────────────────────────────────────┘
-```
+## Out of scope (unchanged)
 
-## Out of scope (future phases)
-
-- Photographer job board (Phase 2)
-- AI shot list generator (Phase 3)
-- Drag-to-reschedule on calendar
-- Week/day calendar views
+- SMS sending, AI shot list generator, drag-to-reschedule, conflict detection, automatic notifications.
 
