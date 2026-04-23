@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isWithinInterval, addDays } from "date-fns";
 import {
   Calendar as CalendarIcon,
   Camera,
@@ -12,14 +12,26 @@ import {
   Package,
   Phone,
   User as UserIcon,
+  Filter,
+  X,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { IcsExportButton } from "@/components/ics-export-button";
+import { ListSkeleton } from "@/components/list-skeleton";
 import {
   type PhotographerTier,
   tierLabel,
@@ -102,6 +114,9 @@ interface MyJobRow {
   request_status: string;
 }
 
+type DateFilter = "any" | "next7" | "next30";
+type RoleFilter = "any" | "point" | "door_holder" | "training_door_holder";
+
 function JobBoardPage() {
   const { t } = useSearch({ from: "/jobs" });
   const token = t ?? "";
@@ -112,6 +127,12 @@ function JobBoardPage() {
   const [myJobs, setMyJobs] = useState<MyJobRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [releaseTarget, setReleaseTarget] = useState<{ openingId: string; eventName: string } | null>(null);
+
+  // Filters
+  const [filterLocation, setFilterLocation] = useState<string>("any");
+  const [filterDate, setFilterDate] = useState<DateFilter>("any");
+  const [filterRole, setFilterRole] = useState<RoleFilter>("any");
 
   const loadMe = useCallback(async () => {
     if (!token) {
@@ -174,12 +195,6 @@ function JobBoardPage() {
   }
 
   async function release(opening_id: string) {
-    if (
-      !confirm(
-        "Release this shoot? It will go back on the board for someone else to pick up."
-      )
-    )
-      return;
     const { data, error } = await supabase.rpc("release_job", {
       _token: token,
       _opening_id: opening_id,
@@ -190,17 +205,43 @@ function JobBoardPage() {
     }
     const result = data as { ok: boolean; error?: string } | null;
     if (result?.ok) {
-      toast.success("Released");
+      // Offer one-tap re-claim within the toast as an "undo".
+      toast.success("Released — back on the board", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void claim(opening_id);
+          },
+        },
+      });
       await loadJobs();
     } else {
       toast.error(errorMessage(result?.error ?? "unknown"));
     }
   }
 
-  // Group open jobs by request so we can render the "Point taken" banner once.
+  // Filter logic on open jobs
+  const visibleOpenJobs = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const horizon =
+      filterDate === "next7" ? addDays(today, 7) : filterDate === "next30" ? addDays(today, 30) : null;
+
+    return openJobs.filter((j) => {
+      if (filterLocation !== "any" && (j.event_location ?? "") !== filterLocation) return false;
+      if (filterRole !== "any" && j.role !== filterRole) return false;
+      if (horizon && j.event_date) {
+        const d = parseISO(j.event_date);
+        if (!isWithinInterval(d, { start: today, end: horizon })) return false;
+      }
+      return true;
+    });
+  }, [openJobs, filterLocation, filterDate, filterRole]);
+
+  // Group filtered open jobs by request so we can render the "Point taken" banner once.
   const groupedOpen = useMemo(() => {
     const groups = new Map<string, OpenJobRow[]>();
-    for (const j of openJobs) {
+    for (const j of visibleOpenJobs) {
       const arr = groups.get(j.request_id) ?? [];
       arr.push(j);
       groups.set(j.request_id, arr);
@@ -263,13 +304,66 @@ function JobBoardPage() {
           </TabsList>
 
           <TabsContent value="open" className="mt-4 space-y-4">
+            {/* Filter bar */}
+            <Card className="p-3 flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mr-1">
+                <Filter className="size-3.5" /> Filter
+              </div>
+              <Select value={filterDate} onValueChange={(v) => setFilterDate(v as DateFilter)}>
+                <SelectTrigger className="h-8 w-auto text-xs gap-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any date</SelectItem>
+                  <SelectItem value="next7">Next 7 days</SelectItem>
+                  <SelectItem value="next30">Next 30 days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterLocation} onValueChange={setFilterLocation}>
+                <SelectTrigger className="h-8 w-auto text-xs gap-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All locations</SelectItem>
+                  {Array.from(new Set(openJobs.map((j) => j.event_location).filter(Boolean) as string[])).map((loc) => (
+                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
+                <SelectTrigger className="h-8 w-auto text-xs gap-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any role</SelectItem>
+                  <SelectItem value="point">Point</SelectItem>
+                  <SelectItem value="door_holder">Door Holder</SelectItem>
+                  <SelectItem value="training_door_holder">Training</SelectItem>
+                </SelectContent>
+              </Select>
+              {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setFilterDate("any");
+                    setFilterLocation("any");
+                    setFilterRole("any");
+                  }}
+                >
+                  <X className="size-3" /> Clear
+                </Button>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground">
+                Showing {visibleOpenJobs.length} of {openJobs.length}
+              </span>
+            </Card>
+
             {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <ListSkeleton rows={3} />
             ) : groupedOpen.length === 0 ? (
               <Card className="p-10 text-center">
                 <Camera className="size-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Nothing open right now. We'll keep this list fresh — check back soon.
+                  {openJobs.length === 0
+                    ? "Nothing open right now. We'll keep this list fresh — check back soon."
+                    : "No shoots match your filters. Try clearing them."}
                 </p>
               </Card>
             ) : (
@@ -287,12 +381,15 @@ function JobBoardPage() {
 
           <TabsContent value="mine" className="mt-4 space-y-3">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <ListSkeleton rows={2} />
             ) : myJobs.length === 0 ? (
-              <Card className="p-10 text-center">
-                <CheckCircle2 className="size-8 mx-auto text-muted-foreground mb-3" />
+              <Card className="p-10 text-center space-y-3">
+                <CheckCircle2 className="size-8 mx-auto text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
                   You haven't claimed any shoots yet.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Browse the <strong>Open shoots</strong> tab to pick one up.
                 </p>
               </Card>
             ) : (
@@ -301,13 +398,35 @@ function JobBoardPage() {
                   key={j.assignment_id}
                   job={j}
                   photographerName={me.name}
-                  onRelease={() => release(j.opening_id)}
+                  onRelease={() =>
+                    setReleaseTarget({
+                      openingId: j.opening_id,
+                      eventName: j.event_name || "this shoot",
+                    })
+                  }
                 />
               ))
             )}
           </TabsContent>
         </Tabs>
       </div>
+
+      <ConfirmDialog
+        open={releaseTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setReleaseTarget(null);
+        }}
+        title={`Release ${releaseTarget?.eventName ?? "this shoot"}?`}
+        description="It will go back on the board for someone else to pick up. You'll have a quick Undo option."
+        confirmLabel="Release"
+        cancelLabel="Keep it"
+        destructive
+        onConfirm={async () => {
+          const target = releaseTarget;
+          setReleaseTarget(null);
+          if (target) await release(target.openingId);
+        }}
+      />
     </main>
   );
 }
@@ -426,10 +545,22 @@ function MyJobCard({
   photographerName: string;
   onRelease: () => void;
 }) {
+  const paid = isPaidRole(job.role);
+  const claimedAt = parseISO(job.claimed_at);
+  const within48h = Date.now() - claimedAt.getTime() < 48 * 60 * 60 * 1000;
+  // Auto-expand the gear request panel when the shoot is within 7 days,
+  // so photographers don't forget to request gear.
+  const within7Days = useMemo(() => {
+    if (!job.event_date) return false;
+    const d = parseISO(job.event_date);
+    const diff = (d.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return diff >= 0 && diff <= 7;
+  }, [job.event_date]);
+
   const [brief, setBrief] = useState<Brief | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const [briefLoading, setBriefLoading] = useState(false);
-  const [gearOpen, setGearOpen] = useState(false);
+  const [gearOpen, setGearOpen] = useState(within7Days);
   const { t } = useSearch({ from: "/jobs" });
 
   async function loadBrief() {
@@ -449,9 +580,7 @@ function MyJobCard({
       setBrief(normalizeBrief(data));
     }
   }
-  const paid = isPaidRole(job.role);
-  const claimedAt = parseISO(job.claimed_at);
-  const within48h = Date.now() - claimedAt.getTime() < 48 * 60 * 60 * 1000;
+
   return (
     <Card className="p-4 space-y-2">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -473,6 +602,17 @@ function MyJobCard({
               {formatBudget(job.budget_cents)}
             </span>
           )}
+          <IcsExportButton
+            uid={`assignment-${job.assignment_id}@passion-photography`}
+            title={job.event_name || "Photography shoot"}
+            description={job.notes ?? null}
+            location={job.event_location ?? null}
+            startDate={job.event_date ?? ""}
+            startTime={job.start_time}
+            endDate={job.event_end_date ?? job.event_date ?? null}
+            endTime={job.end_time}
+            disabled={!job.event_date}
+          />
         </div>
       </div>
 
