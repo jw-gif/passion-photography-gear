@@ -467,6 +467,135 @@ export type Database = {
         }
         Relationships: []
       }
+      shot_list_location_blocks: {
+        Row: {
+          address: string
+          alias: string | null
+          arrival: string
+          created_at: string
+          editing_space: string
+          id: string
+          key: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          alias?: string | null
+          arrival?: string
+          created_at?: string
+          editing_space?: string
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          alias?: string | null
+          arrival?: string
+          created_at?: string
+          editing_space?: string
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shot_list_segment_blocks: {
+        Row: {
+          created_at: string
+          default_location: string | null
+          default_roles: string[]
+          focus: string | null
+          id: string
+          key: string
+          shots: Json
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_location?: string | null
+          default_roles?: string[]
+          focus?: string | null
+          id?: string
+          key: string
+          shots?: Json
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_location?: string | null
+          default_roles?: string[]
+          focus?: string | null
+          id?: string
+          key?: string
+          shots?: Json
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shot_list_templates: {
+        Row: {
+          call_time: string | null
+          created_at: string
+          description: string | null
+          details_notes: string | null
+          editing_notes: string | null
+          gear_notes: string | null
+          id: string
+          location_key: string | null
+          name: string
+          roles: string[]
+          segment_keys: string[]
+          sort_order: number
+          updated_at: string
+          wrap_time: string | null
+        }
+        Insert: {
+          call_time?: string | null
+          created_at?: string
+          description?: string | null
+          details_notes?: string | null
+          editing_notes?: string | null
+          gear_notes?: string | null
+          id?: string
+          location_key?: string | null
+          name: string
+          roles?: string[]
+          segment_keys?: string[]
+          sort_order?: number
+          updated_at?: string
+          wrap_time?: string | null
+        }
+        Update: {
+          call_time?: string | null
+          created_at?: string
+          description?: string | null
+          details_notes?: string | null
+          editing_notes?: string | null
+          gear_notes?: string | null
+          id?: string
+          location_key?: string | null
+          name?: string
+          roles?: string[]
+          segment_keys?: string[]
+          sort_order?: number
+          updated_at?: string
+          wrap_time?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
