@@ -55,11 +55,11 @@ interface GearRequest {
 interface GearRequestItem {
   id: string;
   request_id: string;
-  gear_id: number;
+  gear_id: string;
 }
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   icon_kind: string | null;
 }

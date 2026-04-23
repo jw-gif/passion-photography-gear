@@ -100,7 +100,7 @@ export function CommandPalette() {
           email: r.email as string,
         })),
         gearItems: (gearItemsRes.data ?? []).map((r) => ({
-          id: r.id as number,
+          id: r.id as string,
           name: r.name as string,
         })),
       });

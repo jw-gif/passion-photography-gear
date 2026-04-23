@@ -65,7 +65,7 @@ interface GearReqRow {
 
 interface GearReqItemRow {
   request_id: string;
-  gear_id: number;
+  gear_id: string;
 }
 
 interface OpeningRow {

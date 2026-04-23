@@ -61,9 +61,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [gear, setGear] = useState<GearRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [qrGearId, setQrGearId] = useState<number | null>(null);
-  const [dragGearId, setDragGearId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [qrGearId, setQrGearId] = useState<string | null>(null);
+  const [dragGearId, setDragGearId] = useState<string | null>(null);
   const [dragOverLoc, setDragOverLoc] = useState<string | null>(null);
 
   async function loadGear() {
