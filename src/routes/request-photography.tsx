@@ -303,7 +303,6 @@ function RequestPhotographyPage() {
     setCoverageTypes([]);
     setCoverageOther("");
     setBudget("");
-    setExpensing(false);
     setConcurApprover("");
     setConcurCompany("");
     setConcurClass("");
