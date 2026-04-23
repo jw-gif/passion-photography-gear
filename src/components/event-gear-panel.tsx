@@ -258,15 +258,17 @@ export function EventGearPanel({
                       </p>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeRequest(r.id)}
-                    className="text-destructive hover:text-destructive shrink-0"
-                    title="Delete request"
-                  >
-                    <X className="size-4" />
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeRequest(r.id)}
+                      className="text-destructive hover:text-destructive shrink-0"
+                      title="Delete request"
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  )}
                 </div>
                 {reqItems.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
