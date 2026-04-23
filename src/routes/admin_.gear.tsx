@@ -26,7 +26,7 @@ export const Route = createFileRoute("/admin_/gear")({
 type GearStatus = "active" | "out_of_service" | "out_for_repair";
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   current_location: string;
   sub_location: string | null;
@@ -38,7 +38,7 @@ interface GearRow {
 
 interface HistoryRow {
   id: string;
-  gear_id: number;
+  gear_id: string;
   location: string;
   sub_location: string | null;
   note: string | null;
