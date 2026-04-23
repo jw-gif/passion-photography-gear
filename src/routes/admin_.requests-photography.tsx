@@ -117,6 +117,9 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   const reviewerName = displayName ?? "Admin";
 
   const [requests, setRequests] = useState<PhotoRequest[]>([]);
+  const [rosterByRequest, setRosterByRequest] = useState<
+    Record<string, { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"open" | "all">("open");
@@ -124,12 +127,40 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
 
   async function loadAll() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("photo_requests")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error(`Couldn't load requests: ${error.message}`);
-    setRequests((data ?? []) as PhotoRequest[]);
+    const [reqRes, opRes, asgRes] = await Promise.all([
+      supabase.from("photo_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("photo_request_openings").select("id, request_id, role"),
+      supabase.from("photo_request_assignments").select("opening_id").is("released_at", null),
+    ]);
+    if (reqRes.error) toast.error(`Couldn't load requests: ${reqRes.error.message}`);
+    setRequests((reqRes.data ?? []) as PhotoRequest[]);
+
+    const claimedSet = new Set(
+      ((asgRes.data ?? []) as { opening_id: string }[]).map((a) => a.opening_id),
+    );
+    const map: Record<
+      string,
+      { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }
+    > = {};
+    for (const op of (opRes.data ?? []) as { id: string; request_id: string; role: string }[]) {
+      const entry = map[op.request_id] ?? {
+        filledPoint: 0,
+        filledDoor: 0,
+        openPoint: 0,
+        openDoor: 0,
+      };
+      const isPoint = op.role === "point";
+      const claimed = claimedSet.has(op.id);
+      if (isPoint) {
+        if (claimed) entry.filledPoint += 1;
+        else entry.openPoint += 1;
+      } else {
+        if (claimed) entry.filledDoor += 1;
+        else entry.openDoor += 1;
+      }
+      map[op.request_id] = entry;
+    }
+    setRosterByRequest(map);
     setLoading(false);
   }
 
@@ -140,6 +171,16 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "photo_requests" },
+        () => loadAll()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "photo_request_openings" },
+        () => loadAll()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "photo_request_assignments" },
         () => loadAll()
       )
       .subscribe();
