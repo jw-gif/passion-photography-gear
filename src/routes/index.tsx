@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Lock } from "lucide-react";
 import { LOCATIONS, MOVERS, locationClasses, locationLabel, formatDate, getSubLocations, type Location } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,8 +38,22 @@ export const Route = createFileRoute("/")({
 
 function IndexPage() {
   const { gear } = Route.useSearch();
+  const { isAdmin } = useAuth();
   if (gear) return <PublicGearView gearId={gear} />;
-  return <GearRequestForm />;
+  return (
+    <>
+      <GearRequestForm />
+      <footer className="pb-10 pt-2 flex justify-center">
+        <Link
+          to={isAdmin ? "/admin" : "/login"}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Lock className="size-3" />
+          {isAdmin ? "Admin portal" : "Admin login"}
+        </Link>
+      </footer>
+    </>
+  );
 }
 
 
