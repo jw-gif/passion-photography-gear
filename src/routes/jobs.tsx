@@ -577,6 +577,92 @@ function InvalidTokenScreen({ reason }: { reason: "missing" | "invalid" }) {
   );
 }
 
+function BriefReadOnly({ brief }: { brief: Brief }) {
+  const meta: { label: string; value: string }[] = [];
+  if (brief.call_time) meta.push({ label: "Call", value: brief.call_time });
+  if (brief.wrap_time) meta.push({ label: "Wrap", value: brief.wrap_time });
+  if (brief.door_code) meta.push({ label: "Door code", value: brief.door_code });
+
+  return (
+    <div className="space-y-3 text-sm">
+      {meta.length > 0 && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+          {meta.map((m) => (
+            <span key={m.label} className="inline-flex items-center gap-1">
+              <span className="text-muted-foreground">{m.label}:</span>
+              <span className="font-medium">{m.value}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      {brief.arrival_notes && (
+        <Section title="Arrival">{brief.arrival_notes}</Section>
+      )}
+      {brief.details_notes && (
+        <Section title="Details">{brief.details_notes}</Section>
+      )}
+      {brief.gear_notes && <Section title="Gear">{brief.gear_notes}</Section>}
+      {brief.segments.map((seg) => (
+        <div key={seg.id} className="border rounded-md p-3 space-y-2">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <h4 className="font-semibold">{seg.title}</h4>
+            {seg.location && (
+              <span className="text-xs text-muted-foreground">({seg.location})</span>
+            )}
+            {seg.time && <span className="text-xs text-muted-foreground">— {seg.time}</span>}
+          </div>
+          {seg.assigned_roles.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {seg.assigned_roles.map((r) => (
+                <span
+                  key={r}
+                  className="inline-flex text-[10px] px-1.5 py-0.5 rounded border bg-muted/40"
+                >
+                  {roleShort(r)}
+                </span>
+              ))}
+            </div>
+          )}
+          {seg.focus && (
+            <p className="text-xs italic text-muted-foreground">{seg.focus}</p>
+          )}
+          {seg.shots.length > 0 && (
+            <ul className="space-y-1">
+              {seg.shots.map((shot) => (
+                <li key={shot.id} className="flex items-start gap-2">
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded border shrink-0 mt-0.5",
+                      priorityClasses(shot.priority),
+                    )}
+                  >
+                    {priorityLabel(shot.priority)}
+                  </span>
+                  <span className="text-sm">{shot.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+      {brief.editing_notes && (
+        <Section title="Editing + Uploading">{brief.editing_notes}</Section>
+      )}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h4>
+      <p className="text-sm whitespace-pre-wrap">{children}</p>
+    </div>
+  );
+}
+
 function errorMessage(code: string): string {
   switch (code) {
     case "invalid_token":
