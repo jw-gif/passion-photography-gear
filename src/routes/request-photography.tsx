@@ -848,7 +848,7 @@ function BudgetPicker({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
         {PHOTO_RATE_CARD.map((tier) => {
           const selected = value === tier.label;
           return (
@@ -857,14 +857,18 @@ function BudgetPicker({
               type="button"
               onClick={() => onChange(tier.label)}
               className={cn(
-                "text-left rounded-lg border p-4 transition-colors",
+                "flex h-full flex-col text-left rounded-lg border overflow-hidden transition-colors",
                 selected
                   ? "border-primary bg-primary/5 ring-1 ring-primary"
                   : "border-border hover:border-foreground/30"
               )}
             >
-              <div className="text-xl font-bold tracking-tight">{tier.label}</div>
-              <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+              <div className="px-4 py-3 border-b bg-muted/40">
+                <div className="text-xl font-bold tracking-tight leading-none">
+                  {tier.label}
+                </div>
+              </div>
+              <ul className="flex-1 px-4 py-3 space-y-0.5 text-xs text-muted-foreground">
                 {tier.examples.map((ex) => (
                   <li key={ex}>• {ex}</li>
                 ))}
