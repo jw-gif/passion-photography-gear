@@ -107,7 +107,6 @@ function RequestPhotographyPage() {
   const [coverageTypes, setCoverageTypes] = useState<CoverageType[]>([]);
   const [coverageOther, setCoverageOther] = useState("");
 
-  const [expensing, setExpensing] = useState(false);
   const [budget, setBudget] = useState("");
   const [concurApprover, setConcurApprover] = useState("");
   const [concurCompany, setConcurCompany] = useState("");
