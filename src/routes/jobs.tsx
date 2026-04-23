@@ -26,6 +26,12 @@ import {
   formatBudget,
   isPaidRole,
 } from "@/lib/photographers";
+import {
+  type Brief,
+  priorityClasses,
+  priorityLabel,
+  roleShort,
+} from "@/lib/shot-list";
 
 const searchSchema = z.object({
   t: z.string().min(1).optional(),
