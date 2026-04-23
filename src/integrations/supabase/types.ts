@@ -40,7 +40,7 @@ export type Database = {
           created_at: string
           current_location: string
           icon_kind: string | null
-          id: number
+          id: string
           last_note: string | null
           last_updated: string
           moved_by: string | null
@@ -53,7 +53,7 @@ export type Database = {
           created_at?: string
           current_location?: string
           icon_kind?: string | null
-          id: number
+          id?: string
           last_note?: string | null
           last_updated?: string
           moved_by?: string | null
@@ -66,7 +66,7 @@ export type Database = {
           created_at?: string
           current_location?: string
           icon_kind?: string | null
-          id?: number
+          id?: string
           last_note?: string | null
           last_updated?: string
           moved_by?: string | null
@@ -79,7 +79,7 @@ export type Database = {
       }
       gear_history: {
         Row: {
-          gear_id: number
+          gear_id: string
           id: string
           location: string
           moved_by: string | null
@@ -88,7 +88,7 @@ export type Database = {
           timestamp: string
         }
         Insert: {
-          gear_id: number
+          gear_id: string
           id?: string
           location: string
           moved_by?: string | null
@@ -97,7 +97,7 @@ export type Database = {
           timestamp?: string
         }
         Update: {
-          gear_id?: number
+          gear_id?: string
           id?: string
           location?: string
           moved_by?: string | null
@@ -118,19 +118,19 @@ export type Database = {
       gear_request_items: {
         Row: {
           created_at: string
-          gear_id: number
+          gear_id: string
           id: string
           request_id: string
         }
         Insert: {
           created_at?: string
-          gear_id: number
+          gear_id: string
           id?: string
           request_id: string
         }
         Update: {
           created_at?: string
-          gear_id?: number
+          gear_id?: string
           id?: string
           request_id?: string
         }
@@ -497,6 +497,7 @@ export type Database = {
         Args: { _opening_id: string; _token: string }
         Returns: Json
       }
+      generate_gear_id: { Args: never; Returns: string }
       get_job: {
         Args: { _opening_id: string; _token: string }
         Returns: {

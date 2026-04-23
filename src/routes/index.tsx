@@ -20,12 +20,14 @@ import {
 import { GearRequestForm } from "@/components/gear-request-form";
 
 interface Search {
-  gear?: number;
+  gear?: string;
 }
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    gear: search.gear ? Number(search.gear) : undefined,
+    gear: search.gear !== undefined && search.gear !== null && search.gear !== ""
+      ? String(search.gear)
+      : undefined,
   }),
   head: () => ({
     meta: [
@@ -60,7 +62,7 @@ function IndexPage() {
 type GearStatus = "active" | "out_of_service" | "out_for_repair";
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   current_location: string;
   sub_location: string | null;
@@ -71,7 +73,7 @@ interface GearRow {
   icon_kind: string | null;
 }
 
-function PublicGearView({ gearId }: { gearId: number }) {
+function PublicGearView({ gearId }: { gearId: string }) {
   const { displayName, isAdmin } = useAuth();
   const [gear, setGear] = useState<GearRow | null>(null);
   const [loading, setLoading] = useState(true);

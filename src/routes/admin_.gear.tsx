@@ -26,7 +26,7 @@ export const Route = createFileRoute("/admin_/gear")({
 type GearStatus = "active" | "out_of_service" | "out_for_repair";
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   current_location: string;
   sub_location: string | null;
@@ -38,7 +38,7 @@ interface GearRow {
 
 interface HistoryRow {
   id: string;
-  gear_id: number;
+  gear_id: string;
   location: string;
   sub_location: string | null;
   note: string | null;
@@ -61,9 +61,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [gear, setGear] = useState<GearRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [qrGearId, setQrGearId] = useState<number | null>(null);
-  const [dragGearId, setDragGearId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [qrGearId, setQrGearId] = useState<string | null>(null);
+  const [dragGearId, setDragGearId] = useState<string | null>(null);
   const [dragOverLoc, setDragOverLoc] = useState<string | null>(null);
 
   async function loadGear() {

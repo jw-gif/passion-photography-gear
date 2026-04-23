@@ -36,7 +36,7 @@ import {
 import { toast } from "sonner";
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   icon_kind: string | null;
   status: "active" | "out_of_service" | "out_for_repair";
@@ -44,7 +44,7 @@ interface GearRow {
 
 interface ConflictMap {
   // gear id -> list of YYYY-MM-DD dates already requested
-  [gearId: number]: string[];
+  [gearId: string]: string[];
 }
 
 export function GearRequestForm() {
@@ -52,7 +52,7 @@ export function GearRequestForm() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<GearCategory | "All">("All");
-  const [selectedGear, setSelectedGear] = useState<Set<number>>(new Set());
+  const [selectedGear, setSelectedGear] = useState<Set<string>>(new Set());
   const [conflicts, setConflicts] = useState<ConflictMap>({});
   const [recentlyRequested, setRecentlyRequested] = useState<GearRow[]>([]);
 
@@ -96,7 +96,7 @@ export function GearRequestForm() {
       const map: ConflictMap = {};
       for (const row of (data ?? []) as Array<{
         needed_date: string;
-        gear_request_items: { gear_id: number }[] | null;
+        gear_request_items: { gear_id: string }[] | null;
       }>) {
         for (const item of row.gear_request_items ?? []) {
           if (!map[item.gear_id]) map[item.gear_id] = [];
@@ -123,9 +123,9 @@ export function GearRequestForm() {
         .order("created_at", { ascending: false })
         .limit(8);
       if (cancelled) return;
-      const seen = new Set<number>();
-      const ids: number[] = [];
-      for (const row of (data ?? []) as Array<{ gear_request_items: { gear_id: number }[] | null }>) {
+      const seen = new Set<string>();
+      const ids: string[] = [];
+      for (const row of (data ?? []) as Array<{ gear_request_items: { gear_id: string }[] | null }>) {
         for (const item of row.gear_request_items ?? []) {
           if (!seen.has(item.gear_id)) {
             seen.add(item.gear_id);
@@ -163,12 +163,12 @@ export function GearRequestForm() {
     return counts;
   }, [gear]);
 
-  function isConflicting(gearId: number): boolean {
+  function isConflicting(gearId: string): boolean {
     if (!dateKey) return false;
     return (conflicts[gearId] ?? []).includes(dateKey);
   }
 
-  function toggleGear(id: number) {
+  function toggleGear(id: string) {
     setSelectedGear((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);

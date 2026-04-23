@@ -89,11 +89,11 @@ interface GearDetail {
 
 interface GearItemRow {
   id: string;
-  gear_id: number;
+  gear_id: string;
 }
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -131,7 +131,7 @@ export function EventDetailDialog({ event, onClose, onChanged, navList, onNaviga
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState<PhotoDetail | null>(null);
   const [gear, setGear] = useState<GearDetail | null>(null);
-  const [gearItems, setGearItems] = useState<{ id: number; name: string }[]>([]);
+  const [gearItems, setGearItems] = useState<{ id: string; name: string }[]>([]);
   const [roster, setRoster] = useState<Roster | null>(null);
 
   useEffect(() => {

@@ -55,11 +55,11 @@ interface GearRequest {
 interface GearRequestItem {
   id: string;
   request_id: string;
-  gear_id: number;
+  gear_id: string;
 }
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   icon_kind: string | null;
 }
@@ -110,7 +110,7 @@ function RequestsView({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   const gearMap = useMemo(() => {
-    const m = new Map<number, GearRow>();
+    const m = new Map<string, GearRow>();
     for (const g of gear) m.set(g.id, g);
     return m;
   }, [gear]);

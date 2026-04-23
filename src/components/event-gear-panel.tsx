@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   icon_kind: string | null;
 }
@@ -38,7 +38,7 @@ interface LinkedRequest {
 interface LinkedItem {
   id: string;
   request_id: string;
-  gear_id: number;
+  gear_id: string;
 }
 
 interface EventGearPanelProps {
@@ -80,7 +80,7 @@ export function EventGearPanel({
 
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [requestor, setRequestor] = useState(defaultRequestor);
   const [location, setLocation] = useState<string>(pickClosestLocation(defaultLocation));
   const [neededDate, setNeededDate] = useState<string>(defaultDate ?? "");
@@ -145,12 +145,12 @@ export function EventGearPanel({
   }, [gear, query]);
 
   const gearById = useMemo(() => {
-    const m: Record<number, GearRow> = {};
+    const m: Record<string, GearRow> = {};
     for (const g of gear) m[g.id] = g;
     return m;
   }, [gear]);
 
-  function toggleGear(id: number) {
+  function toggleGear(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);

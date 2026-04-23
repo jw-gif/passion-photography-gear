@@ -27,7 +27,7 @@ interface SearchResults {
   photo: { id: string; title: string; date: string | null }[];
   gear: { id: string; title: string; date: string }[];
   photographers: { id: string; name: string; email: string }[];
-  gearItems: { id: number; name: string }[];
+  gearItems: { id: string; name: string }[];
 }
 
 const empty: SearchResults = { photo: [], gear: [], photographers: [], gearItems: [] };
@@ -100,7 +100,7 @@ export function CommandPalette() {
           email: r.email as string,
         })),
         gearItems: (gearItemsRes.data ?? []).map((r) => ({
-          id: r.id as number,
+          id: r.id as string,
           name: r.name as string,
         })),
       });
