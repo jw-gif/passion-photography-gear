@@ -87,6 +87,7 @@ function PhotographersView({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editing, setEditing] = useState<Photographer | null>(null);
 
   async function load() {
