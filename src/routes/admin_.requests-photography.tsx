@@ -343,18 +343,34 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+interface RosterCounts {
+  filledPoint: number;
+  filledDoor: number;
+  openPoint: number;
+  openDoor: number;
+}
+
 function RequestRow({
   req,
+  roster,
   onOpen,
   onSetStatus,
 }: {
   req: PhotoRequest;
+  roster?: RosterCounts;
   onOpen: () => void;
   onSetStatus: (s: PhotoRequestStatus) => void;
 }) {
   const types = req.request_types
     .map((v) => REQUEST_TYPES.find((t) => t.value === v)?.label ?? v)
     .join(", ");
+
+  const totalOpenings =
+    (roster?.filledPoint ?? 0) +
+    (roster?.filledDoor ?? 0) +
+    (roster?.openPoint ?? 0) +
+    (roster?.openDoor ?? 0);
+  const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
 
   return (
     <Card
@@ -372,6 +388,19 @@ function RequestRow({
             >
               {statusLabel(req.status)}
             </span>
+            {totalOpenings > 0 && (
+              <span
+                className={cn(
+                  "text-xs font-medium px-2 py-0.5 rounded-full border",
+                  totalFilled === totalOpenings
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                    : "bg-muted text-muted-foreground border-border",
+                )}
+                title={`${roster?.filledPoint ?? 0}/${(roster?.filledPoint ?? 0) + (roster?.openPoint ?? 0)} Point · ${roster?.filledDoor ?? 0}/${(roster?.filledDoor ?? 0) + (roster?.openDoor ?? 0)} Door Holder`}
+              >
+                {totalFilled}/{totalOpenings} filled
+              </span>
+            )}
             <span className="text-xs text-muted-foreground">{types}</span>
           </div>
           <div className="mt-1.5 font-semibold truncate">
