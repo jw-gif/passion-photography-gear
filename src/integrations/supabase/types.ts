@@ -187,6 +187,96 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_request_assignments: {
+        Row: {
+          claimed_at: string
+          created_at: string
+          id: string
+          opening_id: string
+          photographer_id: string
+          released_at: string | null
+          released_by: string | null
+          request_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          opening_id: string
+          photographer_id: string
+          released_at?: string | null
+          released_by?: string | null
+          request_id: string
+        }
+        Update: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          opening_id?: string
+          photographer_id?: string
+          released_at?: string | null
+          released_by?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_request_assignments_opening_id_fkey"
+            columns: ["opening_id"]
+            isOneToOne: false
+            referencedRelation: "photo_request_openings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_request_assignments_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "photographers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_request_assignments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "photo_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_request_openings: {
+        Row: {
+          budget_cents: number | null
+          created_at: string
+          id: string
+          position: number
+          request_id: string
+          role: Database["public"]["Enums"]["photographer_tier"]
+        }
+        Insert: {
+          budget_cents?: number | null
+          created_at?: string
+          id?: string
+          position?: number
+          request_id: string
+          role: Database["public"]["Enums"]["photographer_tier"]
+        }
+        Update: {
+          budget_cents?: number | null
+          created_at?: string
+          id?: string
+          position?: number
+          request_id?: string
+          role?: Database["public"]["Enums"]["photographer_tier"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_request_openings_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "photo_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photo_requests: {
         Row: {
           admin_notes: string | null
@@ -298,6 +388,42 @@ export type Database = {
         }
         Relationships: []
       }
+      photographers: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          tier: Database["public"]["Enums"]["photographer_tier"]
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          tier?: Database["public"]["Enums"]["photographer_tier"]
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          tier?: Database["public"]["Enums"]["photographer_tier"]
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -324,12 +450,100 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_job: {
+        Args: { _opening_id: string; _token: string }
+        Returns: Json
+      }
+      get_job: {
+        Args: { _opening_id: string; _token: string }
+        Returns: {
+          budget_cents: number
+          claimed_by_me: boolean
+          coverage_types: Database["public"]["Enums"]["photo_coverage_type"][]
+          end_time: string
+          event_date: string
+          event_end_date: string
+          event_location: string
+          event_name: string
+          is_claimed: boolean
+          notes: string
+          on_site_contact_name: string
+          on_site_contact_phone: string
+          opening_id: string
+          request_id: string
+          role: Database["public"]["Enums"]["photographer_tier"]
+          spans_multiple_days: boolean
+          start_time: string
+        }[]
+      }
+      get_photographer_by_token: {
+        Args: { _token: string }
+        Returns: {
+          active: boolean
+          email: string
+          id: string
+          name: string
+          tier: Database["public"]["Enums"]["photographer_tier"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      list_my_jobs: {
+        Args: { _token: string }
+        Returns: {
+          assignment_id: string
+          budget_cents: number
+          claimed_at: string
+          coverage_types: Database["public"]["Enums"]["photo_coverage_type"][]
+          end_time: string
+          event_date: string
+          event_end_date: string
+          event_location: string
+          event_name: string
+          notes: string
+          on_site_contact_name: string
+          on_site_contact_phone: string
+          opening_id: string
+          request_id: string
+          request_status: Database["public"]["Enums"]["photo_request_status"]
+          role: Database["public"]["Enums"]["photographer_tier"]
+          spans_multiple_days: boolean
+          start_time: string
+        }[]
+      }
+      list_open_jobs: {
+        Args: { _token: string }
+        Returns: {
+          budget_cents: number
+          coverage_types: Database["public"]["Enums"]["photo_coverage_type"][]
+          end_time: string
+          event_date: string
+          event_end_date: string
+          event_location: string
+          event_name: string
+          notes: string
+          on_site_contact_name: string
+          on_site_contact_phone: string
+          opening_id: string
+          point_taken: boolean
+          request_id: string
+          role: Database["public"]["Enums"]["photographer_tier"]
+          spans_multiple_days: boolean
+          start_time: string
+        }[]
+      }
+      release_job: {
+        Args: { _opening_id: string; _token: string }
+        Returns: Json
+      }
+      tier_rank: {
+        Args: { t: Database["public"]["Enums"]["photographer_tier"] }
+        Returns: number
       }
     }
     Enums: {
@@ -348,6 +562,7 @@ export type Database = {
         | "photography_team"
         | "shot_list_addition"
         | "photoshoot"
+      photographer_tier: "point" | "door_holder" | "training_door_holder"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -492,6 +707,7 @@ export const Constants = {
         "shot_list_addition",
         "photoshoot",
       ],
+      photographer_tier: ["point", "door_holder", "training_door_holder"],
     },
   },
 } as const

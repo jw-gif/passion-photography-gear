@@ -45,6 +45,7 @@ import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { toast } from "sonner";
 import { HubHeader } from "@/components/hub-header";
+import { CoverageRoster } from "@/components/coverage-roster";
 import {
   PHOTO_REQUEST_STATUSES,
   REQUEST_TYPES,
@@ -534,6 +535,16 @@ function RequestDetailDialog({
               </DetailGrid>
             </DetailSection>
           )}
+
+          {/* Coverage roster */}
+          <DetailSection title="Coverage roster">
+            <p className="text-xs text-muted-foreground mb-3">
+              Add openings for this shoot. Only Point openings have a budget; Door
+              Holder and Training spots are unpaid coverage. Photographers will
+              see only the openings they're eligible for.
+            </p>
+            <CoverageRoster requestId={request.id} />
+          </DetailSection>
 
           {/* Admin workspace */}
           <DetailSection title="Admin workspace">
