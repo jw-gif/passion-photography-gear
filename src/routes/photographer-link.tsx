@@ -11,11 +11,11 @@ import pccLogo from "@/assets/pcc-logo.png";
 export const Route = createFileRoute("/photographer-link")({
   head: () => ({
     meta: [
-      { title: "Find your jobs page · Passion Photography Hub" },
+      { title: "Find your Serving Opportunities · Passion Photography Hub" },
       {
         name: "description",
         content:
-          "Photographers — enter your email and we'll send you a link to your personal jobs page.",
+          "Photographers — enter your email and we'll send you a link to your personal Serving Opportunities page.",
       },
     ],
   }),
@@ -81,7 +81,7 @@ function PhotographerLinkPage() {
                 <p className="mt-2 text-sm text-muted-foreground">
                   If <span className="font-medium text-foreground">{email}</span> is
                   registered as a photographer, we just sent you a link to your
-                  personal jobs page.
+                  personal Serving Opportunities page.
                 </p>
                 <p className="mt-3 text-xs text-muted-foreground">
                   Didn't get it? Check spam, or ask a Passion admin to send you
@@ -110,11 +110,11 @@ function PhotographerLinkPage() {
                   <Camera className="size-6 text-primary" />
                 </div>
                 <h1 className="text-xl font-semibold tracking-tight">
-                  Find your jobs page
+                  Find your Serving Opportunities
                 </h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Enter the email a Passion admin used to register you. We'll
-                  email you a link to your personal jobs page.
+                  email you a link to your personal Serving Opportunities page.
                 </p>
               </div>
 

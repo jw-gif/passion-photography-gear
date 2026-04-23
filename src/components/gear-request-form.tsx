@@ -273,7 +273,7 @@ export function GearRequestForm() {
           <Button asChild variant="ghost" size="sm" className="gap-1.5">
             <Link to="/photographer-link">
               <UserSearch className="size-4" />
-              <span className="hidden sm:inline">Find my jobs</span>
+              <span className="hidden sm:inline">Find My Serving Opportunities</span>
             </Link>
           </Button>
         </div>
