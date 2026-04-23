@@ -45,6 +45,7 @@ import {
   tierLabel,
   tierBadgeClasses,
   generatePhotographerToken,
+} from "@/lib/photographers";
 import { PhotographerBulkImportDialog } from "@/components/photographer-bulk-import-dialog";
 
 export const Route = createFileRoute("/admin_/photographers")({
