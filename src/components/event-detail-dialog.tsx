@@ -22,8 +22,10 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   ExternalLink,
   Loader2,
+  Mail,
   MapPin,
   Phone,
   User as UserIcon,
@@ -401,13 +403,34 @@ export function EventDetailDialog({ event, onClose, onChanged, navList, onNaviga
                 <span className="text-muted-foreground"> · {photo.company}</span>
                 {photo.team && <span className="text-muted-foreground"> · {photo.team}</span>}
               </Row>
+              <Row icon={<UserIcon className="size-4" />}>
+                <span className="flex-1">
+                  {photo.first_name} {photo.last_name}
+                  <span className="text-muted-foreground"> · {photo.company}</span>
+                  {photo.team && <span className="text-muted-foreground"> · {photo.team}</span>}
+                </span>
+                <CopyButton value={`${photo.first_name} ${photo.last_name}`} label="name" />
+              </Row>
+              {photo.email && (
+                <Row icon={<Mail className="size-4" />}>
+                  <a className="flex-1 hover:underline truncate" href={`mailto:${photo.email}`}>
+                    {photo.email}
+                  </a>
+                  <CopyButton value={photo.email} label="email" />
+                </Row>
+              )}
               {photo.on_site_contact_name && (
                 <Row icon={<Phone className="size-4" />}>
-                  {photo.on_site_contact_name}
+                  <span className="flex-1">
+                    {photo.on_site_contact_name}
+                    {photo.on_site_contact_phone && (
+                      <a className="ml-1 text-foreground hover:underline" href={`tel:${photo.on_site_contact_phone}`}>
+                        {photo.on_site_contact_phone}
+                      </a>
+                    )}
+                  </span>
                   {photo.on_site_contact_phone && (
-                    <a className="ml-1 text-foreground hover:underline" href={`tel:${photo.on_site_contact_phone}`}>
-                      {photo.on_site_contact_phone}
-                    </a>
+                    <CopyButton value={photo.on_site_contact_phone} label="phone" />
                   )}
                 </Row>
               )}
