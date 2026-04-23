@@ -22,6 +22,7 @@ import { Route as ApiPhotographerLinkRouteImport } from './routes/api.photograph
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
 import { Route as AdminTeamRouteImport } from './routes/admin_.team'
 import { Route as AdminShotListGeneratorRouteImport } from './routes/admin_.shot-list-generator'
+import { Route as AdminShotListBlocksRouteImport } from './routes/admin_.shot-list-blocks'
 import { Route as AdminRequestsPhotographyRouteImport } from './routes/admin_.requests-photography'
 import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-gear'
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
@@ -97,6 +98,11 @@ const AdminTeamRoute = AdminTeamRouteImport.update({
 const AdminShotListGeneratorRoute = AdminShotListGeneratorRouteImport.update({
   id: '/admin_/shot-list-generator',
   path: '/admin/shot-list-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminShotListBlocksRoute = AdminShotListBlocksRouteImport.update({
+  id: '/admin_/shot-list-blocks',
+  path: '/admin/shot-list-blocks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRequestsPhotographyRoute =
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/requests-gear': typeof AdminRequestsGearRoute
   '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/shot-list-blocks': typeof AdminShotListBlocksRoute
   '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/requests-gear': typeof AdminRequestsGearRoute
   '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin/shot-list-blocks': typeof AdminShotListBlocksRoute
   '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/admin_/requests': typeof AdminRequestsRoute
   '/admin_/requests-gear': typeof AdminRequestsGearRoute
   '/admin_/requests-photography': typeof AdminRequestsPhotographyRoute
+  '/admin_/shot-list-blocks': typeof AdminShotListBlocksRoute
   '/admin_/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin_/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/requests-gear'
     | '/admin/requests-photography'
+    | '/admin/shot-list-blocks'
     | '/admin/shot-list-generator'
     | '/admin/team'
     | '/api/admins'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/requests'
     | '/admin/requests-gear'
     | '/admin/requests-photography'
+    | '/admin/shot-list-blocks'
     | '/admin/shot-list-generator'
     | '/admin/team'
     | '/api/admins'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin_/requests'
     | '/admin_/requests-gear'
     | '/admin_/requests-photography'
+    | '/admin_/shot-list-blocks'
     | '/admin_/shot-list-generator'
     | '/admin_/team'
     | '/api/admins'
@@ -337,6 +349,7 @@ export interface RootRouteChildren {
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminRequestsGearRoute: typeof AdminRequestsGearRoute
   AdminRequestsPhotographyRoute: typeof AdminRequestsPhotographyRoute
+  AdminShotListBlocksRoute: typeof AdminShotListBlocksRoute
   AdminShotListGeneratorRoute: typeof AdminShotListGeneratorRoute
   AdminTeamRoute: typeof AdminTeamRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
@@ -434,6 +447,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/shot-list-generator'
       fullPath: '/admin/shot-list-generator'
       preLoaderRoute: typeof AdminShotListGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/shot-list-blocks': {
+      id: '/admin_/shot-list-blocks'
+      path: '/admin/shot-list-blocks'
+      fullPath: '/admin/shot-list-blocks'
+      preLoaderRoute: typeof AdminShotListBlocksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin_/requests-photography': {
@@ -537,6 +557,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRequestsRoute: AdminRequestsRoute,
   AdminRequestsGearRoute: AdminRequestsGearRoute,
   AdminRequestsPhotographyRoute: AdminRequestsPhotographyRoute,
+  AdminShotListBlocksRoute: AdminShotListBlocksRoute,
   AdminShotListGeneratorRoute: AdminShotListGeneratorRoute,
   AdminTeamRoute: AdminTeamRoute,
   ApiAdminsRoute: ApiAdminsRoute,
