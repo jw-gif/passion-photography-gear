@@ -1,14 +1,14 @@
 // Per-request shot list generator.
-// Loads a photo_request, builds a context prompt, calls Lovable AI Gateway,
-// and returns the structured brief (does NOT save — the client decides).
+// Loads a photo_request, asks the AI to pick which bank entries apply,
+// then assembles the brief server-side from the bank. The AI never writes
+// any new prose — it only chooses keys from the curated content bank.
 // Admin-only (verify_jwt = true).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  callLovableAi,
+  assembleBrief,
+  callLovableAiForPicks,
   corsHeaders,
-  FEW_SHOT_EXAMPLE,
-  PASSION_STYLE_SYSTEM_PROMPT,
   SHOT_LIST_MODEL,
 } from "../_shared/shot-list.ts";
 
@@ -95,14 +95,21 @@ Deno.serve(async (req) => {
     const userPrompt = buildUserPrompt(reqRow as RequestRow, (openings ?? []) as OpeningRow[], extraPrompt);
 
     try {
-      const { brief } = await callLovableAi({
-        apiKey,
-        systemPrompt: buildSystemPrompt(),
-        userPrompt,
+      const { picks } = await callLovableAiForPicks({ apiKey, userPrompt });
+
+      const brief = assembleBrief(picks, {
+        location_key: (reqRow as RequestRow).event_location ?? null,
+        call_time: (reqRow as RequestRow).start_time ?? null,
+        wrap_time: (reqRow as RequestRow).end_time ?? null,
+        door_code: null,
       });
 
       return json({
-        brief: { ...(brief as object), generated_with_model: SHOT_LIST_MODEL, generation_prompt: extraPrompt || null },
+        brief: {
+          ...brief,
+          generated_with_model: SHOT_LIST_MODEL,
+          generation_prompt: extraPrompt || null,
+        },
       });
     } catch (e) {
       const status = (e as { status?: number }).status;
@@ -124,17 +131,6 @@ Deno.serve(async (req) => {
   }
 });
 
-function buildSystemPrompt(): string {
-  return `${PASSION_STYLE_SYSTEM_PROMPT}
-
-# Few-shot example
-User context:
-${FEW_SHOT_EXAMPLE.user}
-
-Tool call (propose_brief) you would make:
-${JSON.stringify(FEW_SHOT_EXAMPLE.brief, null, 2)}`;
-}
-
 function buildUserPrompt(req: RequestRow, openings: OpeningRow[], extra: string): string {
   const counts = openings.reduce<Record<string, number>>((acc, o) => {
     acc[o.role] = (acc[o.role] ?? 0) + 1;
@@ -148,7 +144,7 @@ function buildUserPrompt(req: RequestRow, openings: OpeningRow[], extra: string)
   const roster = rosterParts.length ? rosterParts.join(", ") : "Not yet set";
 
   const lines = [
-    "Generate a brief for this Passion Photography shoot.",
+    "Pick which bank entries apply to this Passion Photography shoot.",
     "",
     `Event: ${req.event_name ?? "(not specified)"}`,
     `Location: ${req.event_location ?? "(not specified)"}`,
@@ -167,7 +163,10 @@ function buildUserPrompt(req: RequestRow, openings: OpeningRow[], extra: string)
   if (extra) {
     lines.push("", `Extra focus from admin: ${extra}`);
   }
-  lines.push("", "Tailor the segments and roles to this roster. Only include segments that make sense for this event.");
+  lines.push(
+    "",
+    "Pick segments and shot_keys that fit this roster and event. Tailor assigned_roles to who is on the team. Do NOT invent any new keys or prose.",
+  );
   return lines.join("\n");
 }
 

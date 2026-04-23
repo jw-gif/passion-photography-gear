@@ -1,14 +1,14 @@
 // Standalone shot list generator.
 // Accepts a free-form admin payload (location, rooms, segments, roles, focus)
-// and returns a generated brief without touching the database.
+// and returns a brief assembled from the curated content bank. The AI only
+// picks which bank entries apply — it never writes new prose.
 // Admin-only (verify_jwt = true).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  callLovableAi,
+  assembleBrief,
+  callLovableAiForPicks,
   corsHeaders,
-  FEW_SHOT_EXAMPLE,
-  PASSION_STYLE_SYSTEM_PROMPT,
   SHOT_LIST_MODEL,
 } from "../_shared/shot-list.ts";
 
@@ -63,17 +63,21 @@ Deno.serve(async (req) => {
     const userPrompt = buildUserPrompt(body);
 
     try {
-      const { brief } = await callLovableAi({
-        apiKey,
-        systemPrompt: buildSystemPrompt(),
-        userPrompt,
+      const { picks } = await callLovableAiForPicks({ apiKey, userPrompt });
+
+      const brief = assembleBrief(picks, {
+        location_key: body.location ?? null,
+        call_time: body.call_time ?? null,
+        wrap_time: body.wrap_time ?? null,
+        door_code: body.door_code ?? null,
       });
 
-      // Pre-fill metadata from the form when the model didn't include it.
-      const merged = mergeMeta(brief, body);
-
       return json({
-        brief: { ...merged, generated_with_model: SHOT_LIST_MODEL, generation_prompt: body.focus ?? null },
+        brief: {
+          ...brief,
+          generated_with_model: SHOT_LIST_MODEL,
+          generation_prompt: body.focus ?? null,
+        },
       });
     } catch (e) {
       const status = (e as { status?: number }).status;
@@ -95,27 +99,16 @@ Deno.serve(async (req) => {
   }
 });
 
-function buildSystemPrompt(): string {
-  return `${PASSION_STYLE_SYSTEM_PROMPT}
-
-# Few-shot example
-User context:
-${FEW_SHOT_EXAMPLE.user}
-
-Tool call (propose_brief) you would make:
-${JSON.stringify(FEW_SHOT_EXAMPLE.brief, null, 2)}`;
-}
-
 function buildUserPrompt(p: Payload): string {
   const lines = [
-    "Generate a brief for a Passion Photography shoot.",
+    "Pick which bank entries apply to this Passion Photography shoot.",
     "",
     `Event: ${p.event_name || "(unspecified Sunday gathering)"}`,
     `Location: ${p.location || "(not specified)"}`,
   ];
   if (p.rooms && p.rooms.length) lines.push(`Rooms / spaces in use: ${p.rooms.join(", ")}`);
   if (p.segments && p.segments.length)
-    lines.push(`Segments to cover: ${p.segments.join(", ")}`);
+    lines.push(`Segments the admin wants covered (titles, not keys): ${p.segments.join(", ")}`);
   if (p.roles && p.roles.length) lines.push(`Roles available: ${p.roles.join(", ")}`);
   if (p.call_time) lines.push(`Call time: ${p.call_time}`);
   if (p.wrap_time) lines.push(`Wrap: ${p.wrap_time}`);
@@ -123,19 +116,9 @@ function buildUserPrompt(p: Payload): string {
   if (p.focus) lines.push("", `Focus this shoot: ${p.focus}`);
   lines.push(
     "",
-    "Build segments only for the spaces and segments listed above (plus an Editing + Uploading segment). Assign roles thoughtfully — Point covers main room, Door Holders cover support spaces."
+    "Pick the segment_keys that map to the segments listed above (plus editing_uploading at the end). For each segment, pick the shot_keys that fit. Map the requested roles thoughtfully — Point covers main room, Door Holders cover support spaces. Do NOT invent any new keys or prose.",
   );
   return lines.join("\n");
-}
-
-function mergeMeta(brief: unknown, p: Payload): Record<string, unknown> {
-  const b = (brief && typeof brief === "object" ? brief : {}) as Record<string, unknown>;
-  return {
-    ...b,
-    call_time: b.call_time || p.call_time || "",
-    wrap_time: b.wrap_time || p.wrap_time || "",
-    door_code: b.door_code || p.door_code || "",
-  };
 }
 
 function json(data: unknown, status = 200): Response {
