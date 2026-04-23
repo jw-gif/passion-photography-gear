@@ -255,36 +255,36 @@ export function renderBriefAsMarkdown(brief: Brief, eventName?: string): string 
 }
 
 /**
- * Render the brief as Slack mrkdwn — Slack's flavor uses *single asterisks*
- * for bold, _underscores_ for italic, > for blockquotes, and • bullets.
- * Paste straight into a Slack message and the formatting renders natively.
+ * Render the brief as Slack-friendly text using **double asterisks** for bold
+ * (matches the user's preferred paste format), _underscores_ for italic,
+ * > for blockquotes, and • bullets.
  */
 export function renderBriefAsSlack(brief: Brief, eventName?: string): string {
   const lines: string[] = [];
   if (eventName) {
-    lines.push(`*${eventName.toUpperCase()}*`);
+    lines.push(`**${eventName.toUpperCase()}**`);
     lines.push("");
   }
   const meta: string[] = [];
-  if (brief.call_time) meta.push(`*Call time:* ${brief.call_time}`);
-  if (brief.wrap_time) meta.push(`*Wrap:* ${brief.wrap_time}`);
-  if (brief.door_code) meta.push(`*Door code:* ${brief.door_code}`);
+  if (brief.call_time) meta.push(`**Call time:** ${brief.call_time}`);
+  if (brief.wrap_time) meta.push(`**Wrap:** ${brief.wrap_time}`);
+  if (brief.door_code) meta.push(`**Door code:** ${brief.door_code}`);
   if (meta.length) {
     lines.push(meta.join("  ·  "));
     lines.push("");
   }
   if (brief.arrival_notes) {
-    lines.push("*// ARRIVAL //*");
+    lines.push("**// ARRIVAL //**");
     lines.push(brief.arrival_notes);
     lines.push("");
   }
   if (brief.details_notes) {
-    lines.push("*// DETAILS //*");
+    lines.push("**// DETAILS //**");
     lines.push(brief.details_notes);
     lines.push("");
   }
   if (brief.gear_notes) {
-    lines.push("*// GEAR //*");
+    lines.push("**// GEAR //**");
     lines.push(brief.gear_notes);
     lines.push("");
   }
@@ -292,20 +292,20 @@ export function renderBriefAsSlack(brief: Brief, eventName?: string): string {
     const headBits = [seg.title.toUpperCase()];
     if (seg.location) headBits.push(`(${seg.location.toUpperCase()})`);
     if (seg.time) headBits.push(`— ${seg.time}`);
-    lines.push(`*// ${headBits.join(" ")} //*`);
+    lines.push(`**// ${headBits.join(" ")} //**`);
     if (seg.assigned_roles.length) {
       lines.push(`_[${seg.assigned_roles.map(roleShort).join(" / ")}]_`);
     }
     if (seg.focus) lines.push(`> _${seg.focus}_`);
     for (const shot of seg.shots) {
       const prefix =
-        shot.priority === "must" ? "*‼️* " : shot.priority === "nice" ? "_~_ " : "• ";
+        shot.priority === "must" ? "**‼️** " : shot.priority === "nice" ? "_~_ " : "• ";
       lines.push(`${prefix}${shot.text}`);
     }
     lines.push("");
   }
   if (brief.editing_notes) {
-    lines.push("*// EDITING + UPLOADING //*");
+    lines.push("**// EDITING + UPLOADING //**");
     lines.push(brief.editing_notes);
   }
   return lines.join("\n").trim() + "\n";
