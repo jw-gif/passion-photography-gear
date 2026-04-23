@@ -546,6 +546,15 @@ function RequestDetailDialog({
             <CoverageRoster requestId={request.id} />
           </DetailSection>
 
+          {/* Brief / shot list */}
+          <DetailSection title="Brief / shot list">
+            <p className="text-xs text-muted-foreground mb-3">
+              Generate an AI call sheet for this shoot. Photographers see only the
+              segments their role is on.
+            </p>
+            <RequestBriefPanel requestId={request.id} eventName={request.event_name} />
+          </DetailSection>
+
           {/* Admin workspace */}
           <DetailSection title="Admin workspace">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
