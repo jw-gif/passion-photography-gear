@@ -545,7 +545,7 @@ function ShootMeta({ job }: { job: OpenJobRow | MyJobRow }) {
       {(job.start_time || job.end_time) && (
         <span className="inline-flex items-center gap-1">
           <Clock className="size-3.5" />
-          {job.start_time?.slice(0, 5)} – {job.end_time?.slice(0, 5)}
+          {formatTime12(job.start_time)} – {formatTime12(job.end_time)}
         </span>
       )}
       {job.event_location && (
@@ -556,6 +556,84 @@ function ShootMeta({ job }: { job: OpenJobRow | MyJobRow }) {
       )}
     </div>
   );
+}
+
+function ShootDetails({ job }: { job: OpenJobRow }) {
+  const hasContact = job.on_site_contact_name || job.on_site_contact_phone;
+  const hasCoverage = job.coverage_types && job.coverage_types.length > 0;
+  if (!hasContact && !hasCoverage && !job.notes) return null;
+
+  return (
+    <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-sm">
+      {hasCoverage && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+            Coverage:
+          </span>
+          {job.coverage_types.map((c) => (
+            <span
+              key={c}
+              className="inline-flex text-[11px] px-1.5 py-0.5 rounded border bg-background text-foreground"
+            >
+              {coverageLabel(c)}
+            </span>
+          ))}
+        </div>
+      )}
+      {hasContact && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
+          <span className="text-xs uppercase tracking-wide font-semibold">
+            On-site:
+          </span>
+          {job.on_site_contact_name && (
+            <span className="inline-flex items-center gap-1">
+              <UserIcon className="size-3.5" />
+              {job.on_site_contact_name}
+            </span>
+          )}
+          {job.on_site_contact_phone && (
+            <a
+              href={`tel:${job.on_site_contact_phone}`}
+              className="inline-flex items-center gap-1 hover:underline text-foreground"
+            >
+              <Phone className="size-3.5" />
+              {job.on_site_contact_phone}
+            </a>
+          )}
+        </div>
+      )}
+      {job.notes && (
+        <p className="text-sm whitespace-pre-wrap text-muted-foreground border-l-2 border-border pl-3">
+          {job.notes}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function formatTime12(t: string | null | undefined): string {
+  if (!t) return "";
+  const [hStr, mStr] = t.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return t;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const mPad = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
+  return `${h12}${mPad} ${period}`;
+}
+
+function coverageLabel(c: string): string {
+  switch (c) {
+    case "live_event":
+      return "Live event";
+    case "photo_booth":
+      return "Photo booth";
+    case "other":
+      return "Other";
+    default:
+      return c;
+  }
 }
 
 function CenteredMessage({ children }: { children: React.ReactNode }) {
