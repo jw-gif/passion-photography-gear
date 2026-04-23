@@ -304,13 +304,66 @@ function JobBoardPage() {
           </TabsList>
 
           <TabsContent value="open" className="mt-4 space-y-4">
+            {/* Filter bar */}
+            <Card className="p-3 flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mr-1">
+                <Filter className="size-3.5" /> Filter
+              </div>
+              <Select value={filterDate} onValueChange={(v) => setFilterDate(v as DateFilter)}>
+                <SelectTrigger className="h-8 w-auto text-xs gap-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any date</SelectItem>
+                  <SelectItem value="next7">Next 7 days</SelectItem>
+                  <SelectItem value="next30">Next 30 days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterLocation} onValueChange={setFilterLocation}>
+                <SelectTrigger className="h-8 w-auto text-xs gap-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All locations</SelectItem>
+                  {Array.from(new Set(openJobs.map((j) => j.event_location).filter(Boolean) as string[])).map((loc) => (
+                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
+                <SelectTrigger className="h-8 w-auto text-xs gap-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any role</SelectItem>
+                  <SelectItem value="point">Point</SelectItem>
+                  <SelectItem value="door_holder">Door Holder</SelectItem>
+                  <SelectItem value="training_door_holder">Training</SelectItem>
+                </SelectContent>
+              </Select>
+              {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setFilterDate("any");
+                    setFilterLocation("any");
+                    setFilterRole("any");
+                  }}
+                >
+                  <X className="size-3" /> Clear
+                </Button>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground">
+                Showing {visibleOpenJobs.length} of {openJobs.length}
+              </span>
+            </Card>
+
             {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <ListSkeleton rows={3} />
             ) : groupedOpen.length === 0 ? (
               <Card className="p-10 text-center">
                 <Camera className="size-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Nothing open right now. We'll keep this list fresh — check back soon.
+                  {openJobs.length === 0
+                    ? "Nothing open right now. We'll keep this list fresh — check back soon."
+                    : "No shoots match your filters. Try clearing them."}
                 </p>
               </Card>
             ) : (
@@ -328,12 +381,15 @@ function JobBoardPage() {
 
           <TabsContent value="mine" className="mt-4 space-y-3">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <ListSkeleton rows={2} />
             ) : myJobs.length === 0 ? (
-              <Card className="p-10 text-center">
-                <CheckCircle2 className="size-8 mx-auto text-muted-foreground mb-3" />
+              <Card className="p-10 text-center space-y-3">
+                <CheckCircle2 className="size-8 mx-auto text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
                   You haven't claimed any shoots yet.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Browse the <strong>Open shoots</strong> tab to pick one up.
                 </p>
               </Card>
             ) : (
@@ -342,13 +398,35 @@ function JobBoardPage() {
                   key={j.assignment_id}
                   job={j}
                   photographerName={me.name}
-                  onRelease={() => release(j.opening_id)}
+                  onRelease={() =>
+                    setReleaseTarget({
+                      openingId: j.opening_id,
+                      eventName: j.event_name || "this shoot",
+                    })
+                  }
                 />
               ))
             )}
           </TabsContent>
         </Tabs>
       </div>
+
+      <ConfirmDialog
+        open={releaseTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setReleaseTarget(null);
+        }}
+        title={`Release ${releaseTarget?.eventName ?? "this shoot"}?`}
+        description="It will go back on the board for someone else to pick up. You'll have a quick Undo option."
+        confirmLabel="Release"
+        cancelLabel="Keep it"
+        destructive
+        onConfirm={async () => {
+          const target = releaseTarget;
+          setReleaseTarget(null);
+          if (target) await release(target.openingId);
+        }}
+      />
     </main>
   );
 }
