@@ -28,6 +28,7 @@ import {
   EVENT_LOCATIONS,
   COVERAGE_TYPES,
   REQUEST_TYPES,
+  PHOTO_RATE_CARD,
   type RequestType,
   type CoverageType,
 } from "@/lib/orgs";
@@ -117,9 +118,7 @@ function RequestPhotographyPage() {
 
   const showPccTeam = company === "Passion City Church";
   const showEventDetails = useMemo(
-    () =>
-      requestTypes.includes("photography_team") ||
-      requestTypes.includes("photoshoot"),
+    () => requestTypes.includes("photography_team"),
     [requestTypes]
   );
   const showShotListNotes = requestTypes.includes("shot_list_addition");
@@ -446,18 +445,10 @@ function RequestPhotographyPage() {
                   label="Start Time (photographer(s) on site)"
                   required
                 >
-                  <Input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                  />
+                  <TimePicker value={startTime} onChange={setStartTime} />
                 </Field>
                 <Field label="End Time (photographer(s) released)" required>
-                  <Input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                  />
+                  <TimePicker value={endTime} onChange={setEndTime} />
                 </Field>
               </div>
 
@@ -510,32 +501,16 @@ function RequestPhotographyPage() {
             </Section>
           )}
 
-          {/* SECTION: Shot list / photoshoot details */}
-          {(showShotListNotes || requestTypes.includes("photoshoot")) && (
-            <Section
-              title={
-                showShotListNotes && !requestTypes.includes("photoshoot")
-                  ? "Shot list details"
-                  : "Additional details"
-              }
-            >
-              <Field
-                label={
-                  showShotListNotes
-                    ? "Describe the shots you'd like added"
-                    : "Notes for the photography team"
-                }
-              >
+          {/* SECTION: Shot list details */}
+          {showShotListNotes && (
+            <Section title="Shot list details">
+              <Field label="Describe the shots you'd like added">
                 <Textarea
                   rows={5}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={4000}
-                  placeholder={
-                    showShotListNotes
-                      ? "e.g. wide shot of the worship team during the bridge of the closing song; candid of leadership greeting people in the lobby; etc."
-                      : "Anything else we should know."
-                  }
+                  placeholder="e.g. wide shot of the worship team during the bridge of the closing song; candid of leadership greeting people in the lobby; etc."
                 />
               </Field>
             </Section>
