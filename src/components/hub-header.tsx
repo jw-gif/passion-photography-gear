@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import {
   ListChecks,
 } from "lucide-react";
 import pccLogo from "@/assets/pcc-logo.png";
+import { cn } from "@/lib/utils";
 
 interface HubHeaderProps {
   onLogout: () => void;
@@ -33,6 +34,18 @@ interface HubHeaderProps {
 
 export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
   const showInnerLabel = !!title;
+  const { pathname } = useLocation();
+
+  // Highlight dropdown triggers when on any of their sub-routes.
+  const photographyActive =
+    pathname.startsWith("/admin/requests-photography") ||
+    pathname.startsWith("/admin/photographers") ||
+    pathname.startsWith("/admin/shot-list-generator") ||
+    (pathname.startsWith("/admin/team") && pathname.includes("photographers"));
+  const gearActive =
+    pathname.startsWith("/admin/gear") ||
+    pathname.startsWith("/admin/requests-gear");
+
   return (
     <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -73,7 +86,11 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(photographyActive && "bg-muted")}
+              >
                 <Camera className="size-4" />
                 <span className="hidden md:inline">Photography</span>
                 <ChevronDown className="size-3 opacity-60" />
@@ -102,7 +119,11 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(gearActive && "bg-muted")}
+              >
                 <Wrench className="size-4" />
                 <span className="hidden md:inline">Gear</span>
                 <ChevronDown className="size-3 opacity-60" />
