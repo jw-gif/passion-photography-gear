@@ -103,10 +103,14 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/admin/team" search={{ tab: "photographers" }}>
-                  <Users className="size-4" /> Photographers
+                <Link to="/admin/shot-list-generator">
+                  <ListChecks className="size-4" /> Shot list generator
                 </Link>
               </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* placeholder removed below */}
               <DropdownMenuItem asChild>
                 <Link to="/admin/shot-list-generator">
                   <ListChecks className="size-4" /> Shot list generator
