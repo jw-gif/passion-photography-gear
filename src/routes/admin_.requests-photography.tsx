@@ -49,6 +49,7 @@ import { CoverageRoster } from "@/components/coverage-roster";
 import { RequestBriefPanel } from "@/components/request-brief-panel";
 import {
   PHOTO_REQUEST_STATUSES,
+  CLOSED_PHOTO_REQUEST_STATUSES,
   REQUEST_TYPES,
   COVERAGE_TYPES,
   statusBadgeClasses,
@@ -116,6 +117,9 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   const reviewerName = displayName ?? "Admin";
 
   const [requests, setRequests] = useState<PhotoRequest[]>([]);
+  const [rosterByRequest, setRosterByRequest] = useState<
+    Record<string, { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"open" | "all">("open");
@@ -123,12 +127,40 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
 
   async function loadAll() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("photo_requests")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error(`Couldn't load requests: ${error.message}`);
-    setRequests((data ?? []) as PhotoRequest[]);
+    const [reqRes, opRes, asgRes] = await Promise.all([
+      supabase.from("photo_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("photo_request_openings").select("id, request_id, role"),
+      supabase.from("photo_request_assignments").select("opening_id").is("released_at", null),
+    ]);
+    if (reqRes.error) toast.error(`Couldn't load requests: ${reqRes.error.message}`);
+    setRequests((reqRes.data ?? []) as PhotoRequest[]);
+
+    const claimedSet = new Set(
+      ((asgRes.data ?? []) as { opening_id: string }[]).map((a) => a.opening_id),
+    );
+    const map: Record<
+      string,
+      { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }
+    > = {};
+    for (const op of (opRes.data ?? []) as { id: string; request_id: string; role: string }[]) {
+      const entry = map[op.request_id] ?? {
+        filledPoint: 0,
+        filledDoor: 0,
+        openPoint: 0,
+        openDoor: 0,
+      };
+      const isPoint = op.role === "point";
+      const claimed = claimedSet.has(op.id);
+      if (isPoint) {
+        if (claimed) entry.filledPoint += 1;
+        else entry.openPoint += 1;
+      } else {
+        if (claimed) entry.filledDoor += 1;
+        else entry.openDoor += 1;
+      }
+      map[op.request_id] = entry;
+    }
+    setRosterByRequest(map);
     setLoading(false);
   }
 
@@ -141,6 +173,16 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
         { event: "*", schema: "public", table: "photo_requests" },
         () => loadAll()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "photo_request_openings" },
+        () => loadAll()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "photo_request_assignments" },
+        () => loadAll()
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -150,7 +192,10 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return requests.filter((r) => {
-      if (activeTab === "open" && (r.status === "completed" || r.status === "archived" || r.status === "declined")) {
+      if (
+        activeTab === "open" &&
+        (CLOSED_PHOTO_REQUEST_STATUSES as string[]).includes(r.status)
+      ) {
         return false;
       }
       if (!q) return true;
@@ -171,10 +216,26 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   }, [requests, query, activeTab]);
 
   const openCount = requests.filter(
-    (r) => r.status !== "completed" && r.status !== "archived" && r.status !== "declined"
+    (r) => !(CLOSED_PHOTO_REQUEST_STATUSES as string[]).includes(r.status),
   ).length;
 
   const detail = openDetailId ? requests.find((r) => r.id === openDetailId) ?? null : null;
+
+  // Auto-flip "New" → "Pending" the first time an admin opens a request
+  useEffect(() => {
+    if (!detail || detail.status !== "new") return;
+    void supabase
+      .from("photo_requests")
+      .update({
+        status: "pending",
+        reviewed_by: reviewerName,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", detail.id)
+      .then(({ error }) => {
+        if (error) console.error("Auto-pending failed:", error.message);
+      });
+  }, [detail, reviewerName]);
 
   async function setStatus(req: PhotoRequest, status: PhotoRequestStatus) {
     const { error } = await supabase
@@ -260,6 +321,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
                   <RequestRow
                     key={r.id}
                     req={r}
+                    roster={rosterByRequest[r.id]}
                     onOpen={() => setOpenDetailId(r.id)}
                     onSetStatus={(s) => setStatus(r, s)}
                   />
@@ -281,18 +343,34 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+interface RosterCounts {
+  filledPoint: number;
+  filledDoor: number;
+  openPoint: number;
+  openDoor: number;
+}
+
 function RequestRow({
   req,
+  roster,
   onOpen,
   onSetStatus,
 }: {
   req: PhotoRequest;
+  roster?: RosterCounts;
   onOpen: () => void;
   onSetStatus: (s: PhotoRequestStatus) => void;
 }) {
   const types = req.request_types
     .map((v) => REQUEST_TYPES.find((t) => t.value === v)?.label ?? v)
     .join(", ");
+
+  const totalOpenings =
+    (roster?.filledPoint ?? 0) +
+    (roster?.filledDoor ?? 0) +
+    (roster?.openPoint ?? 0) +
+    (roster?.openDoor ?? 0);
+  const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
 
   return (
     <Card
@@ -310,6 +388,19 @@ function RequestRow({
             >
               {statusLabel(req.status)}
             </span>
+            {totalOpenings > 0 && (
+              <span
+                className={cn(
+                  "text-xs font-medium px-2 py-0.5 rounded-full border",
+                  totalFilled === totalOpenings
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                    : "bg-muted text-muted-foreground border-border",
+                )}
+                title={`${roster?.filledPoint ?? 0}/${(roster?.filledPoint ?? 0) + (roster?.openPoint ?? 0)} Point · ${roster?.filledDoor ?? 0}/${(roster?.filledDoor ?? 0) + (roster?.openDoor ?? 0)} Door Holder`}
+              >
+                {totalFilled}/{totalOpenings} filled
+              </span>
+            )}
             <span className="text-xs text-muted-foreground">{types}</span>
           </div>
           <div className="mt-1.5 font-semibold truncate">

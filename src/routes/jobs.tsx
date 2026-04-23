@@ -40,10 +40,10 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/jobs")({
   head: () => ({
     meta: [
-      { title: "Photographer Job Board · Passion Photography Hub" },
+      { title: "Serving Opportunities · Passion Photography Hub" },
       {
         name: "description",
-        content: "Pick up upcoming photography shoots from your personal job board.",
+        content: "Pick up upcoming photography shoots from your personal serving opportunities board.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -221,7 +221,7 @@ function JobBoardPage() {
             <div className="flex items-center gap-2 mb-1">
               <Camera className="size-5 text-primary shrink-0" />
               <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                Passion Photography Job Board
+                Passion Photography · Serving Opportunities
               </span>
             </div>
             <h1 className="text-xl font-semibold tracking-tight truncate">

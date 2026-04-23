@@ -81,13 +81,26 @@ export type RequestType = (typeof REQUEST_TYPES)[number]["value"];
 
 export const PHOTO_REQUEST_STATUSES = [
   { value: "new", label: "New" },
+  { value: "pending", label: "Pending" },
   { value: "in_review", label: "In Review" },
+  { value: "approved_job_board", label: "Approved – Serving Opportunities" },
+  { value: "approved_shot_list", label: "Approved – Shot List Add" },
+  { value: "needs_revisions", label: "Needs Revisions" },
   { value: "scheduled", label: "Scheduled" },
   { value: "completed", label: "Completed" },
+  { value: "denied", label: "Denied" },
   { value: "declined", label: "Declined" },
   { value: "archived", label: "Archived" },
 ] as const;
 export type PhotoRequestStatus = (typeof PHOTO_REQUEST_STATUSES)[number]["value"];
+
+/** Statuses considered "closed" — hidden from the default Open queue. */
+export const CLOSED_PHOTO_REQUEST_STATUSES: PhotoRequestStatus[] = [
+  "completed",
+  "archived",
+  "declined",
+  "denied",
+];
 
 export function statusLabel(s: PhotoRequestStatus): string {
   return PHOTO_REQUEST_STATUSES.find((x) => x.value === s)?.label ?? s;
@@ -97,12 +110,20 @@ export function statusBadgeClasses(s: PhotoRequestStatus): string {
   switch (s) {
     case "new":
       return "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30";
+    case "pending":
     case "in_review":
       return "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30";
+    case "approved_job_board":
+      return "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30";
+    case "approved_shot_list":
+      return "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30";
+    case "needs_revisions":
+      return "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30";
     case "scheduled":
       return "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30";
     case "completed":
       return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30";
+    case "denied":
     case "declined":
       return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30";
     case "archived":
@@ -148,9 +169,15 @@ export function statusDotColor(
     case "approved":
     case "scheduled":
       return "bg-emerald-500";
+    case "approved_job_board":
+      return "bg-sky-500";
+    case "approved_shot_list":
+      return "bg-teal-500";
     case "pending":
     case "in_review":
       return "bg-amber-500";
+    case "needs_revisions":
+      return "bg-orange-500";
     case "new":
       return "bg-blue-500";
     case "denied":
