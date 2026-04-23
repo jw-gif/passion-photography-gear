@@ -124,7 +124,25 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
           .eq("id", event.id)
           .maybeSingle();
         if (error) throw error;
-        setPhoto((data as PhotoDetail | null) ?? null);
+        const photoData = (data as PhotoDetail | null) ?? null;
+        setPhoto(photoData);
+
+        // Auto-flip "New" → "Pending" the first time an admin opens the request
+        if (photoData && photoData.status === "new") {
+          const reviewer = user?.email ?? null;
+          const { error: updErr } = await supabase
+            .from("photo_requests")
+            .update({
+              status: "pending",
+              reviewed_at: new Date().toISOString(),
+              reviewed_by: reviewer,
+            })
+            .eq("id", photoData.id);
+          if (!updErr) {
+            setPhoto({ ...photoData, status: "pending" });
+            onChanged?.();
+          }
+        }
       } else {
         const [{ data: req, error: reqErr }, { data: items, error: itemsErr }] =
           await Promise.all([
