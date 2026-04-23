@@ -9,6 +9,7 @@ import {
   Clock,
   Info,
   MapPin,
+  Package,
   Phone,
   User as UserIcon,
 } from "lucide-react";
