@@ -47,6 +47,7 @@ interface EventGearPanelProps {
   defaultLocation: string | null;
   defaultDate: string | null;
   defaultNotes?: string | null;
+  canDelete?: boolean;
 }
 
 const STATUS_BADGE: Record<LinkedRequest["status"], string> = {
