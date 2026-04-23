@@ -26,7 +26,7 @@ import {
   type Brief,
   emptyBrief,
   normalizeBrief,
-  renderBriefAsText,
+  renderBriefAsSlack,
   renderBriefAsMarkdown,
 } from "@/lib/shot-list";
 import { LOCATIONS } from "@/lib/locations";
@@ -144,7 +144,7 @@ function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
     setBrief(emptyBrief());
   }
 
-  const plainText = useMemo(() => renderBriefAsText(brief, form.eventName), [brief, form.eventName]);
+  const slackText = useMemo(() => renderBriefAsSlack(brief, form.eventName), [brief, form.eventName]);
   const markdown = useMemo(() => renderBriefAsMarkdown(brief, form.eventName), [brief, form.eventName]);
 
   async function copyText(text: string, label: string) {
@@ -157,7 +157,7 @@ function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
   }
 
   function download() {
-    const blob = new Blob([plainText], { type: "text/plain" });
+    const blob = new Blob([slackText], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -429,10 +429,10 @@ function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => copyText(plainText, "Plain text")}
+                  onClick={() => copyText(slackText, "Slack")}
                   disabled={brief.segments.length === 0}
                 >
-                  <Copy className="size-4" /> Plain
+                  <Copy className="size-4" /> Slack
                 </Button>
                 <Button
                   type="button"
@@ -455,14 +455,14 @@ function ShotListGeneratorPage({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
 
-            <Tabs defaultValue="plain">
+            <Tabs defaultValue="slack">
               <TabsList className="mb-3">
-                <TabsTrigger value="plain">Plain text</TabsTrigger>
+                <TabsTrigger value="slack">Slack</TabsTrigger>
                 <TabsTrigger value="markdown">Markdown</TabsTrigger>
               </TabsList>
-              <TabsContent value="plain">
+              <TabsContent value="slack">
                 <pre className="text-xs whitespace-pre-wrap font-mono bg-muted/30 border rounded-md p-3 max-h-[60vh] overflow-y-auto">
-                  {plainText.trim() || "Generate a brief to see the preview."}
+                  {slackText.trim() || "Generate a brief to see the preview."}
                 </pre>
               </TabsContent>
               <TabsContent value="markdown">
