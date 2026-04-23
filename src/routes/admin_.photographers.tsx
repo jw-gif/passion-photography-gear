@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Upload,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -45,6 +46,7 @@ import {
   tierBadgeClasses,
   generatePhotographerToken,
 } from "@/lib/photographers";
+import { PhotographerBulkImportDialog } from "@/components/photographer-bulk-import-dialog";
 
 export const Route = createFileRoute("/admin_/photographers")({
   head: () => ({
@@ -85,6 +87,7 @@ function PhotographersView({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editing, setEditing] = useState<Photographer | null>(null);
 
   async function load() {
@@ -180,6 +183,9 @@ function PhotographersView({ onLogout }: { onLogout: () => void }) {
                 className="pl-9"
               />
             </div>
+            <Button variant="outline" onClick={() => setBulkOpen(true)}>
+              <Upload className="size-4" /> Bulk import
+            </Button>
             <Button onClick={() => setAddOpen(true)}>
               <UserPlus className="size-4" /> Add
             </Button>
@@ -296,6 +302,10 @@ function PhotographersView({ onLogout }: { onLogout: () => void }) {
         open={!!editing}
         onClose={() => setEditing(null)}
         photographer={editing}
+      />
+      <PhotographerBulkImportDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
       />
     </main>
   );
