@@ -373,22 +373,36 @@ function RequestRow({
     (roster?.openDoor ?? 0);
   const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
 
+  const showCornerChip = req.status === "new" || req.status === "pending";
+
   return (
     <Card
-      className="p-4 hover:border-foreground/30 transition-colors cursor-pointer"
+      className="relative p-4 hover:border-foreground/30 transition-colors cursor-pointer"
       onClick={onOpen}
     >
+      {showCornerChip && (
+        <span
+          className={cn(
+            "absolute top-2 right-2 text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full border shadow-sm",
+            statusBadgeClasses(req.status),
+          )}
+        >
+          {req.status === "new" ? "New" : "Pending"}
+        </span>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={cn(
-                "text-xs font-medium px-2 py-0.5 rounded-full border",
-                statusBadgeClasses(req.status)
-              )}
-            >
-              {statusLabel(req.status)}
-            </span>
+            {!showCornerChip && (
+              <span
+                className={cn(
+                  "text-xs font-medium px-2 py-0.5 rounded-full border",
+                  statusBadgeClasses(req.status),
+                )}
+              >
+                {statusLabel(req.status)}
+              </span>
+            )}
             {totalOpenings > 0 && (
               <RosterPills roster={roster!} totalFilled={totalFilled} totalOpenings={totalOpenings} />
             )}
@@ -425,25 +439,25 @@ function RequestRow({
           </div>
         </div>
         <div
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center gap-2 shrink-0 mt-1 sm:mt-0 sm:mr-20"
           onClick={(e) => e.stopPropagation()}
         >
-          <Select
-            value={req.status}
-            onValueChange={(v) => onSetStatus(v as PhotoRequestStatus)}
+          <Button
+            size="sm"
+            onClick={() => onSetStatus("approved_job_board")}
+            className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            <SelectTrigger className="h-8 w-36 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PHOTO_REQUEST_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant="outline" onClick={onOpen}>
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onSetStatus("denied")}
+            className="h-8 text-rose-600 border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950"
+          >
+            Decline
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onOpen} className="h-8">
             View
           </Button>
         </div>
