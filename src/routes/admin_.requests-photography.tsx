@@ -47,6 +47,7 @@ import { toast } from "sonner";
 import { HubHeader } from "@/components/hub-header";
 import { CoverageRoster } from "@/components/coverage-roster";
 import { RequestBriefPanel } from "@/components/request-brief-panel";
+import { EventGearPanel } from "@/components/event-gear-panel";
 import {
   PHOTO_REQUEST_STATUSES,
   CLOSED_PHOTO_REQUEST_STATUSES,
