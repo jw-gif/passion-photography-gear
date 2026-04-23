@@ -719,7 +719,7 @@ function BudgetPicker({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const presetValues = PHOTO_RATE_CARD.map((t) => t.label);
+  const presetValues: string[] = PHOTO_RATE_CARD.map((t) => t.label);
   const isPreset = presetValues.includes(value);
   const isOther = value !== "" && !isPreset;
   const [otherAmount, setOtherAmount] = useState(isOther ? value.replace(/^\$/, "") : "");
