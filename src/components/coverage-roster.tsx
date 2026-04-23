@@ -171,7 +171,7 @@ export function CoverageRoster({ requestId }: CoverageRosterProps) {
   async function releaseAssignment(opening: OpeningRow) {
     const a = assignments.find((x) => x.opening_id === opening.id);
     if (!a) return;
-    if (!confirm("Release this photographer from the spot? It will reappear on the job board.")) return;
+    if (!confirm("Release this photographer from the spot? It will reappear on serving opportunities.")) return;
     const { error } = await supabase
       .from("photo_request_assignments")
       .update({ released_at: new Date().toISOString(), released_by: "Admin" })
@@ -235,7 +235,7 @@ export function CoverageRoster({ requestId }: CoverageRosterProps) {
           <div className="space-y-2">
             {openings.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No openings yet. Add one to publish this shoot to the job board.
+                No openings yet. Add one to publish this shoot to serving opportunities.
               </p>
             )}
             {openings.map((o) => {
