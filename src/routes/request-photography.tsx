@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Camera, Check, ArrowLeft } from "lucide-react";
+import { CalendarIcon, Camera, Check, ArrowLeft, Receipt, AlertCircle } from "lucide-react";
 import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -100,11 +101,13 @@ function RequestPhotographyPage() {
   const [eventEndDate, setEventEndDate] = useState<Date | undefined>();
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [contactSameAsRequester, setContactSameAsRequester] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [coverageTypes, setCoverageTypes] = useState<CoverageType[]>([]);
   const [coverageOther, setCoverageOther] = useState("");
 
+  const [expensing, setExpensing] = useState(false);
   const [budget, setBudget] = useState("");
   const [concurApprover, setConcurApprover] = useState("");
   const [concurCompany, setConcurCompany] = useState("");
@@ -123,6 +126,14 @@ function RequestPhotographyPage() {
   );
   const showShotListNotes = requestTypes.includes("shot_list_addition");
 
+  // When "same as requester" is on, mirror name/phone-less contact info from
+  // requester. Phone stays manual since there's no requester phone field.
+  useEffect(() => {
+    if (contactSameAsRequester) {
+      setContactName(`${firstName} ${lastName}`.trim());
+    }
+  }, [contactSameAsRequester, firstName, lastName]);
+
   function toggleRequestType(t: RequestType) {
     setRequestTypes((prev) =>
       prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
@@ -134,6 +145,50 @@ function RequestPhotographyPage() {
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
     );
   }
+
+  // Live-computed list of missing required fields for the sticky bar.
+  const missingFields = useMemo(() => {
+    const m: string[] = [];
+    if (!company) m.push("Team");
+    if (showPccTeam && !team) m.push("PCC sub-team");
+    if (!firstName.trim()) m.push("First name");
+    if (!lastName.trim()) m.push("Last name");
+    if (!email.trim()) m.push("Email");
+    if (requestTypes.length === 0) m.push("Request type");
+    if (showEventDetails) {
+      if (!eventName.trim()) m.push("Event name");
+      if (!eventLocation) m.push("Event location");
+      if (!eventDate) m.push("Event date");
+      if (!startTime) m.push("Start time");
+      if (!endTime) m.push("End time");
+      if (!contactName.trim()) m.push("On-site contact name");
+      if (!contactPhone.trim()) m.push("On-site contact phone");
+      if (coverageTypes.length === 0) m.push("Coverage type");
+      if (coverageTypes.includes("other") && !coverageOther.trim())
+        m.push("Coverage other");
+      if (!budget.trim()) m.push("Budget");
+    }
+    return m;
+  }, [
+    company,
+    team,
+    showPccTeam,
+    firstName,
+    lastName,
+    email,
+    requestTypes,
+    showEventDetails,
+    eventName,
+    eventLocation,
+    eventDate,
+    startTime,
+    endTime,
+    contactName,
+    contactPhone,
+    coverageTypes,
+    coverageOther,
+    budget,
+  ]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -173,18 +228,9 @@ function RequestPhotographyPage() {
       return;
     }
 
-    if (showEventDetails) {
-      if (!eventName) return toast.error("Event name is required");
-      if (!eventLocation) return toast.error("Event location is required");
-      if (!eventDate) return toast.error("Event date is required");
-      if (!startTime) return toast.error("Start time is required");
-      if (!endTime) return toast.error("End time is required");
-      if (!contactName) return toast.error("On-site contact name is required");
-      if (!contactPhone) return toast.error("On-site contact phone is required");
-      if (coverageTypes.length === 0)
-        return toast.error("Choose at least one coverage type");
-      if (coverageTypes.includes("other") && !coverageOther.trim())
-        return toast.error("Describe the 'Other' coverage type");
+    if (missingFields.length > 0) {
+      toast.error(`Still needed: ${missingFields.slice(0, 3).join(", ")}${missingFields.length > 3 ? "…" : ""}`);
+      return;
     }
 
     setSubmitting(true);
@@ -210,13 +256,13 @@ function RequestPhotographyPage() {
       coverage_types: coverageTypes,
       coverage_other: coverageOther || null,
       budget: budget || null,
-      concur_budget_approver: concurApprover || null,
-      concur_company: concurCompany || null,
-      concur_class: concurClass || null,
-      concur_department: concurDepartment || null,
-      concur_expense_category: concurExpenseCategory || null,
-      concur_project: concurProject || null,
-      concur_people_resource_type: concurPeopleResource || null,
+      concur_budget_approver: expensing ? concurApprover || null : null,
+      concur_company: expensing ? concurCompany || null : null,
+      concur_class: expensing ? concurClass || null : null,
+      concur_department: expensing ? concurDepartment || null : null,
+      concur_expense_category: expensing ? concurExpenseCategory || null : null,
+      concur_project: expensing ? concurProject || null : null,
+      concur_people_resource_type: expensing ? concurPeopleResource || null : null,
       notes: notes || null,
     });
     setSubmitting(false);
@@ -226,53 +272,69 @@ function RequestPhotographyPage() {
       return;
     }
     setSubmitted(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetForm() {
+    setSubmitted(false);
+    setRequestTypes([]);
+    setEventName("");
+    setEventDate(undefined);
+    setEventEndDate(undefined);
+    setSpansMultipleDays(false);
+    setStartTime("");
+    setEndTime("");
+    setContactName("");
+    setContactPhone("");
+    setContactSameAsRequester(false);
+    setCoverageTypes([]);
+    setCoverageOther("");
+    setBudget("");
+    setExpensing(false);
+    setConcurApprover("");
+    setConcurCompany("");
+    setConcurClass("");
+    setConcurDepartment("");
+    setConcurExpenseCategory("");
+    setConcurProject("");
+    setConcurPeopleResource("");
+    setNotes("");
   }
 
   if (submitted) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <Card className="max-w-md w-full p-8 text-center">
-          <div className="mx-auto size-12 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <Check className="size-6" />
+          <div className="mx-auto size-14 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <Check className="size-7" />
           </div>
-          <h1 className="mt-4 text-xl font-semibold tracking-tight">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight">
             Request submitted
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Thanks{firstName ? `, ${firstName}` : ""}! The Photography team will
-            review your request and follow up by email.
+            review your request and follow up by email at{" "}
+            <span className="font-medium text-foreground">{email}</span>.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Button asChild variant="outline">
-              <Link to="/">Home</Link>
+              <Link to="/">Back home</Link>
             </Button>
-            <Button
-              onClick={() => {
-                setSubmitted(false);
-                setRequestTypes([]);
-                setEventName("");
-                setEventDate(undefined);
-                setEventEndDate(undefined);
-                setSpansMultipleDays(false);
-                setStartTime("");
-                setEndTime("");
-                setContactName("");
-                setContactPhone("");
-                setCoverageTypes([]);
-                setCoverageOther("");
-                setNotes("");
-              }}
-            >
-              Submit another
-            </Button>
+            <Button onClick={resetForm}>Submit another</Button>
           </div>
         </Card>
       </main>
     );
   }
 
+  const sectionStep = (n: number) => (
+    <span className="inline-flex items-center justify-center size-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+      {n}
+    </span>
+  );
+
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background pb-28">
       <header className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
           <div className="size-8 rounded-full bg-primary flex items-center justify-center">
@@ -302,8 +364,8 @@ function RequestPhotographyPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* SECTION: Who you are */}
-          <Section title="Tell us about you">
+          {/* SECTION 1: Who you are */}
+          <Section step={sectionStep(1)} title="Tell us about you">
             <Field label="Please tell us what team you're on" required>
               <Select value={company} onValueChange={(v) => { setCompany(v); setTeam(""); }}>
                 <SelectTrigger>
@@ -360,8 +422,8 @@ function RequestPhotographyPage() {
             </Field>
           </Section>
 
-          {/* SECTION: Request type */}
-          <Section title="I want to request a…" required>
+          {/* SECTION 2: Request type */}
+          <Section step={sectionStep(2)} title="What do you need?" required>
             <div className="space-y-3">
               {REQUEST_TYPES.map((t) => {
                 const checked = requestTypes.includes(t.value);
@@ -392,9 +454,9 @@ function RequestPhotographyPage() {
             </div>
           </Section>
 
-          {/* SECTION: Event details */}
+          {/* SECTION 3: Event details */}
           {showEventDetails && (
-            <Section title="Event details">
+            <Section step={sectionStep(3)} title="Event details">
               <Field label="Event Name" required>
                 <Input
                   value={eventName}
@@ -441,10 +503,7 @@ function RequestPhotographyPage() {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field
-                  label="Start Time (photographer(s) on site)"
-                  required
-                >
+                <Field label="Start Time (photographer(s) on site)" required>
                   <TimePicker value={startTime} onChange={setStartTime} />
                 </Field>
                 <Field label="End Time (photographer(s) released)" required>
@@ -452,33 +511,41 @@ function RequestPhotographyPage() {
                 </Field>
               </div>
 
-              <Field label="On-Site Point of Contact Name" required>
-                <Input
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  maxLength={100}
-                />
-              </Field>
-
-              <Field label="On-Site Point of Contact Phone Number" required>
-                <Input
-                  type="tel"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  maxLength={30}
-                  placeholder="(555) 555-5555"
-                />
-              </Field>
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                  <Checkbox
+                    checked={contactSameAsRequester}
+                    onCheckedChange={(v) => setContactSameAsRequester(!!v)}
+                  />
+                  On-site contact is the same as me
+                </label>
+                <Field label="On-Site Point of Contact Name" required>
+                  <Input
+                    value={contactName}
+                    onChange={(e) => {
+                      setContactSameAsRequester(false);
+                      setContactName(e.target.value);
+                    }}
+                    maxLength={100}
+                  />
+                </Field>
+                <Field label="On-Site Point of Contact Phone" required>
+                  <Input
+                    type="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    maxLength={30}
+                    placeholder="(555) 555-5555"
+                  />
+                </Field>
+              </div>
 
               <Field label="What type of coverage are you requesting?" required>
                 <div className="space-y-2">
                   {COVERAGE_TYPES.map((c) => {
                     const checked = coverageTypes.includes(c.value);
                     return (
-                      <label
-                        key={c.value}
-                        className="flex items-center gap-3 cursor-pointer"
-                      >
+                      <label key={c.value} className="flex items-center gap-3 cursor-pointer">
                         <Checkbox
                           checked={checked}
                           onCheckedChange={() => toggleCoverage(c.value)}
@@ -501,9 +568,9 @@ function RequestPhotographyPage() {
             </Section>
           )}
 
-          {/* SECTION: Shot list details */}
+          {/* Shot list notes */}
           {showShotListNotes && (
-            <Section title="Shot list details">
+            <Section step={sectionStep(showEventDetails ? 4 : 3)} title="Shot list details">
               <Field label="Describe the shots you'd like added">
                 <Textarea
                   rows={5}
@@ -516,100 +583,151 @@ function RequestPhotographyPage() {
             </Section>
           )}
 
-          {/* SECTION: Budget / Concur (only for paid bookings) */}
+          {/* Budget + Concur (collapsed behind expensing toggle) */}
           {showEventDetails && (
-            <Section title="Budget & Concur details">
-              <p className="text-sm text-muted-foreground -mt-2">
-                Required for Photography Team bookings and Photoshoots. See the
-                rate card for budget categories.
-              </p>
-
+            <Section
+              step={sectionStep(showShotListNotes ? 5 : 4)}
+              title="Budget & expensing"
+            >
               <Field label="What is your budget?" required>
                 <BudgetPicker value={budget} onChange={setBudget} />
               </Field>
-              <Field label="Concur Budget Approver">
-                <Input
-                  value={concurApprover}
-                  onChange={(e) => setConcurApprover(e.target.value)}
-                  maxLength={200}
-                />
-              </Field>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Company">
-                  <Input
-                    value={concurCompany}
-                    onChange={(e) => setConcurCompany(e.target.value)}
-                    maxLength={200}
-                  />
-                </Field>
-                <Field label="Class">
-                  <Input
-                    value={concurClass}
-                    onChange={(e) => setConcurClass(e.target.value)}
-                    maxLength={200}
-                  />
-                </Field>
-                <Field label="Department">
-                  <Input
-                    value={concurDepartment}
-                    onChange={(e) => setConcurDepartment(e.target.value)}
-                    maxLength={200}
-                  />
-                </Field>
-                <Field label="Expense Category">
-                  <Input
-                    value={concurExpenseCategory}
-                    onChange={(e) => setConcurExpenseCategory(e.target.value)}
-                    maxLength={200}
-                  />
-                </Field>
-                <Field label="Project">
-                  <Input
-                    value={concurProject}
-                    onChange={(e) => setConcurProject(e.target.value)}
-                    maxLength={200}
-                  />
-                </Field>
-                <Field label="People/Resource Type">
-                  <Input
-                    value={concurPeopleResource}
-                    onChange={(e) => setConcurPeopleResource(e.target.value)}
-                    maxLength={200}
-                  />
-                </Field>
+
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="flex items-center gap-3">
+                  <Receipt className="size-5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm font-medium">I'll be expensing this</div>
+                    <div className="text-xs text-muted-foreground">
+                      Shows additional Concur fields for accounting.
+                    </div>
+                  </div>
+                </div>
+                <Switch checked={expensing} onCheckedChange={setExpensing} />
               </div>
+
+              {expensing && (
+                <div className="space-y-4 pt-2">
+                  <Field label="Concur Budget Approver">
+                    <Input
+                      value={concurApprover}
+                      onChange={(e) => setConcurApprover(e.target.value)}
+                      maxLength={200}
+                    />
+                  </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Company">
+                      <Input
+                        value={concurCompany}
+                        onChange={(e) => setConcurCompany(e.target.value)}
+                        maxLength={200}
+                      />
+                    </Field>
+                    <Field label="Class">
+                      <Input
+                        value={concurClass}
+                        onChange={(e) => setConcurClass(e.target.value)}
+                        maxLength={200}
+                      />
+                    </Field>
+                    <Field label="Department">
+                      <Input
+                        value={concurDepartment}
+                        onChange={(e) => setConcurDepartment(e.target.value)}
+                        maxLength={200}
+                      />
+                    </Field>
+                    <Field label="Expense Category">
+                      <Input
+                        value={concurExpenseCategory}
+                        onChange={(e) => setConcurExpenseCategory(e.target.value)}
+                        maxLength={200}
+                      />
+                    </Field>
+                    <Field label="Project">
+                      <Input
+                        value={concurProject}
+                        onChange={(e) => setConcurProject(e.target.value)}
+                        maxLength={200}
+                      />
+                    </Field>
+                    <Field label="People/Resource Type">
+                      <Input
+                        value={concurPeopleResource}
+                        onChange={(e) => setConcurPeopleResource(e.target.value)}
+                        maxLength={200}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              )}
             </Section>
           )}
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button asChild variant="outline" type="button">
-              <Link to="/">Cancel</Link>
-            </Button>
-            <Button type="submit" size="lg" disabled={submitting}>
-              {submitting ? "Submitting…" : "Submit request"}
-            </Button>
-          </div>
         </form>
+      </div>
+
+      {/* Sticky bottom validation + submit bar */}
+      <div className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3 justify-between">
+          <div className="text-sm min-w-0 flex items-center gap-2">
+            {missingFields.length === 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                <Check className="size-4" /> Ready to submit
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground truncate">
+                <AlertCircle className="size-4 shrink-0 text-amber-500" />
+                <span className="truncate">
+                  <span className="font-medium text-foreground">{missingFields.length}</span> required
+                  {missingFields.length === 1 ? " field" : " fields"} missing
+                  <span className="hidden sm:inline">
+                    {": "}
+                    <span className="text-foreground/70">
+                      {missingFields.slice(0, 2).join(", ")}
+                      {missingFields.length > 2 && "…"}
+                    </span>
+                  </span>
+                </span>
+              </span>
+            )}
+          </div>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={submitting || missingFields.length > 0}
+            onClick={(e) => {
+              const form = (e.currentTarget.closest("main")?.querySelector("form") ?? null) as HTMLFormElement | null;
+              if (form) form.requestSubmit();
+            }}
+          >
+            {submitting ? "Submitting…" : "Submit request"}
+          </Button>
+        </div>
       </div>
     </main>
   );
 }
 
 function Section({
+  step,
   title,
   required,
   children,
 }: {
+  step?: React.ReactNode;
   title: string;
   required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Card className="p-5 sm:p-6 space-y-4">
-      <h2 className="text-lg font-semibold tracking-tight">
-        {title}
-        {required && <span className="text-rose-500 ml-1">*</span>}
-      </h2>
+      <div className="flex items-center gap-3">
+        {step}
+        <h2 className="text-lg font-semibold tracking-tight">
+          {title}
+          {required && <span className="text-rose-500 ml-1">*</span>}
+        </h2>
+      </div>
       {children}
     </Card>
   );
@@ -694,7 +812,6 @@ function TimePicker({
   value: string;
   onChange: (v: string) => void;
 }) {
-  // Normalize possible "HH:mm:ss" to "HH:mm"
   const v = value ? value.slice(0, 5) : "";
   return (
     <Select value={v} onValueChange={onChange}>
