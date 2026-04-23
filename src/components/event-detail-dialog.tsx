@@ -625,9 +625,37 @@ export function EventDetailDialog({ event, onClose, onChanged, navList, onNaviga
 
 function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground">{icon}</span>
-      <span>{children}</span>
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="text-muted-foreground shrink-0">{icon}</span>
+      <div className="flex items-center gap-1.5 flex-1 min-w-0">{children}</div>
     </div>
   );
 }
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+      title={copied ? `Copied!` : `Copy ${label}`}
+      onClick={async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          toast.success(`Copied ${label}`);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error("Couldn't copy to clipboard");
+        }
+      }}
+    >
+      {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+    </Button>
+  );
+}
+
