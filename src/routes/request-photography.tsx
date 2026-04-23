@@ -524,12 +524,8 @@ function RequestPhotographyPage() {
                 rate card for budget categories.
               </p>
 
-              <Field label="What is your budget? See rate card for categories">
-                <Input
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  maxLength={200}
-                />
+              <Field label="What is your budget?" required>
+                <BudgetPicker value={budget} onChange={setBudget} />
               </Field>
               <Field label="Concur Budget Approver">
                 <Input
