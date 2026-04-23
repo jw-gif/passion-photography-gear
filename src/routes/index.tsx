@@ -62,7 +62,7 @@ function IndexPage() {
 type GearStatus = "active" | "out_of_service" | "out_for_repair";
 
 interface GearRow {
-  id: number;
+  id: string;
   name: string;
   current_location: string;
   sub_location: string | null;
@@ -73,7 +73,7 @@ interface GearRow {
   icon_kind: string | null;
 }
 
-function PublicGearView({ gearId }: { gearId: number }) {
+function PublicGearView({ gearId }: { gearId: string }) {
   const { displayName, isAdmin } = useAuth();
   const [gear, setGear] = useState<GearRow | null>(null);
   const [loading, setLoading] = useState(true);
