@@ -86,6 +86,11 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
                   <ImageIcon className="size-4" /> Requests
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/photographers">
+                  <Users className="size-4" /> Photographers
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

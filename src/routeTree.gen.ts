@@ -14,6 +14,7 @@ import { Route as RequestPhotographyRouteImport } from './routes/request-photogr
 import { Route as RequestGearRouteImport } from './routes/request-gear'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
@@ -21,6 +22,7 @@ import { Route as AdminTeamRouteImport } from './routes/admin_.team'
 import { Route as AdminRequestsPhotographyRouteImport } from './routes/admin_.requests-photography'
 import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-gear'
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
+import { Route as AdminPhotographersRouteImport } from './routes/admin_.photographers'
 import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
 import { Route as AdminManageRouteImport } from './routes/admin_.manage'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
@@ -52,6 +54,11 @@ const RequestRoute = RequestRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsRoute = JobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -88,6 +95,11 @@ const AdminRequestsGearRoute = AdminRequestsGearRouteImport.update({
 const AdminRequestsRoute = AdminRequestsRouteImport.update({
   id: '/admin_/requests',
   path: '/admin/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPhotographersRoute = AdminPhotographersRouteImport.update({
+  id: '/admin_/photographers',
+  path: '/admin/photographers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPhotoRequestsRoute = AdminPhotoRequestsRouteImport.update({
@@ -129,6 +141,7 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -141,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
+  '/admin/photographers': typeof AdminPhotographersRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/requests-gear': typeof AdminRequestsGearRoute
   '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
@@ -150,6 +164,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -162,6 +177,7 @@ export interface FileRoutesByTo {
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
+  '/admin/photographers': typeof AdminPhotographersRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/requests-gear': typeof AdminRequestsGearRoute
   '/admin/requests-photography': typeof AdminRequestsPhotographyRoute
@@ -172,6 +188,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -184,6 +201,7 @@ export interface FileRoutesById {
   '/admin_/history': typeof AdminHistoryRoute
   '/admin_/manage': typeof AdminManageRoute
   '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
+  '/admin_/photographers': typeof AdminPhotographersRoute
   '/admin_/requests': typeof AdminRequestsRoute
   '/admin_/requests-gear': typeof AdminRequestsGearRoute
   '/admin_/requests-photography': typeof AdminRequestsPhotographyRoute
@@ -195,6 +213,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/jobs'
     | '/login'
     | '/request'
     | '/request-gear'
@@ -207,6 +226,7 @@ export interface FileRouteTypes {
     | '/admin/history'
     | '/admin/manage'
     | '/admin/photo-requests'
+    | '/admin/photographers'
     | '/admin/requests'
     | '/admin/requests-gear'
     | '/admin/requests-photography'
@@ -216,6 +236,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/jobs'
     | '/login'
     | '/request'
     | '/request-gear'
@@ -228,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin/history'
     | '/admin/manage'
     | '/admin/photo-requests'
+    | '/admin/photographers'
     | '/admin/requests'
     | '/admin/requests-gear'
     | '/admin/requests-photography'
@@ -237,6 +259,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/jobs'
     | '/login'
     | '/request'
     | '/request-gear'
@@ -249,6 +272,7 @@ export interface FileRouteTypes {
     | '/admin_/history'
     | '/admin_/manage'
     | '/admin_/photo-requests'
+    | '/admin_/photographers'
     | '/admin_/requests'
     | '/admin_/requests-gear'
     | '/admin_/requests-photography'
@@ -259,6 +283,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  JobsRoute: typeof JobsRoute
   LoginRoute: typeof LoginRoute
   RequestRoute: typeof RequestRoute
   RequestGearRoute: typeof RequestGearRoute
@@ -271,6 +296,7 @@ export interface RootRouteChildren {
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminManageRoute: typeof AdminManageRoute
   AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
+  AdminPhotographersRoute: typeof AdminPhotographersRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminRequestsGearRoute: typeof AdminRequestsGearRoute
   AdminRequestsPhotographyRoute: typeof AdminRequestsPhotographyRoute
@@ -313,6 +339,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs': {
+      id: '/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -362,6 +395,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/requests'
       fullPath: '/admin/requests'
       preLoaderRoute: typeof AdminRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/photographers': {
+      id: '/admin_/photographers'
+      path: '/admin/photographers'
+      fullPath: '/admin/photographers'
+      preLoaderRoute: typeof AdminPhotographersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin_/photo-requests': {
@@ -419,6 +459,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  JobsRoute: JobsRoute,
   LoginRoute: LoginRoute,
   RequestRoute: RequestRoute,
   RequestGearRoute: RequestGearRoute,
@@ -431,6 +472,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminHistoryRoute: AdminHistoryRoute,
   AdminManageRoute: AdminManageRoute,
   AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
+  AdminPhotographersRoute: AdminPhotographersRoute,
   AdminRequestsRoute: AdminRequestsRoute,
   AdminRequestsGearRoute: AdminRequestsGearRoute,
   AdminRequestsPhotographyRoute: AdminRequestsPhotographyRoute,

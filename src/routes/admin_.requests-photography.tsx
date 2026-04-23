@@ -45,6 +45,7 @@ import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { toast } from "sonner";
 import { HubHeader } from "@/components/hub-header";
+import { CoverageRoster } from "@/components/coverage-roster";
 import {
   PHOTO_REQUEST_STATUSES,
   REQUEST_TYPES,
