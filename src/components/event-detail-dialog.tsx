@@ -4,22 +4,32 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import {
   Calendar as CalendarIcon,
   Camera,
   Check,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Loader2,
   MapPin,
+  Phone,
   User as UserIcon,
   Wrench,
   X,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -28,20 +38,16 @@ import { cn } from "@/lib/utils";
 import {
   gearRequestBadgeClasses,
   gearRequestStatusLabel,
-  PHOTO_REQUEST_STATUSES,
   statusBadgeClasses,
   statusLabel,
   type GearRequestStatus,
   type PhotoRequestStatus,
 } from "@/lib/orgs";
 import { locationLabel } from "@/lib/locations";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RequestActionRail } from "@/components/request-action-rail";
+import { HistoryTimeline } from "@/components/history-timeline";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { relativeDayLabel } from "@/lib/relative-date";
 
 export type DetailEvent =
   | { kind: "photo"; id: string }
@@ -65,6 +71,9 @@ interface PhotoDetail {
   status: PhotoRequestStatus;
   on_site_contact_name: string | null;
   on_site_contact_phone: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
 }
 
 interface GearDetail {
@@ -86,30 +95,88 @@ interface GearRow {
   name: string;
 }
 
+interface OpeningRow {
+  id: string;
+  role: string;
+}
+
+interface AssignmentRow {
+  id: string;
+  opening_id: string;
+}
+
+interface Roster {
+  filled: number;
+  total: number;
+}
+
 interface Props {
   event: DetailEvent | null;
   onClose: () => void;
   onChanged?: () => void;
+  /**
+   * Optional list of navigable events. When provided the dialog shows
+   * Prev/Next controls (and supports J/K hotkeys) for browsing the queue.
+   */
+  navList?: DetailEvent[];
+  onNavigate?: (next: DetailEvent) => void;
 }
 
-export function EventDetailDialog({ event, onClose, onChanged }: Props) {
+export function EventDetailDialog({ event, onClose, onChanged, navList, onNavigate }: Props) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState<PhotoDetail | null>(null);
   const [gear, setGear] = useState<GearDetail | null>(null);
   const [gearItems, setGearItems] = useState<{ id: number; name: string }[]>([]);
+  const [roster, setRoster] = useState<Roster | null>(null);
 
   useEffect(() => {
     if (!event) {
       setPhoto(null);
       setGear(null);
       setGearItems([]);
+      setRoster(null);
       return;
     }
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event?.kind, event?.id]);
+
+  // J/K keyboard navigation between requests in the queue, and A to approve.
+  useEffect(() => {
+    if (!event) return;
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!navList || navList.length === 0) return;
+      const idx = navList.findIndex((n) => n.kind === event!.kind && n.id === event!.id);
+      if (e.key === "j" || e.key === "ArrowRight") {
+        const next = navList[Math.min(navList.length - 1, idx + 1)];
+        if (next && next !== navList[idx]) onNavigate?.(next);
+      } else if (e.key === "k" || e.key === "ArrowLeft") {
+        const prev = navList[Math.max(0, idx - 1)];
+        if (prev && prev !== navList[idx]) onNavigate?.(prev);
+      } else if (e.key === "a" && photo) {
+        e.preventDefault();
+        void setPhotoStatus("approved_job_board");
+      } else if (e.key === "d" && photo) {
+        e.preventDefault();
+        void setPhotoStatus("denied");
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event, navList, photo]);
+
+  const navIndex = event && navList
+    ? navList.findIndex((n) => n.kind === event.kind && n.id === event.id)
+    : -1;
+  const hasPrev = navList ? navIndex > 0 : false;
+  const hasNext = navList ? navIndex >= 0 && navIndex < navList.length - 1 : false;
 
   async function load() {
     if (!event) return;
@@ -119,13 +186,28 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
         const { data, error } = await supabase
           .from("photo_requests")
           .select(
-            "id, first_name, last_name, email, company, team, event_name, event_location, event_date, event_end_date, spans_multiple_days, start_time, end_time, notes, status, on_site_contact_name, on_site_contact_phone",
+            "id, first_name, last_name, email, company, team, event_name, event_location, event_date, event_end_date, spans_multiple_days, start_time, end_time, notes, status, on_site_contact_name, on_site_contact_phone, created_at, reviewed_at, reviewed_by",
           )
           .eq("id", event.id)
           .maybeSingle();
         if (error) throw error;
         const photoData = (data as PhotoDetail | null) ?? null;
         setPhoto(photoData);
+
+        // Load roster fill (openings vs active assignments)
+        if (photoData) {
+          const [{ data: openings }, { data: assigns }] = await Promise.all([
+            supabase.from("photo_request_openings").select("id, role").eq("request_id", photoData.id),
+            supabase
+              .from("photo_request_assignments")
+              .select("id, opening_id")
+              .eq("request_id", photoData.id)
+              .is("released_at", null),
+          ]);
+          const total = (openings as OpeningRow[] | null)?.length ?? 0;
+          const filled = (assigns as AssignmentRow[] | null)?.length ?? 0;
+          setRoster({ filled, total });
+        }
 
         // Auto-flip "New" → "Pending" the first time an admin opens the request
         if (photoData && photoData.status === "new") {
@@ -139,7 +221,7 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
             })
             .eq("id", photoData.id);
           if (!updErr) {
-            setPhoto({ ...photoData, status: "pending" });
+            setPhoto({ ...photoData, status: "pending", reviewed_at: new Date().toISOString(), reviewed_by: reviewer });
             onChanged?.();
           }
         }
@@ -194,7 +276,7 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
       toast.error(error.message);
       return;
     }
-    setPhoto({ ...photo, status: next });
+    setPhoto({ ...photo, status: next, reviewed_at: new Date().toISOString(), reviewed_by: reviewer });
     toast.success(`Marked ${statusLabel(next)}`);
     onChanged?.();
   }
@@ -223,40 +305,83 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
 
   const open = event !== null;
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        {loading ? (
-          <div className="py-10 flex items-center justify-center text-muted-foreground gap-2">
-            <Loader2 className="size-4 animate-spin" /> Loading…
-          </div>
-        ) : event?.kind === "photo" && photo ? (
-          <>
-            <DialogHeader>
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                <Camera className="size-3.5" /> Photography Request
-              </div>
-              <DialogTitle className="text-xl">
-                {photo.event_name || `${photo.first_name} ${photo.last_name}`}
-              </DialogTitle>
-              <DialogDescription asChild>
-                <div className="flex items-center gap-2 flex-wrap pt-1">
+  // The body is rendered into either a Dialog (desktop) or Sheet (mobile).
+  const body = (
+    <>
+      {loading ? (
+        <div className="py-10 flex items-center justify-center text-muted-foreground gap-2">
+          <Loader2 className="size-4 animate-spin" /> Loading…
+        </div>
+      ) : event?.kind === "photo" && photo ? (
+        <div className="space-y-4">
+          {/* Roster fill indicator pinned at top */}
+          {roster && roster.total > 0 && (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 flex items-center gap-2">
+              <Users className="size-4 text-muted-foreground" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span>Roster</span>
                   <span
                     className={cn(
-                      "text-xs font-medium px-2 py-0.5 rounded-full border",
-                      statusBadgeClasses(photo.status),
+                      "tabular-nums",
+                      roster.filled === 0 && "text-rose-600",
+                      roster.filled > 0 && roster.filled < roster.total && "text-amber-600",
+                      roster.filled >= roster.total && "text-emerald-600",
                     )}
                   >
-                    {statusLabel(photo.status)}
+                    {roster.filled} / {roster.total} filled
                   </span>
                 </div>
-              </DialogDescription>
-            </DialogHeader>
+                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full transition-all",
+                      roster.filled === 0 && "bg-rose-500",
+                      roster.filled > 0 && roster.filled < roster.total && "bg-amber-500",
+                      roster.filled >= roster.total && "bg-emerald-500",
+                    )}
+                    style={{ width: `${Math.min(100, (roster.filled / Math.max(1, roster.total)) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
-            <div className="space-y-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4">
+            {/* Action rail (left on desktop, top on mobile) */}
+            <div className="sm:w-44">
+              <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                Set status
+              </div>
+              <RequestActionRail
+                current={photo.status}
+                onSetStatus={(s) => void setPhotoStatus(s)}
+                disabled={saving}
+              />
+              <div className="mt-2 text-[10px] text-muted-foreground hidden sm:block">
+                Tip: <kbd className="px-1 rounded border bg-muted">A</kbd> approve · <kbd className="px-1 rounded border bg-muted">D</kbd> deny · <kbd className="px-1 rounded border bg-muted">J</kbd>/<kbd className="px-1 rounded border bg-muted">K</kbd> next/prev
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-3 text-sm min-w-0">
+              <div>
+                <span
+                  className={cn(
+                    "text-xs font-medium px-2 py-0.5 rounded-full border inline-block",
+                    statusBadgeClasses(photo.status),
+                  )}
+                >
+                  {statusLabel(photo.status)}
+                </span>
+              </div>
               {photo.event_date && (
                 <Row icon={<CalendarIcon className="size-4" />}>
                   {format(parseISO(photo.event_date), "EEEE, MMM d, yyyy")}
+                  {(() => {
+                    const rel = relativeDayLabel(photo.event_date);
+                    return rel ? <span className="text-muted-foreground"> · {rel}</span> : null;
+                  })()}
                   {photo.spans_multiple_days && photo.event_end_date &&
                     ` → ${format(parseISO(photo.event_end_date), "MMM d")}`}
                   {(photo.start_time || photo.end_time) && (
@@ -277,10 +402,14 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
                 {photo.team && <span className="text-muted-foreground"> · {photo.team}</span>}
               </Row>
               {photo.on_site_contact_name && (
-                <div className="text-xs text-muted-foreground">
-                  On-site: {photo.on_site_contact_name}
-                  {photo.on_site_contact_phone && ` · ${photo.on_site_contact_phone}`}
-                </div>
+                <Row icon={<Phone className="size-4" />}>
+                  {photo.on_site_contact_name}
+                  {photo.on_site_contact_phone && (
+                    <a className="ml-1 text-foreground hover:underline" href={`tel:${photo.on_site_contact_phone}`}>
+                      {photo.on_site_contact_phone}
+                    </a>
+                  )}
+                </Row>
               )}
               {photo.notes && (
                 <div className="rounded-md border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
@@ -288,85 +417,100 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
                 </div>
               )}
 
-              <div className="pt-1">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
-                <Select
-                  value={photo.status}
-                  onValueChange={(v) => setPhotoStatus(v as PhotoRequestStatus)}
-                  disabled={saving}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PHOTO_REQUEST_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/admin/requests-photography">
-                  Open full request <ExternalLink className="size-3.5" />
-                </Link>
-              </Button>
-            </DialogFooter>
-          </>
-        ) : event?.kind === "gear" && gear ? (
-          <>
-            <DialogHeader>
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                <Wrench className="size-3.5" /> Gear Request
-              </div>
-              <DialogTitle className="text-xl">{gear.requestor_name}</DialogTitle>
-              <DialogDescription asChild>
-                <div className="flex items-center gap-2 flex-wrap pt-1">
-                  <span
-                    className={cn(
-                      "text-xs font-medium px-2 py-0.5 rounded-full border",
-                      gearRequestBadgeClasses(gear.status),
-                    )}
-                  >
-                    {gearRequestStatusLabel(gear.status)}
-                  </span>
+              <details className="group rounded-md border">
+                <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                  <span>History</span>
+                  <ChevronRight className="size-3.5 transition-transform group-open:rotate-90" />
+                </summary>
+                <div className="px-3 py-3 border-t">
+                  <HistoryTimeline
+                    requestId={photo.id}
+                    createdAt={photo.created_at}
+                    reviewedAt={photo.reviewed_at}
+                    reviewedBy={photo.reviewed_by}
+                  />
                 </div>
-              </DialogDescription>
-            </DialogHeader>
+              </details>
 
-            <div className="space-y-3 text-sm">
-              <Row icon={<CalendarIcon className="size-4" />}>
-                {format(parseISO(gear.needed_date), "EEEE, MMM d, yyyy")}
-              </Row>
-              <Row icon={<MapPin className="size-4" />}>
-                {locationLabel(gear.location)}
-              </Row>
-              {gearItems.length > 0 && (
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground mb-1">
-                    Items ({gearItems.length})
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/admin/requests-photography">
+                    Open full request <ExternalLink className="size-3.5" />
+                  </Link>
+                </Button>
+                {navList && navList.length > 1 && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      disabled={!hasPrev}
+                      onClick={() => onNavigate?.(navList[navIndex - 1])}
+                      title="Previous (K)"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {navIndex + 1} / {navList.length}
+                    </span>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      disabled={!hasNext}
+                      onClick={() => onNavigate?.(navList[navIndex + 1])}
+                      title="Next (J)"
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
                   </div>
-                  <ul className="rounded-md border bg-muted/20 divide-y text-xs">
-                    {gearItems.map((it) => (
-                      <li key={it.id} className="px-3 py-1.5">
-                        {it.name}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {gear.notes && (
-                <div className="rounded-md border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
-                  {gear.notes}
-                </div>
-              )}
+                )}
+              </div>
             </div>
+          </div>
+        </div>
+      ) : event?.kind === "gear" && gear ? (
+        <div className="space-y-3 text-sm">
+          <div>
+            <span
+              className={cn(
+                "text-xs font-medium px-2 py-0.5 rounded-full border inline-block",
+                gearRequestBadgeClasses(gear.status),
+              )}
+            >
+              {gearRequestStatusLabel(gear.status)}
+            </span>
+          </div>
+          <Row icon={<CalendarIcon className="size-4" />}>
+            {format(parseISO(gear.needed_date), "EEEE, MMM d, yyyy")}
+            {(() => {
+              const rel = relativeDayLabel(gear.needed_date);
+              return rel ? <span className="text-muted-foreground"> · {rel}</span> : null;
+            })()}
+          </Row>
+          <Row icon={<MapPin className="size-4" />}>{locationLabel(gear.location)}</Row>
+          {gearItems.length > 0 && (
+            <div>
+              <div className="text-xs font-medium text-muted-foreground mb-1">
+                Items ({gearItems.length})
+              </div>
+              <ul className="rounded-md border bg-muted/20 divide-y text-xs">
+                {gearItems.map((it) => (
+                  <li key={it.id} className="px-3 py-1.5">
+                    {it.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {gear.notes && (
+            <div className="rounded-md border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+              {gear.notes}
+            </div>
+          )}
 
-            <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+          <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               {gear.status !== "approved" && (
                 <Button
                   size="sm"
@@ -398,18 +542,59 @@ export function EventDetailDialog({ event, onClose, onChanged }: Props) {
                   Reset to pending
                 </Button>
               )}
-              <Button asChild variant="outline" size="sm" className="ml-auto">
-                <Link to="/admin/requests-gear">
-                  Open full request <ExternalLink className="size-3.5" />
-                </Link>
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <div className="py-10 text-center text-sm text-muted-foreground">
-            Not found.
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/requests-gear">
+                Open full request <ExternalLink className="size-3.5" />
+              </Link>
+            </Button>
           </div>
-        )}
+        </div>
+      ) : (
+        <div className="py-10 text-center text-sm text-muted-foreground">
+          Not found.
+        </div>
+      )}
+    </>
+  );
+
+  // Title / description for the heading (works for both Dialog and Sheet)
+  const headerTitle = event?.kind === "photo"
+    ? (photo?.event_name || (photo ? `${photo.first_name} ${photo.last_name}` : "Photography request"))
+    : (gear?.requestor_name ?? "Gear request");
+
+  const headerKindIcon = event?.kind === "photo"
+    ? <><Camera className="size-3.5" /> Photography Request</>
+    : <><Wrench className="size-3.5" /> Gear Request</>;
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+        <SheetContent side="bottom" className="h-[92vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader className="text-left">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              {headerKindIcon}
+            </div>
+            <SheetTitle className="text-xl">{headerTitle}</SheetTitle>
+            <SheetDescription className="sr-only">Request details</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">{body}</div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+            {headerKindIcon}
+          </div>
+          <DialogTitle className="text-xl">{headerTitle}</DialogTitle>
+          <DialogDescription className="sr-only">Request details</DialogDescription>
+        </DialogHeader>
+        {body}
       </DialogContent>
     </Dialog>
   );
