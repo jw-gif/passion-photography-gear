@@ -183,6 +183,9 @@ function PhotographersView({ onLogout }: { onLogout: () => void }) {
                 className="pl-9"
               />
             </div>
+            <Button variant="outline" onClick={() => setBulkOpen(true)}>
+              <Upload className="size-4" /> Bulk import
+            </Button>
             <Button onClick={() => setAddOpen(true)}>
               <UserPlus className="size-4" /> Add
             </Button>
