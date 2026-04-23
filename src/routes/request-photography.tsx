@@ -28,6 +28,7 @@ import {
   EVENT_LOCATIONS,
   COVERAGE_TYPES,
   REQUEST_TYPES,
+  PHOTO_RATE_CARD,
   type RequestType,
   type CoverageType,
 } from "@/lib/orgs";
@@ -117,9 +118,7 @@ function RequestPhotographyPage() {
 
   const showPccTeam = company === "Passion City Church";
   const showEventDetails = useMemo(
-    () =>
-      requestTypes.includes("photography_team") ||
-      requestTypes.includes("photoshoot"),
+    () => requestTypes.includes("photography_team"),
     [requestTypes]
   );
   const showShotListNotes = requestTypes.includes("shot_list_addition");
@@ -446,18 +445,10 @@ function RequestPhotographyPage() {
                   label="Start Time (photographer(s) on site)"
                   required
                 >
-                  <Input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                  />
+                  <TimePicker value={startTime} onChange={setStartTime} />
                 </Field>
                 <Field label="End Time (photographer(s) released)" required>
-                  <Input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                  />
+                  <TimePicker value={endTime} onChange={setEndTime} />
                 </Field>
               </div>
 
@@ -510,32 +501,16 @@ function RequestPhotographyPage() {
             </Section>
           )}
 
-          {/* SECTION: Shot list / photoshoot details */}
-          {(showShotListNotes || requestTypes.includes("photoshoot")) && (
-            <Section
-              title={
-                showShotListNotes && !requestTypes.includes("photoshoot")
-                  ? "Shot list details"
-                  : "Additional details"
-              }
-            >
-              <Field
-                label={
-                  showShotListNotes
-                    ? "Describe the shots you'd like added"
-                    : "Notes for the photography team"
-                }
-              >
+          {/* SECTION: Shot list details */}
+          {showShotListNotes && (
+            <Section title="Shot list details">
+              <Field label="Describe the shots you'd like added">
                 <Textarea
                   rows={5}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={4000}
-                  placeholder={
-                    showShotListNotes
-                      ? "e.g. wide shot of the worship team during the bridge of the closing song; candid of leadership greeting people in the lobby; etc."
-                      : "Anything else we should know."
-                  }
+                  placeholder="e.g. wide shot of the worship team during the bridge of the closing song; candid of leadership greeting people in the lobby; etc."
                 />
               </Field>
             </Section>
@@ -549,12 +524,8 @@ function RequestPhotographyPage() {
                 rate card for budget categories.
               </p>
 
-              <Field label="What is your budget? See rate card for categories">
-                <Input
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  maxLength={200}
-                />
+              <Field label="What is your budget?" required>
+                <BudgetPicker value={budget} onChange={setBudget} />
               </Field>
               <Field label="Concur Budget Approver">
                 <Input
@@ -696,5 +667,129 @@ function DatePicker({
         />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Generates HH:mm options in 15-minute increments across the day. */
+const TIME_OPTIONS: { value: string; label: string }[] = (() => {
+  const out: { value: string; label: string }[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const hh = String(h).padStart(2, "0");
+      const mm = String(m).padStart(2, "0");
+      const value = `${hh}:${mm}`;
+      const period = h < 12 ? "AM" : "PM";
+      const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${display}:${mm} ${period}`;
+      out.push({ value, label });
+    }
+  }
+  return out;
+})();
+
+function TimePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  // Normalize possible "HH:mm:ss" to "HH:mm"
+  const v = value ? value.slice(0, 5) : "";
+  return (
+    <Select value={v} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Select a time" />
+      </SelectTrigger>
+      <SelectContent className="max-h-72">
+        {TIME_OPTIONS.map((t) => (
+          <SelectItem key={t.value} value={t.value}>
+            {t.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function BudgetPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const presetValues: string[] = PHOTO_RATE_CARD.map((t) => t.label);
+  const isPreset = presetValues.includes(value);
+  const isOther = value !== "" && !isPreset;
+  const [otherAmount, setOtherAmount] = useState(isOther ? value.replace(/^\$/, "") : "");
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {PHOTO_RATE_CARD.map((tier) => {
+          const selected = value === tier.label;
+          return (
+            <button
+              key={tier.amount}
+              type="button"
+              onClick={() => onChange(tier.label)}
+              className={cn(
+                "text-left rounded-lg border p-4 transition-colors",
+                selected
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-border hover:border-foreground/30"
+              )}
+            >
+              <div className="text-xl font-bold tracking-tight">{tier.label}</div>
+              <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                {tier.examples.map((ex) => (
+                  <li key={ex}>• {ex}</li>
+                ))}
+              </ul>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          if (!isOther) {
+            const next = otherAmount ? `$${otherAmount}` : "";
+            onChange(next || "$");
+            if (!next) setOtherAmount("");
+          }
+        }}
+        className={cn(
+          "w-full text-left rounded-lg border p-3 transition-colors",
+          isOther
+            ? "border-primary bg-primary/5 ring-1 ring-primary"
+            : "border-border hover:border-foreground/30"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-sm">Other</span>
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="text-muted-foreground text-sm">$</span>
+            <Input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="1"
+              value={otherAmount}
+              placeholder="0"
+              onChange={(e) => {
+                const v = e.target.value;
+                setOtherAmount(v);
+                onChange(v ? `$${v}` : "");
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="h-9 w-32"
+            />
+          </div>
+        </div>
+      </button>
+    </div>
   );
 }

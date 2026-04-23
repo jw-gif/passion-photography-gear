@@ -70,14 +70,49 @@ export const REQUEST_TYPES = [
     description:
       "Add specific shots to an existing scheduled shoot — moments, people, or details we should be sure to capture.",
   },
-  {
-    value: "photoshoot",
-    label: "Photoshoot",
-    description:
-      "A scheduled photoshoot (headshots, branded content, environmental portraits, product, etc.) outside of a live event.",
-  },
 ] as const;
 export type RequestType = (typeof REQUEST_TYPES)[number]["value"];
+
+/**
+ * Photography rate card (June 2024). Each tier groups multiple event types
+ * that share the same flat rate for a Point on the Door Holder Photography
+ * Team. Used by the request form to let requestors quickly pick a budget.
+ */
+export const PHOTO_RATE_CARD = [
+  {
+    amount: 200,
+    label: "$200",
+    examples: [
+      "Sunday Gatherings – 9:30a + 11:45a",
+      "Sunday Gatherings – 5p",
+      "Sunday After Parties",
+      "Child Dedications",
+      "Post-gathering baptisms / events / meetings",
+    ],
+  },
+  {
+    amount: 300,
+    label: "$300",
+    examples: [
+      "Family Ministries Gatherings",
+      "Young Adult Collectives / Groups",
+      "Passion Worship Academy",
+      "Community Group Events / Gatherings",
+      "CORE, Launch, UNITE, etc.",
+      "Team / Training Nights / Collectives",
+    ],
+  },
+  {
+    amount: 400,
+    label: "$400",
+    examples: [
+      "The Rising",
+      "The Grove",
+      "Fight Night",
+      "Summer / Christmas In The City",
+    ],
+  },
+] as const;
 
 export const PHOTO_REQUEST_STATUSES = [
   { value: "new", label: "New" },
