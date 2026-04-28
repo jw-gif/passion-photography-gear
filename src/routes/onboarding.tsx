@@ -110,8 +110,8 @@ function OnboardingPage() {
       })),
     );
     setHire(hireRow);
-    setTimeline(((t.data ?? []) as TimelineItemRow[]) ?? []);
-    setChecklist(((c.data ?? []) as ChecklistItemRow[]) ?? []);
+    setTimeline((t.data ?? []) as TimelineItemRow[]);
+    setChecklist((c.data ?? []) as ChecklistItemRow[]);
     setLoadingData(false);
   }
 
