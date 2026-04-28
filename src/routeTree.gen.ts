@@ -28,6 +28,7 @@ import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
 import { Route as AdminPhotographersRouteImport } from './routes/admin_.photographers'
 import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
+import { Route as AdminOnboardingRouteImport } from './routes/admin_.onboarding'
 import { Route as AdminManageRouteImport } from './routes/admin_.manage'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
 import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage'
@@ -131,6 +132,11 @@ const AdminPhotoRequestsRoute = AdminPhotoRequestsRouteImport.update({
   path: '/admin/photo-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
+  id: '/admin_/onboarding',
+  path: '/admin/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminManageRoute = AdminManageRouteImport.update({
   id: '/admin_/manage',
   path: '/admin/manage',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
+  '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/photographers': typeof AdminPhotographersRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
+  '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/photographers': typeof AdminPhotographersRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/admin_/gear-manage': typeof AdminGearManageRoute
   '/admin_/history': typeof AdminHistoryRoute
   '/admin_/manage': typeof AdminManageRoute
+  '/admin_/onboarding': typeof AdminOnboardingRoute
   '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin_/photographers': typeof AdminPhotographersRoute
   '/admin_/requests': typeof AdminRequestsRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/admin/gear-manage'
     | '/admin/history'
     | '/admin/manage'
+    | '/admin/onboarding'
     | '/admin/photo-requests'
     | '/admin/photographers'
     | '/admin/requests'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/admin/gear-manage'
     | '/admin/history'
     | '/admin/manage'
+    | '/admin/onboarding'
     | '/admin/photo-requests'
     | '/admin/photographers'
     | '/admin/requests'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/admin_/gear-manage'
     | '/admin_/history'
     | '/admin_/manage'
+    | '/admin_/onboarding'
     | '/admin_/photo-requests'
     | '/admin_/photographers'
     | '/admin_/requests'
@@ -344,6 +356,7 @@ export interface RootRouteChildren {
   AdminGearManageRoute: typeof AdminGearManageRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminManageRoute: typeof AdminManageRoute
+  AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
   AdminPhotographersRoute: typeof AdminPhotographersRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
@@ -491,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPhotoRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/onboarding': {
+      id: '/admin_/onboarding'
+      path: '/admin/onboarding'
+      fullPath: '/admin/onboarding'
+      preLoaderRoute: typeof AdminOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/manage': {
       id: '/admin_/manage'
       path: '/admin/manage'
@@ -552,6 +572,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminGearManageRoute: AdminGearManageRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminManageRoute: AdminManageRoute,
+  AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
   AdminPhotographersRoute: AdminPhotographersRoute,
   AdminRequestsRoute: AdminRequestsRoute,
