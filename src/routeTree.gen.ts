@@ -14,6 +14,7 @@ import { Route as RequestPhotographyRouteImport } from './routes/request-photogr
 import { Route as RequestGearRouteImport } from './routes/request-gear'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as PhotographerLinkRouteImport } from './routes/photographer-link'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -28,12 +29,15 @@ import { Route as AdminRequestsGearRouteImport } from './routes/admin_.requests-
 import { Route as AdminRequestsRouteImport } from './routes/admin_.requests'
 import { Route as AdminPhotographersRouteImport } from './routes/admin_.photographers'
 import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
+import { Route as AdminOnboardingRouteImport } from './routes/admin_.onboarding'
 import { Route as AdminManageRouteImport } from './routes/admin_.manage'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
 import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage'
 import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
 import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
+import { Route as AdminOnboardingPagesSlugRouteImport } from './routes/admin_.onboarding.pages.$slug'
+import { Route as AdminOnboardingHiresHireIdRouteImport } from './routes/admin_.onboarding.hires.$hireId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -58,6 +62,11 @@ const RequestRoute = RequestRouteImport.update({
 const PhotographerLinkRoute = PhotographerLinkRouteImport.update({
   id: '/photographer-link',
   path: '/photographer-link',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -131,6 +140,11 @@ const AdminPhotoRequestsRoute = AdminPhotoRequestsRouteImport.update({
   path: '/admin/photo-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
+  id: '/admin_/onboarding',
+  path: '/admin/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminManageRoute = AdminManageRouteImport.update({
   id: '/admin_/manage',
   path: '/admin/manage',
@@ -161,12 +175,25 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admin/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOnboardingPagesSlugRoute =
+  AdminOnboardingPagesSlugRouteImport.update({
+    id: '/pages/$slug',
+    path: '/pages/$slug',
+    getParentRoute: () => AdminOnboardingRoute,
+  } as any)
+const AdminOnboardingHiresHireIdRoute =
+  AdminOnboardingHiresHireIdRouteImport.update({
+    id: '/hires/$hireId',
+    path: '/hires/$hireId',
+    getParentRoute: () => AdminOnboardingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -178,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
+  '/admin/onboarding': typeof AdminOnboardingRouteWithChildren
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/photographers': typeof AdminPhotographersRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -188,12 +216,15 @@ export interface FileRoutesByFullPath {
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
+  '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
+  '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -205,6 +236,7 @@ export interface FileRoutesByTo {
   '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
   '/admin/manage': typeof AdminManageRoute
+  '/admin/onboarding': typeof AdminOnboardingRouteWithChildren
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin/photographers': typeof AdminPhotographersRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -215,6 +247,8 @@ export interface FileRoutesByTo {
   '/admin/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
+  '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
+  '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -222,6 +256,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -233,6 +268,7 @@ export interface FileRoutesById {
   '/admin_/gear-manage': typeof AdminGearManageRoute
   '/admin_/history': typeof AdminHistoryRoute
   '/admin_/manage': typeof AdminManageRoute
+  '/admin_/onboarding': typeof AdminOnboardingRouteWithChildren
   '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
   '/admin_/photographers': typeof AdminPhotographersRoute
   '/admin_/requests': typeof AdminRequestsRoute
@@ -243,6 +279,8 @@ export interface FileRoutesById {
   '/admin_/team': typeof AdminTeamRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
+  '/admin_/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
+  '/admin_/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -251,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/onboarding'
     | '/photographer-link'
     | '/request'
     | '/request-gear'
@@ -262,6 +301,7 @@ export interface FileRouteTypes {
     | '/admin/gear-manage'
     | '/admin/history'
     | '/admin/manage'
+    | '/admin/onboarding'
     | '/admin/photo-requests'
     | '/admin/photographers'
     | '/admin/requests'
@@ -272,12 +312,15 @@ export interface FileRouteTypes {
     | '/admin/team'
     | '/api/admins'
     | '/api/photographer-link'
+    | '/admin/onboarding/hires/$hireId'
+    | '/admin/onboarding/pages/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/onboarding'
     | '/photographer-link'
     | '/request'
     | '/request-gear'
@@ -289,6 +332,7 @@ export interface FileRouteTypes {
     | '/admin/gear-manage'
     | '/admin/history'
     | '/admin/manage'
+    | '/admin/onboarding'
     | '/admin/photo-requests'
     | '/admin/photographers'
     | '/admin/requests'
@@ -299,12 +343,15 @@ export interface FileRouteTypes {
     | '/admin/team'
     | '/api/admins'
     | '/api/photographer-link'
+    | '/admin/onboarding/hires/$hireId'
+    | '/admin/onboarding/pages/$slug'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/onboarding'
     | '/photographer-link'
     | '/request'
     | '/request-gear'
@@ -316,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin_/gear-manage'
     | '/admin_/history'
     | '/admin_/manage'
+    | '/admin_/onboarding'
     | '/admin_/photo-requests'
     | '/admin_/photographers'
     | '/admin_/requests'
@@ -326,6 +374,8 @@ export interface FileRouteTypes {
     | '/admin_/team'
     | '/api/admins'
     | '/api/photographer-link'
+    | '/admin_/onboarding/hires/$hireId'
+    | '/admin_/onboarding/pages/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -333,6 +383,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   JobsRoute: typeof JobsRoute
   LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
   PhotographerLinkRoute: typeof PhotographerLinkRoute
   RequestRoute: typeof RequestRoute
   RequestGearRoute: typeof RequestGearRoute
@@ -344,6 +395,7 @@ export interface RootRouteChildren {
   AdminGearManageRoute: typeof AdminGearManageRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
   AdminManageRoute: typeof AdminManageRoute
+  AdminOnboardingRoute: typeof AdminOnboardingRouteWithChildren
   AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
   AdminPhotographersRoute: typeof AdminPhotographersRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
@@ -391,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/photographer-link'
       fullPath: '/photographer-link'
       preLoaderRoute: typeof PhotographerLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -491,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPhotoRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/onboarding': {
+      id: '/admin_/onboarding'
+      path: '/admin/onboarding'
+      fullPath: '/admin/onboarding'
+      preLoaderRoute: typeof AdminOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/manage': {
       id: '/admin_/manage'
       path: '/admin/manage'
@@ -533,14 +599,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/onboarding/pages/$slug': {
+      id: '/admin_/onboarding/pages/$slug'
+      path: '/pages/$slug'
+      fullPath: '/admin/onboarding/pages/$slug'
+      preLoaderRoute: typeof AdminOnboardingPagesSlugRouteImport
+      parentRoute: typeof AdminOnboardingRoute
+    }
+    '/admin_/onboarding/hires/$hireId': {
+      id: '/admin_/onboarding/hires/$hireId'
+      path: '/hires/$hireId'
+      fullPath: '/admin/onboarding/hires/$hireId'
+      preLoaderRoute: typeof AdminOnboardingHiresHireIdRouteImport
+      parentRoute: typeof AdminOnboardingRoute
+    }
   }
 }
+
+interface AdminOnboardingRouteChildren {
+  AdminOnboardingHiresHireIdRoute: typeof AdminOnboardingHiresHireIdRoute
+  AdminOnboardingPagesSlugRoute: typeof AdminOnboardingPagesSlugRoute
+}
+
+const AdminOnboardingRouteChildren: AdminOnboardingRouteChildren = {
+  AdminOnboardingHiresHireIdRoute: AdminOnboardingHiresHireIdRoute,
+  AdminOnboardingPagesSlugRoute: AdminOnboardingPagesSlugRoute,
+}
+
+const AdminOnboardingRouteWithChildren = AdminOnboardingRoute._addFileChildren(
+  AdminOnboardingRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   JobsRoute: JobsRoute,
   LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
   PhotographerLinkRoute: PhotographerLinkRoute,
   RequestRoute: RequestRoute,
   RequestGearRoute: RequestGearRoute,
@@ -552,6 +647,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminGearManageRoute: AdminGearManageRoute,
   AdminHistoryRoute: AdminHistoryRoute,
   AdminManageRoute: AdminManageRoute,
+  AdminOnboardingRoute: AdminOnboardingRouteWithChildren,
   AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
   AdminPhotographersRoute: AdminPhotographersRoute,
   AdminRequestsRoute: AdminRequestsRoute,

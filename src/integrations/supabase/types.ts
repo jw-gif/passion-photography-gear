@@ -198,6 +198,169 @@ export type Database = {
           },
         ]
       }
+      onboarding_hire_checklist: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          hire_id: string
+          id: string
+          label: string
+          owner: string | null
+          section: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          hire_id: string
+          id?: string
+          label: string
+          owner?: string | null
+          section?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          hire_id?: string
+          id?: string
+          label?: string
+          owner?: string | null
+          section?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_hire_checklist_hire_id_fkey"
+            columns: ["hire_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_hires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_hire_timeline: {
+        Row: {
+          created_at: string
+          day_offset: number
+          description: string | null
+          hire_id: string
+          id: string
+          label: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_offset?: number
+          description?: string | null
+          hire_id: string
+          id?: string
+          label: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_offset?: number
+          description?: string | null
+          hire_id?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_hire_timeline_hire_id_fkey"
+            columns: ["hire_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_hires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_hires: {
+        Row: {
+          archived: boolean
+          coordinator_name: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role_label: string | null
+          start_date: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          archived?: boolean
+          coordinator_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          role_label?: string | null
+          start_date: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          archived?: boolean
+          coordinator_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role_label?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      onboarding_pages: {
+        Row: {
+          blocks: Json
+          created_at: string
+          id: string
+          slug: string
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocks?: Json
+          created_at?: string
+          id?: string
+          slug: string
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blocks?: Json
+          created_at?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       photo_request_assignments: {
         Row: {
           claimed_at: string
