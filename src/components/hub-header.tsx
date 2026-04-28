@@ -155,6 +155,13 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
             </Link>
           </Button>
 
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/admin/onboarding" activeProps={{ className: "bg-muted" }}>
+              <ListChecks className="size-4" />
+              <span className="hidden md:inline">Onboarding</span>
+            </Link>
+          </Button>
+
           <Button variant="ghost" size="sm" onClick={onLogout}>
             <LogOut className="size-4" />
             <span className="hidden md:inline">Sign out</span>
