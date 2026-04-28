@@ -14,6 +14,7 @@ import { Route as RequestPhotographyRouteImport } from './routes/request-photogr
 import { Route as RequestGearRouteImport } from './routes/request-gear'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as PhotographerLinkRouteImport } from './routes/photographer-link'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -61,6 +62,11 @@ const RequestRoute = RequestRouteImport.update({
 const PhotographerLinkRoute = PhotographerLinkRouteImport.update({
   id: '/photographer-link',
   path: '/photographer-link',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/photographer-link': typeof PhotographerLinkRoute
   '/request': typeof RequestRoute
   '/request-gear': typeof RequestGearRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/onboarding'
     | '/photographer-link'
     | '/request'
     | '/request-gear'
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/onboarding'
     | '/photographer-link'
     | '/request'
     | '/request-gear'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/jobs'
     | '/login'
+    | '/onboarding'
     | '/photographer-link'
     | '/request'
     | '/request-gear'
@@ -371,6 +383,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   JobsRoute: typeof JobsRoute
   LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
   PhotographerLinkRoute: typeof PhotographerLinkRoute
   RequestRoute: typeof RequestRoute
   RequestGearRoute: typeof RequestGearRoute
@@ -430,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/photographer-link'
       fullPath: '/photographer-link'
       preLoaderRoute: typeof PhotographerLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -615,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   JobsRoute: JobsRoute,
   LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
   PhotographerLinkRoute: PhotographerLinkRoute,
   RequestRoute: RequestRoute,
   RequestGearRoute: RequestGearRoute,
