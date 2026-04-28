@@ -16,7 +16,7 @@ import { BlocksEditor } from "@/components/onboarding-blocks-editor";
 import { BlocksRenderer } from "@/components/onboarding-blocks-renderer";
 import { type ContentBlock, safeBlocks } from "@/lib/onboarding";
 
-export const Route = createFileRoute("/admin_/onboarding/pages/$slug")({
+export const Route = createFileRoute("/admin_/onboarding_/pages/$slug")({
   head: () => ({ meta: [{ title: "Edit page · Staff Onboarding" }] }),
   component: PageWrapper,
 });
