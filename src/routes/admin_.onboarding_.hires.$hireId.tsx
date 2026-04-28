@@ -23,7 +23,7 @@ import {
   checklistProgress,
 } from "@/lib/onboarding";
 
-export const Route = createFileRoute("/admin_/onboarding/hires/$hireId")({
+export const Route = createFileRoute("/admin_/onboarding_/hires/$hireId")({
   head: () => ({ meta: [{ title: "Hire · Staff Onboarding" }] }),
   component: PageWrapper,
 });
