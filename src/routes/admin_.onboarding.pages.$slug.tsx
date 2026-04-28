@@ -68,7 +68,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
       .update({
         title,
         subtitle: subtitle.trim() || null,
-        blocks: blocks as unknown as object,
+        blocks: JSON.parse(JSON.stringify(blocks)),
       })
       .eq("id", pageId);
     setSaving(false);
