@@ -101,9 +101,9 @@ function LoginPage() {
           </div>
           <div>
             <div className="font-semibold tracking-tight leading-tight">
-              {mode === "signin" ? "Admin sign in" : "Reset password"}
+              {mode === "signin" ? "Sign in" : "Reset password"}
             </div>
-            <div className="text-xs text-muted-foreground">Passion Gear Tracking</div>
+            <div className="text-xs text-muted-foreground">Passion Staff Hub</div>
           </div>
         </div>
 
