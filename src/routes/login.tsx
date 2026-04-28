@@ -37,8 +37,12 @@ function LoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!loading && user && isAdmin) {
-      navigate({ to: redirect || "/admin", replace: true });
+    if (!loading && user) {
+      if (isAdmin) {
+        navigate({ to: redirect || "/admin", replace: true });
+      } else {
+        navigate({ to: redirect || "/onboarding", replace: true });
+      }
     }
   }, [loading, user, isAdmin, redirect, navigate]);
 
@@ -55,21 +59,17 @@ function LoginPage() {
       setSubmitting(false);
       return;
     }
-    // After sign-in, verify admin role
+    // Sign-in succeeded. Admin vs hire routing happens in the effect above
+    // once useAuth picks up the new session. We also try to link the auth
+    // user to a matching onboarding_hires row by email (if one exists and
+    // hasn't been linked yet).
     const { data: { user: u } } = await supabase.auth.getUser();
-    if (u) {
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", u.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (!roleRow) {
-        await supabase.auth.signOut();
-        setError("This account doesn't have admin access.");
-        setSubmitting(false);
-        return;
-      }
+    if (u?.email) {
+      await supabase
+        .from("onboarding_hires")
+        .update({ user_id: u.id })
+        .eq("email", u.email.toLowerCase())
+        .is("user_id", null);
     }
     setSubmitting(false);
   }
