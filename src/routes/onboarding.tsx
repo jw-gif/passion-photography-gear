@@ -182,6 +182,23 @@ function OnboardingPage() {
         </div>
       </header>
 
+      {isPreview && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 text-amber-900 text-xs px-4 sm:px-6 py-2">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+            <span>
+              Admin preview of <strong>{hire?.name ?? "hire"}</strong>'s view. Checklist
+              toggles are disabled.
+            </span>
+            <Link
+              to="/admin/onboarding/hires/$hireId"
+              params={{ hireId: previewHire ?? "" }}
+              className="underline"
+            >
+              Back to editor
+            </Link>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {loadingData ? (
           <div className="text-sm text-muted-foreground">Loading…</div>
