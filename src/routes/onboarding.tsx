@@ -209,7 +209,7 @@ function OnboardingPage() {
                 <Link
                   key={t.key}
                   to="/onboarding"
-                  search={{ tab: t.key }}
+                  search={{ tab: t.key, previewHire: isPreview ? previewHire : undefined }}
                   replace
                   className={cn(
                     "text-xs px-3 py-1.5 rounded-full border transition-colors",
