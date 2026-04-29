@@ -99,7 +99,7 @@ function HireEditor({ onLogout }: { onLogout: () => void }) {
         .order("sort_order"),
       supabase
         .from("onboarding_hire_checklist")
-        .select("id, hire_id, section, label, owner, completed, completed_at, sort_order")
+        .select("id, hire_id, section, label, owner, completed, completed_at, sort_order, day_offset")
         .eq("hire_id", hireId)
         .order("sort_order"),
     ]);
