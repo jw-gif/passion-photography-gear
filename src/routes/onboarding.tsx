@@ -24,11 +24,13 @@ import {
 
 interface Search {
   tab?: string;
+  previewHire?: string;
 }
 
 export const Route = createFileRoute("/onboarding")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     tab: typeof s.tab === "string" ? s.tab : undefined,
+    previewHire: typeof s.previewHire === "string" ? s.previewHire : undefined,
   }),
   head: () => ({
     meta: [{ title: "Onboarding · Passion Staff Hub" }],
@@ -39,7 +41,8 @@ export const Route = createFileRoute("/onboarding")({
 function OnboardingPage() {
   const { user, loading, signOut, isAdmin, displayName } = useAuth();
   const navigate = useNavigate();
-  const { tab } = Route.useSearch();
+  const { tab, previewHire } = Route.useSearch();
+  const isPreview = Boolean(previewHire && isAdmin);
 
   const [pages, setPages] = useState<PageRow[]>([]);
   const [hire, setHire] = useState<HireRow | null>(null);
@@ -55,27 +58,35 @@ function OnboardingPage() {
 
   async function loadAll(uid: string) {
     setLoadingData(true);
-    // Try to find the hire row matching this user. If not yet linked by
-    // user_id, attempt a match by email and link it.
     let hireRow: HireRow | null = null;
-    {
+
+    if (isPreview && previewHire) {
+      // Admin preview: load the specified hire by id (admin RLS allows it)
+      const { data } = await supabase
+        .from("onboarding_hires")
+        .select("id, user_id, name, email, role_label, start_date, coordinator_name, archived")
+        .eq("id", previewHire)
+        .maybeSingle();
+      hireRow = (data as HireRow | null) ?? null;
+    } else {
+      // Normal hire flow: find by user_id, or link by email
       const { data } = await supabase
         .from("onboarding_hires")
         .select("id, user_id, name, email, role_label, start_date, coordinator_name, archived")
         .eq("user_id", uid)
         .maybeSingle();
       hireRow = (data as HireRow | null) ?? null;
-    }
-    if (!hireRow && user?.email) {
-      const { data } = await supabase
-        .from("onboarding_hires")
-        .select("id, user_id, name, email, role_label, start_date, coordinator_name, archived")
-        .eq("email", user.email.toLowerCase())
-        .is("user_id", null)
-        .maybeSingle();
-      if (data) {
-        await supabase.from("onboarding_hires").update({ user_id: uid }).eq("id", data.id);
-        hireRow = { ...(data as HireRow), user_id: uid };
+      if (!hireRow && user?.email) {
+        const { data: byEmail } = await supabase
+          .from("onboarding_hires")
+          .select("id, user_id, name, email, role_label, start_date, coordinator_name, archived")
+          .eq("email", user.email.toLowerCase())
+          .is("user_id", null)
+          .maybeSingle();
+        if (byEmail) {
+          await supabase.from("onboarding_hires").update({ user_id: uid }).eq("id", byEmail.id);
+          hireRow = { ...(byEmail as HireRow), user_id: uid };
+        }
       }
     }
 
@@ -117,7 +128,7 @@ function OnboardingPage() {
 
   useEffect(() => {
     if (user) loadAll(user.id);
-  }, [user]);
+  }, [user, previewHire, isPreview]);
 
   const tabs = useMemo(() => {
     const base: { key: string; label: string }[] = pages.map((p) => ({
@@ -171,6 +182,23 @@ function OnboardingPage() {
         </div>
       </header>
 
+      {isPreview && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 text-amber-900 text-xs px-4 sm:px-6 py-2">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+            <span>
+              Admin preview of <strong>{hire?.name ?? "hire"}</strong>'s view. Checklist
+              toggles are disabled.
+            </span>
+            <Link
+              to="/admin/onboarding/hires/$hireId"
+              params={{ hireId: previewHire ?? "" }}
+              className="underline"
+            >
+              Back to editor
+            </Link>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {loadingData ? (
           <div className="text-sm text-muted-foreground">Loading…</div>
@@ -181,7 +209,7 @@ function OnboardingPage() {
                 <Link
                   key={t.key}
                   to="/onboarding"
-                  search={{ tab: t.key }}
+                  search={{ tab: t.key, previewHire: isPreview ? previewHire : undefined }}
                   replace
                   className={cn(
                     "text-xs px-3 py-1.5 rounded-full border transition-colors",
@@ -200,7 +228,7 @@ function OnboardingPage() {
             ) : activeKey === "checklist" && hire ? (
               <ChecklistView
                 items={checklist}
-                onToggle={async (item) => {
+                onToggle={isPreview ? () => {} : async (item) => {
                   const completed = !item.completed;
                   const { error } = await supabase
                     .from("onboarding_hire_checklist")
