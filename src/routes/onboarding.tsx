@@ -228,7 +228,7 @@ function OnboardingPage() {
             ) : activeKey === "checklist" && hire ? (
               <ChecklistView
                 items={checklist}
-                onToggle={async (item) => {
+                onToggle={isPreview ? () => {} : async (item) => {
                   const completed = !item.completed;
                   const { error } = await supabase
                     .from("onboarding_hire_checklist")
