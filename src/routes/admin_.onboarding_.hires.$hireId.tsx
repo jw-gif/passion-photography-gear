@@ -122,8 +122,15 @@ function HireEditor({ onLogout }: { onLogout: () => void }) {
     return (
       <main className="min-h-screen">
         <HubHeader onLogout={onLogout} title="Hire" subtitle="Staff Onboarding" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 text-sm text-muted-foreground">
-          Loading…
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <div className="h-8 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-24 w-full rounded-xl bg-muted animate-pulse" />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+          </div>
+          <div className="h-64 w-full rounded-xl bg-muted animate-pulse" />
         </div>
       </main>
     );
