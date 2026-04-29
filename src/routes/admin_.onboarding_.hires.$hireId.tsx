@@ -809,12 +809,22 @@ function ChecklistItemEditor({
 }) {
   const [label, setLabel] = useState(item.label);
   const [owner, setOwner] = useState(item.owner ?? "");
+  const [dayOffset, setDayOffset] = useState<string>(
+    item.day_offset == null ? "" : String(item.day_offset),
+  );
 
-  const value = useMemo(() => ({ label, owner }), [label, owner]);
+  const value = useMemo(() => ({ label, owner, dayOffset }), [label, owner, dayOffset]);
   const saveState = useAutoSave(value, async (v) => {
+    const parsed = v.dayOffset.trim() === "" ? null : Number(v.dayOffset);
+    const dayOffsetVal =
+      parsed != null && Number.isFinite(parsed) ? Math.trunc(parsed) : null;
     const { error } = await supabase
       .from("onboarding_hire_checklist")
-      .update({ label: v.label, owner: v.owner.trim() || null })
+      .update({
+        label: v.label,
+        owner: v.owner.trim() || null,
+        day_offset: dayOffsetVal,
+      })
       .eq("id", item.id);
     if (error) throw error;
   });
@@ -835,7 +845,7 @@ function ChecklistItemEditor({
   }
 
   return (
-    <div className="grid grid-cols-[auto_auto_1fr_140px_auto_auto] gap-2 items-center">
+    <div className="grid grid-cols-[auto_auto_1fr_120px_72px_auto_auto] gap-2 items-center">
       {dragHandle ?? <span />}
       <input
         type="checkbox"
@@ -853,6 +863,13 @@ function ChecklistItemEditor({
         onChange={(e) => setOwner(e.target.value)}
         placeholder="Owner"
         className="text-xs"
+      />
+      <Input
+        value={dayOffset}
+        onChange={(e) => setDayOffset(e.target.value.replace(/[^0-9-]/g, ""))}
+        placeholder="Day"
+        title="Day number relative to start (0 = first day). Leave empty for anytime."
+        className="text-xs text-center tabular-nums"
       />
       <span className="text-[10px] text-muted-foreground whitespace-nowrap min-w-[44px] text-right">
         {saveState === "saving" ? "…" : saveState === "saved" ? "✓" : item.completed && item.completed_at ? format(new Date(item.completed_at), "MMM d") : ""}
