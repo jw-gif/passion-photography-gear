@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Save } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlocksEditor } from "@/components/onboarding-blocks-editor";
 import { BlocksRenderer } from "@/components/onboarding-blocks-renderer";
 import { type ContentBlock, safeBlocks } from "@/lib/onboarding";
+import { SaveIndicator, useAutoSave } from "@/lib/use-auto-save";
 
 export const Route = createFileRoute("/admin_/onboarding_/pages/$slug")({
   head: () => ({ meta: [{ title: "Edit page · Staff Onboarding" }] }),
@@ -38,7 +39,6 @@ function Editor({ onLogout }: { onLogout: () => void }) {
   const [subtitle, setSubtitle] = useState("");
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -60,21 +60,23 @@ function Editor({ onLogout }: { onLogout: () => void }) {
     })();
   }, [slug, navigate]);
 
-  async function save() {
+  const value = useMemo(
+    () => ({ title, subtitle, blocks }),
+    [title, subtitle, blocks],
+  );
+
+  const saveState = useAutoSave(value, async (v) => {
     if (!pageId) return;
-    setSaving(true);
     const { error } = await supabase
       .from("onboarding_pages")
       .update({
-        title,
-        subtitle: subtitle.trim() || null,
-        blocks: JSON.parse(JSON.stringify(blocks)),
+        title: v.title,
+        subtitle: v.subtitle.trim() || null,
+        blocks: JSON.parse(JSON.stringify(v.blocks)),
       })
       .eq("id", pageId);
-    setSaving(false);
-    if (error) toast.error(error.message);
-    else toast.success("Saved");
-  }
+    if (error) throw error;
+  });
 
   return (
     <main className="min-h-screen">
@@ -86,9 +88,7 @@ function Editor({ onLogout }: { onLogout: () => void }) {
               <ArrowLeft className="size-4" /> Back
             </Link>
           </Button>
-          <Button onClick={save} disabled={saving || loading} size="sm">
-            <Save className="size-4" /> {saving ? "Saving…" : "Save"}
-          </Button>
+          <SaveIndicator state={saveState} />
         </div>
 
         {loading ? (

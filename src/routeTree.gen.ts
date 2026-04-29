@@ -36,6 +36,7 @@ import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage
 import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
 import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
+import { Route as AdminOnboardingTemplatesTemplateIdRouteImport } from './routes/admin_.onboarding_.templates.$templateId'
 import { Route as AdminOnboardingPagesSlugRouteImport } from './routes/admin_.onboarding_.pages.$slug'
 import { Route as AdminOnboardingHiresHireIdRouteImport } from './routes/admin_.onboarding_.hires.$hireId'
 
@@ -175,6 +176,12 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admin/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOnboardingTemplatesTemplateIdRoute =
+  AdminOnboardingTemplatesTemplateIdRouteImport.update({
+    id: '/admin_/onboarding_/templates/$templateId',
+    path: '/admin/onboarding/templates/$templateId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOnboardingPagesSlugRoute =
   AdminOnboardingPagesSlugRouteImport.update({
     id: '/admin_/onboarding_/pages/$slug',
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
+  '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -249,6 +257,7 @@ export interface FileRoutesByTo {
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
+  '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -281,6 +290,7 @@ export interface FileRoutesById {
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
   '/admin_/onboarding_/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin_/onboarding_/pages/$slug': typeof AdminOnboardingPagesSlugRoute
+  '/admin_/onboarding_/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/api/photographer-link'
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
+    | '/admin/onboarding/templates/$templateId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/api/photographer-link'
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
+    | '/admin/onboarding/templates/$templateId'
   id:
     | '__root__'
     | '/'
@@ -376,6 +388,7 @@ export interface FileRouteTypes {
     | '/api/photographer-link'
     | '/admin_/onboarding_/hires/$hireId'
     | '/admin_/onboarding_/pages/$slug'
+    | '/admin_/onboarding_/templates/$templateId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -408,6 +421,7 @@ export interface RootRouteChildren {
   ApiPhotographerLinkRoute: typeof ApiPhotographerLinkRoute
   AdminOnboardingHiresHireIdRoute: typeof AdminOnboardingHiresHireIdRoute
   AdminOnboardingPagesSlugRoute: typeof AdminOnboardingPagesSlugRoute
+  AdminOnboardingTemplatesTemplateIdRoute: typeof AdminOnboardingTemplatesTemplateIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -601,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/onboarding_/templates/$templateId': {
+      id: '/admin_/onboarding_/templates/$templateId'
+      path: '/admin/onboarding/templates/$templateId'
+      fullPath: '/admin/onboarding/templates/$templateId'
+      preLoaderRoute: typeof AdminOnboardingTemplatesTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/onboarding_/pages/$slug': {
       id: '/admin_/onboarding_/pages/$slug'
       path: '/admin/onboarding/pages/$slug'
@@ -648,16 +669,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPhotographerLinkRoute: ApiPhotographerLinkRoute,
   AdminOnboardingHiresHireIdRoute: AdminOnboardingHiresHireIdRoute,
   AdminOnboardingPagesSlugRoute: AdminOnboardingPagesSlugRoute,
+  AdminOnboardingTemplatesTemplateIdRoute:
+    AdminOnboardingTemplatesTemplateIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

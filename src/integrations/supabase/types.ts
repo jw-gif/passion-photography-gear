@@ -361,6 +361,39 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_templates: {
+        Row: {
+          checklist: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          timeline: Json
+          updated_at: string
+        }
+        Insert: {
+          checklist?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          timeline?: Json
+          updated_at?: string
+        }
+        Update: {
+          checklist?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          timeline?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       photo_request_assignments: {
         Row: {
           claimed_at: string

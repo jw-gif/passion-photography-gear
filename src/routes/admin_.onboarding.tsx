@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, FileText, Trash2 } from "lucide-react";
+import { Plus, Pencil, Users, FileText, LayoutTemplate } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -21,12 +21,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   type HireRow,
   type PageRow,
-  type ChecklistItemRow,
-  checklistProgress,
+  type TemplateRow,
   safeBlocks,
+  safeTemplateChecklist,
+  safeTemplateTimeline,
 } from "@/lib/onboarding";
+import { NewTemplateDialog } from "./admin_.onboarding_.templates.$templateId";
 
 export const Route = createFileRoute("/admin_/onboarding")({
   head: () => ({ meta: [{ title: "Staff Onboarding · Passion Photography Hub" }] }),
@@ -43,13 +52,15 @@ function Page() {
 }
 
 function Inner({ onLogout }: { onLogout: () => void }) {
+  const navigate = useNavigate();
   const [pages, setPages] = useState<PageRow[]>([]);
   const [hires, setHires] = useState<HireRow[]>([]);
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [progress, setProgress] = useState<Record<string, { done: number; total: number }>>({});
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const [{ data: p }, { data: h }, { data: c }] = await Promise.all([
+    const [{ data: p }, { data: h }, { data: c }, { data: t }] = await Promise.all([
       supabase
         .from("onboarding_pages")
         .select("id, slug, title, subtitle, blocks, sort_order")
@@ -61,6 +72,10 @@ function Inner({ onLogout }: { onLogout: () => void }) {
       supabase
         .from("onboarding_hire_checklist")
         .select("id, hire_id, completed"),
+      supabase
+        .from("onboarding_templates")
+        .select("id, name, description, checklist, timeline, sort_order")
+        .order("sort_order"),
     ]);
     setPages(
       ((p ?? []) as Array<Omit<PageRow, "blocks"> & { blocks: unknown }>).map((row) => ({
@@ -69,6 +84,13 @@ function Inner({ onLogout }: { onLogout: () => void }) {
       })),
     );
     setHires((h ?? []) as HireRow[]);
+    setTemplates(
+      ((t ?? []) as Array<Omit<TemplateRow, "checklist" | "timeline"> & { checklist: unknown; timeline: unknown }>).map((row) => ({
+        ...row,
+        checklist: safeTemplateChecklist(row.checklist),
+        timeline: safeTemplateTimeline(row.timeline),
+      })),
+    );
     const map: Record<string, { done: number; total: number }> = {};
     for (const item of (c ?? []) as { hire_id: string; completed: boolean }[]) {
       const cur = map[item.hire_id] ?? { done: 0, total: 0 };
@@ -88,6 +110,7 @@ function Inner({ onLogout }: { onLogout: () => void }) {
     <main className="min-h-screen">
       <HubHeader onLogout={onLogout} title="Staff Onboarding" subtitle="New hire resources" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+        {/* Shared pages */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold tracking-tight inline-flex items-center gap-2">
@@ -121,12 +144,56 @@ function Inner({ onLogout }: { onLogout: () => void }) {
           )}
         </div>
 
+        {/* Templates */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold tracking-tight inline-flex items-center gap-2">
+              <LayoutTemplate className="size-4 text-muted-foreground" /> Templates
+            </h2>
+            <NewTemplateDialog
+              onCreated={(id) =>
+                navigate({ to: "/admin/onboarding/templates/$templateId", params: { templateId: id } })
+              }
+            />
+          </div>
+          {loading ? null : templates.length === 0 ? (
+            <Card className="p-6 text-center border-dashed">
+              <div className="text-sm text-muted-foreground">
+                No templates yet. Create one to pre-populate new hires' checklists and timelines.
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {templates.map((t) => (
+                <Link
+                  key={t.id}
+                  to="/admin/onboarding/templates/$templateId"
+                  params={{ templateId: t.id }}
+                >
+                  <Card className="p-4 hover:border-foreground/30 transition-colors h-full">
+                    <div className="font-medium">{t.name}</div>
+                    {t.description && (
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {t.description}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-3">
+                      {t.checklist.length} checklist · {t.timeline.length} timeline
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* New hires */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold tracking-tight inline-flex items-center gap-2">
               <Users className="size-4 text-muted-foreground" /> New hires
             </h2>
-            <NewHireDialog onCreated={load} />
+            <NewHireDialog templates={templates} onCreated={load} />
           </div>
           {loading ? (
             <div className="text-sm text-muted-foreground">Loading…</div>
@@ -189,13 +256,20 @@ function Inner({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-function NewHireDialog({ onCreated }: { onCreated: () => void }) {
+function NewHireDialog({
+  templates,
+  onCreated,
+}: {
+  templates: TemplateRow[];
+  onCreated: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [roleLabel, setRoleLabel] = useState("");
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [coordinator, setCoordinator] = useState("");
+  const [templateId, setTemplateId] = useState<string>("__none");
   const [saving, setSaving] = useState(false);
 
   async function submit() {
@@ -204,26 +278,59 @@ function NewHireDialog({ onCreated }: { onCreated: () => void }) {
       return;
     }
     setSaving(true);
-    // Try to look up an existing auth user by email so the hire can sign in.
-    // We can only see admin_profiles; we use email match with the eventual sign-in.
-    const { error } = await supabase.from("onboarding_hires").insert({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role_label: roleLabel.trim() || null,
-      start_date: startDate,
-      coordinator_name: coordinator.trim() || null,
-    });
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
+    const { data: created, error } = await supabase
+      .from("onboarding_hires")
+      .insert({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        role_label: roleLabel.trim() || null,
+        start_date: startDate,
+        coordinator_name: coordinator.trim() || null,
+      })
+      .select("id")
+      .maybeSingle();
+    if (error || !created) {
+      setSaving(false);
+      toast.error(error?.message ?? "Failed to create");
       return;
     }
+
+    // Apply template if selected
+    if (templateId !== "__none") {
+      const tpl = templates.find((t) => t.id === templateId);
+      if (tpl) {
+        const checklistRows = tpl.checklist.map((c, i) => ({
+          hire_id: created.id,
+          section: c.section || "General",
+          label: c.label,
+          owner: c.owner ?? null,
+          sort_order: i,
+        }));
+        const timelineRows = tpl.timeline.map((t, i) => ({
+          hire_id: created.id,
+          day_offset: t.day_offset,
+          label: t.label,
+          title: t.title,
+          description: t.description ?? null,
+          sort_order: i,
+        }));
+        if (checklistRows.length > 0) {
+          await supabase.from("onboarding_hire_checklist").insert(checklistRows);
+        }
+        if (timelineRows.length > 0) {
+          await supabase.from("onboarding_hire_timeline").insert(timelineRows);
+        }
+      }
+    }
+
+    setSaving(false);
     toast.success("Hire created");
     setOpen(false);
     setName("");
     setEmail("");
     setRoleLabel("");
     setCoordinator("");
+    setTemplateId("__none");
     onCreated();
   }
 
@@ -274,6 +381,22 @@ function NewHireDialog({ onCreated }: { onCreated: () => void }) {
               onChange={(e) => setCoordinator(e.target.value)}
               placeholder="Who is onboarding them"
             />
+          </div>
+          <div>
+            <Label className="text-xs">Apply template (optional)</Label>
+            <Select value={templateId} onValueChange={setTemplateId}>
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">None — start blank</SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name} ({t.checklist.length} + {t.timeline.length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>
