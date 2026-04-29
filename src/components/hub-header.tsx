@@ -43,6 +43,9 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
   const gearActive =
     pathname.startsWith("/admin/gear") ||
     pathname.startsWith("/admin/requests-gear");
+  const teamActive =
+    pathname.startsWith("/admin/team") ||
+    pathname.startsWith("/admin/onboarding");
 
   return (
     <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
