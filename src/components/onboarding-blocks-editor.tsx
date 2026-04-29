@@ -10,7 +10,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   BLOCK_TYPE_LABELS,
   type ContentBlock,
@@ -24,59 +41,71 @@ interface Props {
   onChange: (next: ContentBlock[]) => void;
 }
 
+// Stable IDs across reorders. We tag blocks with a __id symbol-free property
+// only in editor state; persisted blocks don't keep this.
+type IdBlock = ContentBlock & { __id: string };
+
+function withIds(blocks: ContentBlock[]): IdBlock[] {
+  return blocks.map((b, i) => ({ ...b, __id: `b-${i}-${Math.random().toString(36).slice(2, 8)}` } as IdBlock));
+}
+function stripIds(blocks: IdBlock[]): ContentBlock[] {
+  return blocks.map(({ __id: _ignored, ...rest }) => rest as ContentBlock);
+}
+
 export function BlocksEditor({ blocks, onChange }: Props) {
+  // Maintain a parallel id list keyed by index. Recreated when length changes.
+  const [ids, setIds] = useState<string[]>(() => blocks.map((_, i) => `b-${i}-${Math.random().toString(36).slice(2, 8)}`));
+
+  // Keep ids in sync if external blocks length changes (e.g. add/remove from outside)
+  if (ids.length !== blocks.length) {
+    setIds(blocks.map((_, i) => ids[i] ?? `b-${i}-${Math.random().toString(36).slice(2, 8)}`));
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   function update(i: number, b: ContentBlock) {
     const next = blocks.slice();
     next[i] = b;
     onChange(next);
   }
   function remove(i: number) {
+    const nextIds = ids.slice();
+    nextIds.splice(i, 1);
+    setIds(nextIds);
     onChange(blocks.filter((_, j) => j !== i));
   }
-  function move(i: number, dir: -1 | 1) {
-    const j = i + dir;
-    if (j < 0 || j >= blocks.length) return;
-    const next = blocks.slice();
-    [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
-  }
   function add(type: BlockType) {
+    setIds([...ids, `b-${blocks.length}-${Math.random().toString(36).slice(2, 8)}`]);
     onChange([...blocks, emptyBlock(type)]);
+  }
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    setIds(arrayMove(ids, oldIndex, newIndex));
+    onChange(arrayMove(blocks, oldIndex, newIndex));
   }
 
   return (
     <div className="space-y-3">
-      {blocks.map((b, i) => (
-        <Card key={i} className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {BLOCK_TYPE_LABELS[b.type]}
-            </div>
-            <div className="flex items-center gap-1">
-              <Button size="sm" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>
-                <ArrowUp className="size-3.5" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => move(i, 1)}
-                disabled={i === blocks.length - 1}
-              >
-                <ArrowDown className="size-3.5" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => remove(i)}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-          <BlockFields block={b} onChange={(next) => update(i, next)} />
-        </Card>
-      ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          {blocks.map((b, i) => (
+            <SortableBlockCard
+              key={ids[i]}
+              id={ids[i]}
+              block={b}
+              onChange={(next) => update(i, next)}
+              onRemove={() => remove(i)}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -92,6 +121,67 @@ export function BlocksEditor({ blocks, onChange }: Props) {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+    </div>
+  );
+}
+
+function SortableBlockCard({
+  id,
+  block,
+  onChange,
+  onRemove,
+}: {
+  id: string;
+  block: ContentBlock;
+  onChange: (b: ContentBlock) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
+              aria-label="Drag to reorder"
+            >
+              <GripVertical className="size-4" />
+            </button>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {BLOCK_TYPE_LABELS[block.type]}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onRemove}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+        <BlockFields block={block} onChange={onChange} />
+        {(block.type === "paragraph" ||
+          block.type === "callout" ||
+          block.type === "card" ||
+          block.type === "two_col" ||
+          block.type === "accordion" ||
+          block.type === "checklist_preview" ||
+          block.type === "table") && (
+          <div className="text-[10px] text-muted-foreground mt-2">
+            Tip: <code>**bold**</code>, <code>*italic*</code>, <code>[text](url)</code>, <code>`code`</code>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
@@ -192,6 +282,72 @@ function BlockFields({
       return <PeopleEditor block={block} onChange={onChange} />;
     case "checklist_preview":
       return <BulletEditor block={block} onChange={onChange} />;
+    case "image":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Image URL</Label>
+            <Input
+              placeholder="https://…"
+              value={block.url}
+              onChange={(e) => onChange({ ...block, url: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Alt text</Label>
+              <Input
+                value={block.alt ?? ""}
+                onChange={(e) => onChange({ ...block, alt: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Caption (optional)</Label>
+              <Input
+                value={block.caption ?? ""}
+                onChange={(e) => onChange({ ...block, caption: e.target.value })}
+              />
+            </div>
+          </div>
+          {block.url && (
+            <img
+              src={block.url}
+              alt={block.alt ?? ""}
+              className="max-h-40 rounded border bg-muted mt-1"
+            />
+          )}
+        </div>
+      );
+    case "embed":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Title (optional)</Label>
+            <Input
+              value={block.title ?? ""}
+              onChange={(e) => onChange({ ...block, title: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">URL (Loom, YouTube, Figma)</Label>
+            <Input
+              placeholder="https://www.loom.com/share/…"
+              value={block.url}
+              onChange={(e) => onChange({ ...block, url: e.target.value })}
+            />
+          </div>
+        </div>
+      );
+    case "link_list":
+      return <LinkListEditor block={block} onChange={onChange} />;
+    case "divider":
+      return (
+        <div className="text-xs text-muted-foreground italic">
+          Horizontal divider — no content needed.
+        </div>
+      );
+    case "accordion":
+      return <AccordionEditor block={block} onChange={onChange} />;
   }
 }
 
@@ -394,3 +550,120 @@ function BulletEditor({
     </div>
   );
 }
+
+function LinkListEditor({
+  block,
+  onChange,
+}: {
+  block: Extract<ContentBlock, { type: "link_list" }>;
+  onChange: (b: ContentBlock) => void;
+}) {
+  function updateLink(i: number, patch: Partial<{ title: string; description: string; url: string }>) {
+    const links = block.links.slice();
+    links[i] = { ...links[i], ...patch };
+    onChange({ ...block, links });
+  }
+  return (
+    <div className="space-y-3">
+      <Input
+        placeholder="List title (optional)"
+        value={block.title ?? ""}
+        onChange={(e) => onChange({ ...block, title: e.target.value })}
+      />
+      {block.links.map((l, i) => (
+        <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_2fr_auto] gap-2 items-start">
+          <Input
+            placeholder="Title"
+            value={l.title}
+            onChange={(e) => updateLink(i, { title: e.target.value })}
+          />
+          <Input
+            placeholder="Description"
+            value={l.description ?? ""}
+            onChange={(e) => updateLink(i, { description: e.target.value })}
+          />
+          <Input
+            placeholder="https://…"
+            value={l.url}
+            onChange={(e) => updateLink(i, { url: e.target.value })}
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onChange({ ...block, links: block.links.filter((_, j) => j !== i) })}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() =>
+          onChange({ ...block, links: [...block.links, { title: "", description: "", url: "" }] })
+        }
+      >
+        <Plus className="size-3.5" /> Add link
+      </Button>
+    </div>
+  );
+}
+
+function AccordionEditor({
+  block,
+  onChange,
+}: {
+  block: Extract<ContentBlock, { type: "accordion" }>;
+  onChange: (b: ContentBlock) => void;
+}) {
+  function update(i: number, patch: Partial<{ question: string; answer: string }>) {
+    const items = block.items.slice();
+    items[i] = { ...items[i], ...patch };
+    onChange({ ...block, items });
+  }
+  return (
+    <div className="space-y-3">
+      <Input
+        placeholder="Section title (optional)"
+        value={block.title ?? ""}
+        onChange={(e) => onChange({ ...block, title: e.target.value })}
+      />
+      {block.items.map((item, i) => (
+        <div key={i} className="space-y-2 border-l-2 border-muted pl-3">
+          <div className="flex items-start gap-2">
+            <Input
+              placeholder="Question"
+              value={item.question}
+              onChange={(e) => update(i, { question: e.target.value })}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onChange({ ...block, items: block.items.filter((_, j) => j !== i) })}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+          <Textarea
+            rows={3}
+            placeholder="Answer"
+            value={item.answer}
+            onChange={(e) => update(i, { answer: e.target.value })}
+          />
+        </div>
+      ))}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() =>
+          onChange({ ...block, items: [...block.items, { question: "", answer: "" }] })
+        }
+      >
+        <Plus className="size-3.5" /> Add Q&A
+      </Button>
+    </div>
+  );
+}
+
+// Re-export with id helpers used by drag-and-drop above (not currently used by callers).
+export { withIds, stripIds };
