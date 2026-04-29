@@ -104,7 +104,11 @@ function HireEditor({ onLogout }: { onLogout: () => void }) {
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <a href="/onboarding" target="_blank" rel="noreferrer">
+            <a
+              href={`/onboarding?previewHire=${hire.id}`}
+              target="_blank"
+              rel="noreferrer"
+            >
               <ExternalLink className="size-4" /> Open hire view
             </a>
           </Button>
