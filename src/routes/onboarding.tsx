@@ -1,7 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format, differenceInCalendarDays } from "date-fns";
-import { ArrowRight, Check, ChevronDown, ChevronRight, Circle, LogOut, PartyPopper } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  HelpCircle,
+  LogOut,
+  Mail,
+  PartyPopper,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 
@@ -10,17 +21,32 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import pccLogo from "@/assets/pcc-logo.png";
 import { cn } from "@/lib/utils";
 import { BlocksRenderer } from "@/components/onboarding-blocks-renderer";
 import {
   type ChecklistItemRow,
+  type DayBucket,
   type HireRow,
   type PageRow,
   type TimelineItemRow,
+  buildPlan,
   checklistProgress,
   classifyMilestone,
   dayOffsetToDate,
+  getInitials,
   safeBlocks,
 } from "@/lib/onboarding";
 
@@ -39,6 +65,8 @@ export const Route = createFileRoute("/onboarding")({
   }),
   component: OnboardingPage,
 });
+
+type TopTab = "home" | "plan" | string; // string = page slug
 
 function OnboardingPage() {
   const { user, loading, signOut, isAdmin, displayName } = useAuth();
@@ -107,7 +135,7 @@ function OnboardingPage() {
         ? supabase
             .from("onboarding_hire_checklist")
             .select(
-              "id, hire_id, section, label, owner, completed, completed_at, sort_order",
+              "id, hire_id, section, label, owner, completed, completed_at, sort_order, day_offset",
             )
             .eq("hire_id", hireRow.id)
             .order("sort_order")
@@ -128,31 +156,68 @@ function OnboardingPage() {
 
   useEffect(() => {
     if (user) loadAll(user.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, previewHire, isPreview]);
 
-  const tabs = useMemo(() => {
-    const base: { key: string; label: string }[] = pages.map((p) => ({
-      key: p.slug,
-      label: p.title,
-    }));
-    if (hire) {
-      base.push({ key: "first-month", label: "First month" });
-      base.push({ key: "checklist", label: "Checklist" });
-    }
-    return base;
-  }, [pages, hire]);
+  const validTabs: TopTab[] = useMemo(() => {
+    const list: TopTab[] = ["home"];
+    if (hire) list.push("plan");
+    for (const p of pages) list.push(p.slug);
+    return list;
+  }, [hire, pages]);
 
-  const activeKey = tab && tabs.some((t) => t.key === tab) ? tab : tabs[0]?.key ?? "welcome";
-  const isFirstTab = tabs[0]?.key === activeKey;
+  const activeTab: TopTab =
+    tab && validTabs.includes(tab) ? (tab as TopTab) : hire ? "home" : pages[0]?.slug ?? "home";
+
+  async function toggleChecklist(item: ChecklistItemRow) {
+    if (isPreview) return;
+    const completed = !item.completed;
+    const { error } = await supabase
+      .from("onboarding_hire_checklist")
+      .update({
+        completed,
+        completed_at: completed ? new Date().toISOString() : null,
+      })
+      .eq("id", item.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const next = checklist.map((i) =>
+      i.id === item.id
+        ? {
+            ...i,
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+          }
+        : i,
+    );
+    setChecklist(next);
+    if (completed) {
+      const sectionItems = next.filter((i) => i.section === item.section);
+      if (sectionItems.length > 0 && sectionItems.every((i) => i.completed)) {
+        confetti({
+          particleCount: 60,
+          spread: 70,
+          origin: { y: 0.6 },
+          disableForReducedMotion: true,
+        });
+        toast.success(`${item.section} complete! 🎉`, {
+          icon: <PartyPopper className="size-4" />,
+        });
+      }
+    }
+  }
 
   if (loading || !user) return null;
 
   return (
-    <main className="min-h-screen">
-      <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-full bg-primary flex items-center justify-center">
+    <main className="min-h-screen bg-background">
+      {/* Top bar */}
+      <header className="px-4 sm:px-6 py-4 border-b border-border bg-card/70 backdrop-blur sticky top-0 z-30">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="size-9 rounded-full bg-primary flex items-center justify-center">
               <img
                 src={pccLogo}
                 alt="PCC"
@@ -160,9 +225,9 @@ function OnboardingPage() {
                 style={{ filter: "brightness(0) invert(1)" }}
               />
             </div>
-            <div>
-              <div className="font-semibold tracking-tight leading-tight">Onboarding</div>
-              <div className="text-xs text-muted-foreground">
+            <div className="leading-tight">
+              <div className="font-semibold tracking-tight">Onboarding</div>
+              <div className="text-[11px] text-muted-foreground">
                 {hire ? `Welcome, ${hire.name.split(" ")[0]}` : displayName ?? user.email}
               </div>
             </div>
@@ -183,7 +248,7 @@ function OnboardingPage() {
 
       {isPreview && (
         <div className="bg-amber-500/15 border-b border-amber-500/30 text-amber-900 text-xs px-4 sm:px-6 py-2">
-          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
             <span>
               Admin preview of <strong>{hire?.name ?? "hire"}</strong>'s view. Checklist
               toggles are disabled.
@@ -199,117 +264,47 @@ function OnboardingPage() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+      {/* Segmented nav: Home / Your plan / Resources▾ */}
+      {hire && (
+        <SegmentedNav
+          activeTab={activeTab}
+          pages={pages}
+          isPreview={isPreview}
+          previewHire={previewHire}
+        />
+      )}
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {loadingData ? (
-          <div className="space-y-4">
-            <Skeleton className="h-32 w-full rounded-xl" />
-            <Skeleton className="h-20 w-full rounded-xl" />
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-48 w-full" />
-          </div>
+          <PageSkeleton />
+        ) : !hire ? (
+          // No hire linked — fall back to a simple welcome list of pages
+          <NoHireState
+            email={user.email ?? ""}
+            pages={pages}
+            activeTab={activeTab}
+            isPreview={isPreview}
+            previewHire={previewHire}
+          />
+        ) : activeTab === "home" ? (
+          <HomeView
+            hire={hire}
+            timeline={timeline}
+            checklist={checklist}
+            pages={pages}
+            isPreview={isPreview}
+            previewHire={previewHire}
+            onToggleTask={toggleChecklist}
+          />
+        ) : activeTab === "plan" ? (
+          <PlanView
+            hire={hire}
+            timeline={timeline}
+            checklist={checklist}
+            onToggleTask={toggleChecklist}
+          />
         ) : (
-          <>
-            {/* Hero on first tab */}
-            {isFirstTab && hire && <HireHero hire={hire} />}
-
-            {/* Today card visible on all tabs when there's a hire */}
-            {hire && (
-              <TodayCard
-                hire={hire}
-                timeline={timeline}
-                checklist={checklist}
-                activeKey={activeKey}
-                isPreview={isPreview}
-                previewHire={previewHire}
-              />
-            )}
-
-            {/* Tabs (horizontal scroll on mobile) */}
-            <nav className="flex gap-2 mb-6 overflow-x-auto -mx-1 px-1 pb-1 snap-x">
-              {tabs.map((t) => (
-                <Link
-                  key={t.key}
-                  to="/onboarding"
-                  search={{ tab: t.key, previewHire: isPreview ? previewHire : undefined }}
-                  replace
-                  className={cn(
-                    "text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap snap-start",
-                    t.key === activeKey
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-card border-border text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {t.label}
-                </Link>
-              ))}
-            </nav>
-
-            {activeKey === "first-month" && hire ? (
-              <FirstMonthView hire={hire} items={timeline} />
-            ) : activeKey === "checklist" && hire ? (
-              <ChecklistView
-                items={checklist}
-                onToggle={
-                  isPreview
-                    ? () => {}
-                    : async (item) => {
-                        const completed = !item.completed;
-                        const { error } = await supabase
-                          .from("onboarding_hire_checklist")
-                          .update({
-                            completed,
-                            completed_at: completed ? new Date().toISOString() : null,
-                          })
-                          .eq("id", item.id);
-                        if (error) {
-                          toast.error(error.message);
-                          return;
-                        }
-                        const next = checklist.map((i) =>
-                          i.id === item.id
-                            ? {
-                                ...i,
-                                completed,
-                                completed_at: completed ? new Date().toISOString() : null,
-                              }
-                            : i,
-                        );
-                        setChecklist(next);
-                        // Section-complete celebration
-                        if (completed) {
-                          const sectionItems = next.filter((i) => i.section === item.section);
-                          if (
-                            sectionItems.length > 0 &&
-                            sectionItems.every((i) => i.completed)
-                          ) {
-                            confetti({
-                              particleCount: 60,
-                              spread: 70,
-                              origin: { y: 0.6 },
-                              disableForReducedMotion: true,
-                            });
-                            toast.success(`${item.section} complete! 🎉`, {
-                              icon: <PartyPopper className="size-4" />,
-                            });
-                          }
-                        }
-                      }
-                }
-              />
-            ) : (
-              <PageView page={pages.find((p) => p.slug === activeKey)} />
-            )}
-
-            {!hire && (
-              <Card className="p-4 mt-6 border-dashed">
-                <div className="text-sm text-muted-foreground">
-                  No personalized first-month plan or checklist is linked to your account
-                  yet. Ask your coordinator to add you with the email{" "}
-                  <span className="font-mono">{user.email}</span>.
-                </div>
-              </Card>
-            )}
-          </>
+          <PageView page={pages.find((p) => p.slug === activeTab)} />
         )}
       </div>
     </main>
@@ -317,176 +312,758 @@ function OnboardingPage() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Hero                                                               */
+/* Segmented nav                                                      */
 /* ------------------------------------------------------------------ */
 
-function HireHero({ hire }: { hire: HireRow }) {
-  const firstName = hire.name.split(" ")[0];
-  const startDate = new Date(`${hire.start_date}T00:00:00`);
+function SegmentedNav({
+  activeTab,
+  pages,
+  isPreview,
+  previewHire,
+}: {
+  activeTab: TopTab;
+  pages: PageRow[];
+  isPreview: boolean;
+  previewHire: string | undefined;
+}) {
+  const search = (slug: string) => ({
+    tab: slug,
+    previewHire: isPreview ? previewHire : undefined,
+  });
+  const onResource = pages.some((p) => p.slug === activeTab);
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/15 via-background to-background p-6 sm:p-8 mb-5">
-      <div
-        className="absolute -right-10 -top-10 size-48 rounded-full bg-primary/10 blur-3xl pointer-events-none"
-        aria-hidden
-      />
-      <div
-        className="absolute right-6 top-6 size-12 rounded-full bg-primary/20 flex items-center justify-center pointer-events-none"
-        aria-hidden
-      >
-        <img
-          src={pccLogo}
-          alt=""
-          className="size-7 object-contain opacity-80"
-          style={{ filter: "brightness(0) invert(1)" }}
-        />
-      </div>
-      <div className="relative">
-        <div className="text-xs uppercase tracking-wider text-primary/80 font-semibold mb-1">
-          Welcome to Passion
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-          Welcome, {firstName} 👋
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-          {hire.role_label ? `${hire.role_label} · ` : ""}
-          {startDate.getTime() > Date.now()
-            ? `Starting ${format(startDate, "EEE, MMM d")}`
-            : `Started ${format(startDate, "EEE, MMM d")}`}
-          {hire.coordinator_name ? ` · Onboarded by ${hire.coordinator_name}` : ""}
-        </p>
+    <div className="border-b border-border bg-background/80 backdrop-blur sticky top-[73px] z-20">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <nav className="flex items-center gap-1 py-2">
+          <NavPill to="home" label="Home" active={activeTab === "home"} search={search("home")} />
+          <NavPill to="plan" label="Your plan" active={activeTab === "plan"} search={search("plan")} />
+          {pages.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border transition-colors",
+                    onResource
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <BookOpen className="size-3.5" />
+                  Resources
+                  <ChevronDown className="size-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {pages.map((p) => (
+                  <DropdownMenuItem key={p.slug} asChild>
+                    <Link
+                      to="/onboarding"
+                      search={search(p.slug)}
+                      replace
+                      className="cursor-pointer"
+                    >
+                      {p.title}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </nav>
       </div>
     </div>
   );
 }
 
+function NavPill({
+  to,
+  label,
+  active,
+  search,
+}: {
+  to: string;
+  label: string;
+  active: boolean;
+  search: Search;
+}) {
+  return (
+    <Link
+      to="/onboarding"
+      search={search}
+      replace
+      className={cn(
+        "text-sm px-3 py-1.5 rounded-full border transition-colors",
+        active
+          ? "bg-foreground text-background border-foreground"
+          : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60",
+      )}
+      aria-current={active ? "page" : undefined}
+      data-tab={to}
+    >
+      {label}
+    </Link>
+  );
+}
+
 /* ------------------------------------------------------------------ */
-/* Today card                                                         */
+/* Home view                                                          */
 /* ------------------------------------------------------------------ */
 
-function TodayCard({
+function HomeView({
   hire,
   timeline,
   checklist,
-  activeKey,
+  pages,
   isPreview,
   previewHire,
+  onToggleTask,
 }: {
   hire: HireRow;
   timeline: TimelineItemRow[];
   checklist: ChecklistItemRow[];
-  activeKey: string;
+  pages: PageRow[];
   isPreview: boolean;
   previewHire: string | undefined;
+  onToggleTask: (item: ChecklistItemRow) => void;
 }) {
   const start = new Date(`${hire.start_date}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dayN = differenceInCalendarDays(today, start) + 1;
   const totalDays = 30;
+  const progress = checklistProgress(checklist);
+
+  const todaysEvents = timeline.filter(
+    (t) => classifyMilestone(hire.start_date, t.day_offset) === "today",
+  );
+  const todaysTasks = checklist.filter(
+    (c) =>
+      c.day_offset != null &&
+      !c.completed &&
+      classifyMilestone(hire.start_date, c.day_offset) === "today",
+  );
+  const upcomingThisWeek = useMemo(() => {
+    return timeline
+      .filter((t) => {
+        const status = classifyMilestone(hire.start_date, t.day_offset);
+        if (status !== "upcoming") return false;
+        const date = dayOffsetToDate(hire.start_date, t.day_offset);
+        return differenceInCalendarDays(date, today) <= 7;
+      })
+      .slice(0, 4);
+  }, [timeline, hire.start_date, today]);
+
+  // Fallback "to-do soon" if no day-pinned tasks today: surface next 3 unchecked
+  const fallbackTasks =
+    todaysTasks.length === 0
+      ? checklist.filter((c) => !c.completed).slice(0, 3)
+      : todaysTasks;
+
   const dayLabel =
     dayN <= 0
-      ? `Starts in ${Math.abs(dayN) + 1} day${Math.abs(dayN) === 0 ? "" : "s"}`
+      ? `Starts ${format(start, "EEE, MMM d")}`
       : dayN > totalDays
         ? `Past day ${totalDays}`
-        : `Day ${dayN} of ${totalDays}`;
-
-  const todaysItem =
-    timeline.find((t) => classifyMilestone(hire.start_date, t.day_offset) === "today") ??
-    null;
-  const upcomingItem =
-    !todaysItem
-      ? timeline.find((t) => classifyMilestone(hire.start_date, t.day_offset) === "upcoming") ??
-        null
-      : null;
-
-  const progress = checklistProgress(checklist);
-  const remaining = progress.total - progress.done;
-
-  // Don't render on the checklist or first-month tab — duplicative
-  if (activeKey === "checklist" || activeKey === "first-month") return null;
-  if (timeline.length === 0 && checklist.length === 0) return null;
+        : `Day ${Math.min(dayN, totalDays)} of ${totalDays}`;
 
   return (
-    <Card className="p-4 mb-5 bg-card/50 backdrop-blur">
-      <div className="flex items-start gap-4 flex-wrap">
-        <div className="flex flex-col items-center justify-center min-w-[72px] py-1 px-3 rounded-xl bg-primary/10 border border-primary/20">
-          <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold">
-            {dayN <= 0 ? "Soon" : dayN > totalDays ? "Done" : "Today"}
+    <div className="space-y-5">
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/15 via-background to-background p-6 sm:p-8">
+        <div
+          className="absolute -right-16 -top-16 size-56 rounded-full bg-primary/15 blur-3xl pointer-events-none"
+          aria-hidden
+        />
+        <div className="relative">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-primary/80 font-semibold mb-1.5">
+            <Sparkles className="size-3 inline -mt-0.5 mr-1" />
+            Welcome to Passion
           </div>
-          <div className="text-2xl font-semibold leading-tight">
-            {dayN <= 0 || dayN > totalDays ? "—" : dayN}
-          </div>
-          <div className="text-[10px] text-muted-foreground">of {totalDays}</div>
-        </div>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+            Hi, {hire.name.split(" ")[0]} 👋
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+            {hire.role_label ? `${hire.role_label} · ` : ""}
+            {dayLabel}
+            {hire.coordinator_name ? ` · with ${hire.coordinator_name}` : ""}
+          </p>
 
-        <div className="flex-1 min-w-[200px] space-y-1">
-          <div className="text-xs text-muted-foreground">{dayLabel}</div>
-          {todaysItem ? (
-            <div>
-              <div className="text-sm font-medium">Today: {todaysItem.title}</div>
-              {todaysItem.description && (
-                <div className="text-xs text-muted-foreground line-clamp-1">
-                  {todaysItem.description}
-                </div>
-              )}
-            </div>
-          ) : upcomingItem ? (
-            <div>
-              <div className="text-sm font-medium">
-                Up next: {upcomingItem.title}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {format(dayOffsetToDate(hire.start_date, upcomingItem.day_offset), "EEE, MMM d")}
-              </div>
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">No upcoming milestones.</div>
-          )}
+          {/* Progress bar */}
           {progress.total > 0 && (
-            <div className="text-xs text-muted-foreground">
-              Checklist: {progress.done}/{progress.total} done
-              {remaining > 0 ? ` · ${remaining} to go` : " · all done 🎉"}
+            <div className="mt-5 max-w-md">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5">
+                <span className="font-medium tabular-nums text-foreground/80">
+                  {progress.done} of {progress.total} tasks done
+                </span>
+                <span className="tabular-nums">{progress.pct}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${progress.pct}%` }}
+                />
+              </div>
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {timeline.length > 0 && (
-            <Button asChild size="sm" variant="outline">
-              <Link
-                to="/onboarding"
-                search={{
-                  tab: "first-month",
-                  previewHire: isPreview ? previewHire : undefined,
-                }}
-                replace
-              >
-                First month <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
-          )}
-          {checklist.length > 0 && (
-            <Button asChild size="sm">
-              <Link
-                to="/onboarding"
-                search={{
-                  tab: "checklist",
-                  previewHire: isPreview ? previewHire : undefined,
-                }}
-                replace
-              >
-                Checklist
-              </Link>
-            </Button>
           )}
         </div>
       </div>
-    </Card>
+
+      {/* Today focus */}
+      <Card className="overflow-hidden">
+        <div className="px-5 sm:px-6 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+              Today · {format(today, "EEE, MMM d")}
+            </span>
+          </div>
+          {dayN > 0 && dayN <= totalDays && (
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              Day {dayN}
+            </span>
+          )}
+        </div>
+        <div className="p-5 sm:p-6 space-y-5">
+          {/* Events */}
+          {todaysEvents.length > 0 ? (
+            <div className="space-y-3">
+              {todaysEvents.map((e) => (
+                <div key={e.id} className="flex gap-3">
+                  <span className="mt-1.5 size-1.5 rounded-full bg-primary shrink-0" />
+                  <div>
+                    <div className="font-medium leading-tight">{e.title}</div>
+                    {e.description && (
+                      <div className="text-sm text-muted-foreground mt-0.5 whitespace-pre-wrap">
+                        {e.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No events scheduled for today — a great day to catch up.
+            </div>
+          )}
+
+          {/* Tasks */}
+          {fallbackTasks.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                {todaysTasks.length > 0 ? "To do today" : "Up next on your list"}
+              </div>
+              <ul className="divide-y divide-border/60">
+                {fallbackTasks.map((t) => (
+                  <TaskRow key={t.id} task={t} onToggle={onToggleTask} compact />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-1">
+            <Button asChild size="sm" variant="outline">
+              <Link
+                to="/onboarding"
+                search={{ tab: "plan", previewHire: isPreview ? previewHire : undefined }}
+                replace
+              >
+                Open full plan <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Coming up */}
+      {upcomingThisWeek.length > 0 && (
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Coming up this week
+            </div>
+          </div>
+          <ul className="space-y-2.5">
+            {upcomingThisWeek.map((e) => {
+              const date = dayOffsetToDate(hire.start_date, e.day_offset);
+              return (
+                <li key={e.id} className="flex items-baseline gap-3 text-sm">
+                  <span className="text-xs text-muted-foreground tabular-nums w-20 shrink-0">
+                    {format(date, "EEE, MMM d")}
+                  </span>
+                  <span className="font-medium">{e.title}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
+
+      {/* Help */}
+      {hire.coordinator_name && (
+        <Card className="p-5 sm:p-6 bg-muted/20">
+          <div className="flex items-start gap-3">
+            <div className="size-9 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
+              {getInitials(hire.coordinator_name)}
+            </div>
+            <div className="flex-1">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
+                <HelpCircle className="size-3 inline -mt-0.5 mr-1" />
+                Need help?
+              </div>
+              <div className="text-sm">
+                Reach out to{" "}
+                <span className="font-medium">{hire.coordinator_name}</span> any time —
+                they're here to make week one easy.
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Resources grid */}
+      {pages.length > 0 && (
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-1">
+            Resources
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {pages.map((p) => (
+              <Link
+                key={p.slug}
+                to="/onboarding"
+                search={{ tab: p.slug, previewHire: isPreview ? previewHire : undefined }}
+                replace
+                className="group rounded-2xl border border-border bg-card hover:bg-muted/40 transition-colors p-4 flex flex-col gap-1.5"
+              >
+                <BookOpen className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="text-sm font-medium leading-tight">{p.title}</div>
+                {p.subtitle && (
+                  <div className="text-[11px] text-muted-foreground line-clamp-2">
+                    {p.subtitle}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Page (welcome / shared)                                            */
+/* Plan view (unified day-by-day)                                     */
+/* ------------------------------------------------------------------ */
+
+type PlanFilter = "all" | "events" | "tasks" | "mine";
+
+function PlanView({
+  hire,
+  timeline,
+  checklist,
+  onToggleTask,
+}: {
+  hire: HireRow;
+  timeline: TimelineItemRow[];
+  checklist: ChecklistItemRow[];
+  onToggleTask: (item: ChecklistItemRow) => void;
+}) {
+  const { weeks, anytimeTasks } = useMemo(
+    () => buildPlan(hire, timeline, checklist),
+    [hire, timeline, checklist],
+  );
+
+  const todayRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      todayRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+    return () => window.clearTimeout(id);
+  }, [weeks.length]);
+
+  const [filter, setFilter] = useState<PlanFilter>("all");
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  const firstName = hire.name.split(" ")[0];
+
+  function dayMatchesFilter(d: DayBucket): { events: TimelineItemRow[]; tasks: ChecklistItemRow[] } {
+    let events = d.events;
+    let tasks = d.tasks;
+    if (filter === "events") tasks = [];
+    if (filter === "tasks") events = [];
+    if (filter === "mine") {
+      events = [];
+      tasks = tasks.filter((t) => {
+        const o = (t.owner ?? "").toLowerCase();
+        return !o || o === firstName.toLowerCase() || o === "you" || o === hire.name.toLowerCase();
+      });
+    }
+    if (!showCompleted && d.isPast) {
+      tasks = tasks.filter((t) => !t.completed);
+    }
+    return { events, tasks };
+  }
+
+  if (weeks.length === 0 && anytimeTasks.length === 0) {
+    return (
+      <Card className="p-10 text-center border-dashed">
+        <div className="text-3xl mb-3">📋</div>
+        <div className="text-sm text-muted-foreground">
+          Your coordinator hasn't built your plan yet.
+        </div>
+        {hire.coordinator_name && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Ping {hire.coordinator_name} to get started.
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  // Find current week index
+  const currentWeekIdx = weeks.findIndex((w) =>
+    w.days.some((d) => d.isToday),
+  );
+
+  const completedTasksCount = checklist.filter((c) => c.completed).length;
+
+  return (
+    <article>
+      <div className="mb-5">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Your plan</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Day by day from {format(new Date(`${hire.start_date}T00:00:00`), "MMM d")}.
+          Events and to-dos in one place.
+        </p>
+      </div>
+
+      {/* Filter chips */}
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        {(
+          [
+            { key: "all", label: "All" },
+            { key: "events", label: "Events" },
+            { key: "tasks", label: "To-dos" },
+            { key: "mine", label: "Mine" },
+          ] as { key: PlanFilter; label: string }[]
+        ).map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={cn(
+              "text-xs px-3 py-1.5 rounded-full border transition-colors",
+              filter === f.key
+                ? "bg-foreground text-background border-foreground"
+                : "bg-card border-border text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+        {completedTasksCount > 0 && (
+          <button
+            onClick={() => setShowCompleted((s) => !s)}
+            className="text-xs px-3 py-1.5 rounded-full border border-dashed border-border text-muted-foreground hover:text-foreground inline-flex items-center gap-1 ml-auto"
+          >
+            {showCompleted ? (
+              <>
+                <ChevronDown className="size-3" /> Hide completed
+              </>
+            ) : (
+              <>
+                <ChevronRight className="size-3" /> Show {completedTasksCount} completed
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-8">
+        {weeks.map((week) => {
+          const isCurrent = week.weekIndex === currentWeekIdx;
+          return (
+            <WeekSection
+              key={week.weekIndex}
+              week={week}
+              hireStart={hire.start_date}
+              defaultOpen={isCurrent || currentWeekIdx === -1}
+              dayMatchesFilter={dayMatchesFilter}
+              onToggleTask={onToggleTask}
+              todayRef={todayRef}
+              showCompleted={showCompleted}
+            />
+          );
+        })}
+
+        {filter !== "events" && anytimeTasks.length > 0 && (
+          <section>
+            <SectionHeader title="Anytime — no specific day" />
+            <Card className="p-4 sm:p-5">
+              <ul className="divide-y divide-border/60">
+                {anytimeTasks
+                  .filter((t) => showCompleted || !t.completed)
+                  .map((t) => (
+                    <TaskRow key={t.id} task={t} onToggle={onToggleTask} />
+                  ))}
+              </ul>
+            </Card>
+          </section>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function WeekSection({
+  week,
+  hireStart,
+  defaultOpen,
+  dayMatchesFilter,
+  onToggleTask,
+  todayRef,
+  showCompleted,
+}: {
+  week: ReturnType<typeof buildPlan>["weeks"][number];
+  hireStart: string;
+  defaultOpen: boolean;
+  dayMatchesFilter: (d: DayBucket) => { events: TimelineItemRow[]; tasks: ChecklistItemRow[] };
+  onToggleTask: (t: ChecklistItemRow) => void;
+  todayRef: React.RefObject<HTMLDivElement | null>;
+  showCompleted: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const visibleDays = week.days
+    .map((d) => ({ d, ...dayMatchesFilter(d) }))
+    .filter((x) => x.events.length > 0 || x.tasks.length > 0);
+  if (visibleDays.length === 0) return null;
+
+  const totalEvents = visibleDays.reduce((n, x) => n + x.events.length, 0);
+  const totalTasks = visibleDays.reduce((n, x) => n + x.tasks.length, 0);
+
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-baseline justify-between mb-3 pb-1.5 border-b border-border group"
+      >
+        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground group-hover:text-foreground transition-colors">
+          Week {week.weekIndex + 1}
+          <span className="ml-2 text-foreground/60 normal-case tracking-normal font-normal">
+            {format(week.weekStart, "MMM d")} – {format(week.weekEnd, "MMM d")}
+          </span>
+        </h2>
+        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-2">
+          {totalEvents > 0 && <span>{totalEvents} event{totalEvents === 1 ? "" : "s"}</span>}
+          {totalTasks > 0 && <span>{totalTasks} task{totalTasks === 1 ? "" : "s"}</span>}
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform",
+              open ? "rotate-0" : "-rotate-90",
+            )}
+          />
+        </span>
+      </button>
+
+      {open && (
+        <div className="space-y-3">
+          {visibleDays.map(({ d, events, tasks }) => (
+            <DayCard
+              key={d.dayOffset}
+              day={d}
+              events={events}
+              tasks={tasks}
+              hireStart={hireStart}
+              onToggleTask={onToggleTask}
+              todayRef={d.isToday ? todayRef : undefined}
+              showCompleted={showCompleted}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DayCard({
+  day,
+  events,
+  tasks,
+  onToggleTask,
+  todayRef,
+}: {
+  day: DayBucket;
+  events: TimelineItemRow[];
+  tasks: ChecklistItemRow[];
+  hireStart: string;
+  onToggleTask: (t: ChecklistItemRow) => void;
+  todayRef?: React.RefObject<HTMLDivElement | null>;
+  showCompleted: boolean;
+}) {
+  const taskDone = tasks.filter((t) => t.completed).length;
+  return (
+    <div ref={todayRef} className="scroll-mt-32">
+      <Card
+        className={cn(
+          "overflow-hidden transition-shadow",
+          day.isToday && "ring-2 ring-primary/60 shadow-lg",
+        )}
+      >
+        {/* Date header */}
+        <div
+          className={cn(
+            "px-4 sm:px-5 py-2.5 flex items-center justify-between border-b border-border",
+            day.isToday ? "bg-primary/10" : day.isPast ? "bg-muted/40" : "bg-muted/20",
+          )}
+        >
+          <div className="flex items-baseline gap-2">
+            <span
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-[0.14em]",
+                day.isToday ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              {format(day.date, "EEE")} · {format(day.date, "MMM d")}
+            </span>
+            {day.isToday && (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/15 px-1.5 py-0.5 rounded">
+                Today
+              </span>
+            )}
+          </div>
+          {tasks.length > 0 && (
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {taskDone}/{tasks.length} done
+            </span>
+          )}
+        </div>
+
+        <div className="p-4 sm:p-5 space-y-4">
+          {events.length > 0 && (
+            <ul className="space-y-3">
+              {events.map((e) => (
+                <li key={e.id} className="flex gap-3">
+                  <span
+                    className={cn(
+                      "mt-1.5 size-1.5 rounded-full shrink-0",
+                      day.isToday ? "bg-primary" : day.isPast ? "bg-muted-foreground/40" : "bg-foreground/40",
+                    )}
+                  />
+                  <div className="flex-1">
+                    <div
+                      className={cn(
+                        "font-medium leading-tight",
+                        day.isPast && "text-muted-foreground",
+                      )}
+                    >
+                      {e.title}
+                    </div>
+                    {e.label && e.label !== "Day" && (
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-0.5">
+                        {e.label}
+                      </div>
+                    )}
+                    {e.description && (
+                      <div
+                        className={cn(
+                          "text-sm mt-1 whitespace-pre-wrap",
+                          day.isPast ? "text-muted-foreground/80" : "text-foreground/80",
+                        )}
+                      >
+                        {e.description}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {tasks.length > 0 && (
+            <div>
+              {events.length > 0 && (
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  To do
+                </div>
+              )}
+              <ul className="divide-y divide-border/60">
+                {tasks.map((t) => (
+                  <TaskRow key={t.id} task={t} onToggle={onToggleTask} />
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Task row (shared)                                                  */
+/* ------------------------------------------------------------------ */
+
+function TaskRow({
+  task,
+  onToggle,
+  compact,
+}: {
+  task: ChecklistItemRow;
+  onToggle: (t: ChecklistItemRow) => void;
+  compact?: boolean;
+}) {
+  return (
+    <li className={cn("flex items-start gap-3", compact ? "py-2" : "py-2.5")}>
+      <button
+        type="button"
+        onClick={() => onToggle(task)}
+        aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+        className={cn(
+          "size-5 mt-0.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer",
+          task.completed
+            ? "bg-emerald-600 border-emerald-600 text-background scale-100"
+            : "border-input bg-background hover:border-primary hover:scale-105",
+        )}
+      >
+        {task.completed && <Check className="size-3" strokeWidth={3} />}
+      </button>
+      <span
+        className={cn(
+          "text-sm flex-1 select-none cursor-pointer leading-snug",
+          task.completed && "line-through text-muted-foreground",
+        )}
+        onClick={() => onToggle(task)}
+      >
+        {task.label}
+        {task.section && !compact && (
+          <span className="ml-2 text-[10px] text-muted-foreground/70 uppercase tracking-wider">
+            · {task.section}
+          </span>
+        )}
+      </span>
+      {task.owner && <OwnerChip owner={task.owner} />}
+    </li>
+  );
+}
+
+function OwnerChip({ owner }: { owner: string }) {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground shrink-0">
+            {getInitials(owner)}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top">{owner}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page (resource content)                                            */
 /* ------------------------------------------------------------------ */
 
 function PageView({ page }: { page: PageRow | undefined }) {
@@ -499,10 +1076,10 @@ function PageView({ page }: { page: PageRow | undefined }) {
   }
   return (
     <article>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">{page.title}</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{page.title}</h1>
         {page.subtitle && (
-          <p className="text-sm text-muted-foreground mt-1">{page.subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1.5">{page.subtitle}</p>
         )}
       </div>
       <BlocksRenderer blocks={page.blocks} />
@@ -511,277 +1088,84 @@ function PageView({ page }: { page: PageRow | undefined }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* First month timeline                                               */
+/* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function FirstMonthView({
-  hire,
-  items,
-}: {
-  hire: HireRow;
-  items: TimelineItemRow[];
-}) {
-  const [showPast, setShowPast] = useState(false);
-  const todayRef = useRef<HTMLLIElement | null>(null);
-
-  // Auto-scroll to today on mount
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      todayRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
-    return () => window.clearTimeout(id);
-  }, [items.length]);
-
-  if (items.length === 0) {
-    return (
-      <Card className="p-8 text-center border-dashed">
-        <div className="text-sm text-muted-foreground">
-          Your coordinator hasn't built your first-month timeline yet.
-        </div>
-      </Card>
-    );
-  }
-
-  // Group by week
-  const groups = new Map<number, TimelineItemRow[]>();
-  for (const it of items) {
-    const week = Math.max(0, Math.floor(it.day_offset / 7));
-    const arr = groups.get(week) ?? [];
-    arr.push(it);
-    groups.set(week, arr);
-  }
-  const weeks = Array.from(groups.keys()).sort((a, b) => a - b);
-  const pastItems = items.filter(
-    (i) => classifyMilestone(hire.start_date, i.day_offset) === "past",
-  );
-
+function SectionHeader({ title }: { title: string }) {
   return (
-    <article>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Your first month</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Starting {format(new Date(`${hire.start_date}T00:00:00`), "EEE, MMM d")} — items
-          highlight as you reach each day.
-        </p>
-      </div>
-
-      {pastItems.length > 0 && !showPast && (
-        <button
-          onClick={() => setShowPast(true)}
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-3 underline-offset-2 hover:underline"
-        >
-          <ChevronRight className="size-3" />
-          Show {pastItems.length} completed
-        </button>
-      )}
-
-      <div className="space-y-6">
-        {weeks.map((w) => {
-          const weekItems = groups.get(w) ?? [];
-          const visibleItems = showPast
-            ? weekItems
-            : weekItems.filter(
-                (i) => classifyMilestone(hire.start_date, i.day_offset) !== "past",
-              );
-          if (visibleItems.length === 0) return null;
-          const weekStart = dayOffsetToDate(hire.start_date, w * 7);
-          const weekEnd = dayOffsetToDate(hire.start_date, w * 7 + 6);
-          return (
-            <section key={w}>
-              <div className="flex items-baseline justify-between mb-2 pb-1 border-b border-border">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Week {w + 1}
-                </h2>
-                <span className="text-[10px] text-muted-foreground">
-                  {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d")}
-                </span>
-              </div>
-              <ol className="relative pl-6 border-l border-border">
-                {visibleItems.map((item) => {
-                  const status = classifyMilestone(hire.start_date, item.day_offset);
-                  const date = dayOffsetToDate(hire.start_date, item.day_offset);
-                  return (
-                    <li
-                      key={item.id}
-                      ref={status === "today" ? todayRef : undefined}
-                      className="relative pb-4 last:pb-0"
-                    >
-                      <span
-                        className={cn(
-                          "absolute -left-[30px] top-0.5 size-5 rounded-full border-2 flex items-center justify-center bg-card",
-                          status === "today" &&
-                            "border-emerald-600 bg-emerald-600 text-background animate-pulse",
-                          status === "past" && "border-emerald-600/50 bg-emerald-600/20 text-emerald-700",
-                          status === "upcoming" && "border-border text-muted-foreground",
-                        )}
-                      >
-                        {status === "past" ? (
-                          <Check className="size-3" strokeWidth={3} />
-                        ) : status === "today" ? (
-                          <span className="size-1.5 rounded-full bg-background" />
-                        ) : (
-                          <Circle className="size-1.5 fill-current" />
-                        )}
-                      </span>
-                      <div
-                        className={cn(
-                          "text-[10px] font-semibold uppercase tracking-wider mb-0.5",
-                          status === "today" ? "text-emerald-700" : "text-muted-foreground",
-                        )}
-                      >
-                        {item.label} · {format(date, "EEE, MMM d")}
-                        {status === "today" && " · Today"}
-                      </div>
-                      <div
-                        className={cn(
-                          "font-medium",
-                          status === "past" && "text-muted-foreground",
-                        )}
-                      >
-                        {item.title}
-                      </div>
-                      {item.description && (
-                        <div
-                          className={cn(
-                            "text-sm mt-0.5 whitespace-pre-wrap",
-                            status === "past"
-                              ? "text-muted-foreground/80"
-                              : "text-foreground/80",
-                          )}
-                        >
-                          {item.description}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          );
-        })}
-      </div>
-
-      {pastItems.length > 0 && showPast && (
-        <button
-          onClick={() => setShowPast(false)}
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mt-4 underline-offset-2 hover:underline"
-        >
-          <ChevronDown className="size-3" />
-          Hide completed
-        </button>
-      )}
-    </article>
+    <div className="mb-3 pb-1.5 border-b border-border">
+      <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {title}
+      </h2>
+    </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Checklist                                                          */
-/* ------------------------------------------------------------------ */
-
-function ChecklistView({
-  items,
-  onToggle,
-}: {
-  items: ChecklistItemRow[];
-  onToggle: (item: ChecklistItemRow) => void;
-}) {
-  if (items.length === 0) {
-    return (
-      <Card className="p-8 text-center border-dashed">
-        <div className="text-sm text-muted-foreground">
-          Your coordinator hasn't created your checklist yet.
-        </div>
-      </Card>
-    );
-  }
-  const sections = Array.from(new Set(items.map((i) => i.section || "General")));
-  const progress = checklistProgress(items);
+function PageSkeleton() {
   return (
-    <article>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Your checklist</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {progress.done} of {progress.total} complete · {progress.pct}%
-        </p>
-      </div>
+    <div className="space-y-4">
+      <Skeleton className="h-40 w-full rounded-3xl" />
+      <Skeleton className="h-48 w-full rounded-xl" />
+      <Skeleton className="h-32 w-full rounded-xl" />
+    </div>
+  );
+}
 
-      {/* Sticky progress bar */}
-      <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-background/90 backdrop-blur border-b border-border mb-4">
-        <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <div className="text-xs font-medium tabular-nums whitespace-nowrap">
-            {progress.done}/{progress.total}
+function NoHireState({
+  email,
+  pages,
+  activeTab,
+  isPreview,
+  previewHire,
+}: {
+  email: string;
+  pages: PageRow[];
+  activeTab: TopTab;
+  isPreview: boolean;
+  previewHire: string | undefined;
+}) {
+  const onPage = pages.find((p) => p.slug === activeTab);
+  return (
+    <div className="space-y-5">
+      {!onPage && (
+        <Card className="p-8 text-center border-dashed">
+          <div className="text-3xl mb-2">👋</div>
+          <div className="font-medium mb-1">You're signed in!</div>
+          <div className="text-sm text-muted-foreground max-w-md mx-auto">
+            We don't have a personalized plan linked to your account yet. Ask your
+            coordinator to add you using the email{" "}
+            <span className="font-mono">{email}</span>.
           </div>
-          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all"
-              style={{ width: `${progress.pct}%` }}
-            />
-          </div>
-          <div className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-            {progress.pct}%
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {sections.map((section) => {
-          const sItems = items.filter((i) => i.section === section);
-          const sDone = sItems.filter((i) => i.completed).length;
-          const sTotal = sItems.length;
-          const allDone = sTotal > 0 && sDone === sTotal;
-          return (
-            <Card key={section} className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-semibold">{section}</div>
-                <span
-                  className={cn(
-                    "text-[11px] px-2 py-0.5 rounded-full border tabular-nums",
-                    allDone
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-                      : "border-border bg-muted/50 text-muted-foreground",
-                  )}
+        </Card>
+      )}
+      {onPage ? (
+        <PageView page={onPage} />
+      ) : (
+        pages.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-1">
+              Resources
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {pages.map((p) => (
+                <Link
+                  key={p.slug}
+                  to="/onboarding"
+                  search={{ tab: p.slug, previewHire: isPreview ? previewHire : undefined }}
+                  replace
+                  className="group rounded-2xl border border-border bg-card hover:bg-muted/40 transition-colors p-4 flex flex-col gap-1.5"
                 >
-                  {sDone}/{sTotal}
-                  {allDone && " ✓"}
-                </span>
-              </div>
-              <ul className="divide-y">
-                {sItems.map((item) => (
-                  <li key={item.id} className="py-3 flex items-start gap-3">
-                    <button
-                      type="button"
-                      onClick={() => onToggle(item)}
-                      aria-label={item.completed ? "Mark incomplete" : "Mark complete"}
-                      className={cn(
-                        "size-6 sm:size-5 mt-0.5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer",
-                        item.completed
-                          ? "bg-emerald-600 border-emerald-600 text-background"
-                          : "border-input bg-background hover:border-emerald-500",
-                      )}
-                    >
-                      {item.completed && <Check className="size-3.5" strokeWidth={3} />}
-                    </button>
-                    <span
-                      className={cn(
-                        "text-sm flex-1 select-none cursor-pointer",
-                        item.completed && "line-through text-muted-foreground",
-                      )}
-                      onClick={() => onToggle(item)}
-                    >
-                      {item.label}
-                    </span>
-                    {item.owner && (
-                      <span className="text-[11px] text-muted-foreground whitespace-nowrap mt-0.5">
-                        {item.owner}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          );
-        })}
-      </div>
-    </article>
+                  <BookOpen className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="text-sm font-medium leading-tight">{p.title}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )
+      )}
+    </div>
   );
 }
+
+// Suppress unused-import warning in some bundlers.
+void Mail;

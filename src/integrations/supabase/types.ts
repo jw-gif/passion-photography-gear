@@ -203,6 +203,7 @@ export type Database = {
           completed: boolean
           completed_at: string | null
           created_at: string
+          day_offset: number | null
           hire_id: string
           id: string
           label: string
@@ -215,6 +216,7 @@ export type Database = {
           completed?: boolean
           completed_at?: string | null
           created_at?: string
+          day_offset?: number | null
           hire_id: string
           id?: string
           label: string
@@ -227,6 +229,7 @@ export type Database = {
           completed?: boolean
           completed_at?: string | null
           created_at?: string
+          day_offset?: number | null
           hire_id?: string
           id?: string
           label?: string

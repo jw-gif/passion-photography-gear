@@ -137,6 +137,105 @@ export interface ChecklistItemRow {
   completed: boolean;
   completed_at: string | null;
   sort_order: number;
+  day_offset: number | null;
+}
+
+// Merged per-day item used by the unified plan view.
+export type DayItem =
+  | { kind: "event"; data: TimelineItemRow }
+  | { kind: "task"; data: ChecklistItemRow };
+
+export interface DayBucket {
+  date: Date;
+  dayOffset: number; // can be negative for pre-start
+  weekIndex: number; // 0-based
+  isToday: boolean;
+  isPast: boolean;
+  events: TimelineItemRow[];
+  tasks: ChecklistItemRow[];
+}
+
+export interface WeekBucket {
+  weekIndex: number;
+  weekStart: Date;
+  weekEnd: Date;
+  days: DayBucket[];
+  unscheduledTasks: ChecklistItemRow[]; // tasks with no day_offset, bucketed by section week if any
+}
+
+export function buildPlan(
+  hire: HireRow,
+  timeline: TimelineItemRow[],
+  checklist: ChecklistItemRow[],
+  now: Date = new Date(),
+): { weeks: WeekBucket[]; anytimeTasks: ChecklistItemRow[] } {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  // Collect distinct day offsets that have any content
+  const offsets = new Set<number>();
+  for (const t of timeline) offsets.add(t.day_offset);
+  for (const c of checklist) if (c.day_offset != null) offsets.add(c.day_offset);
+
+  // Always ensure today appears if hire is in their plan window
+  const startOffset = 0;
+  const maxOffset = Math.max(
+    ...Array.from(offsets),
+    startOffset,
+  );
+
+  const sortedOffsets = Array.from(offsets).sort((a, b) => a - b);
+
+  const dayBuckets: DayBucket[] = sortedOffsets.map((offset) => {
+    const date = dayOffsetToDate(hire.start_date, offset);
+    const status = classifyMilestone(hire.start_date, offset, now);
+    return {
+      date,
+      dayOffset: offset,
+      weekIndex: Math.max(0, Math.floor(offset / 7)),
+      isToday: status === "today",
+      isPast: status === "past",
+      events: timeline
+        .filter((t) => t.day_offset === offset)
+        .sort((a, b) => a.sort_order - b.sort_order),
+      tasks: checklist
+        .filter((c) => c.day_offset === offset)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    };
+  });
+
+  // Group days into weeks
+  const weekMap = new Map<number, DayBucket[]>();
+  for (const d of dayBuckets) {
+    const arr = weekMap.get(d.weekIndex) ?? [];
+    arr.push(d);
+    weekMap.set(d.weekIndex, arr);
+  }
+
+  const anytimeTasks = checklist
+    .filter((c) => c.day_offset == null)
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  const weeks: WeekBucket[] = Array.from(weekMap.keys())
+    .sort((a, b) => a - b)
+    .map((weekIndex) => ({
+      weekIndex,
+      weekStart: dayOffsetToDate(hire.start_date, weekIndex * 7),
+      weekEnd: dayOffsetToDate(hire.start_date, weekIndex * 7 + 6),
+      days: (weekMap.get(weekIndex) ?? []).sort((a, b) => a.dayOffset - b.dayOffset),
+      unscheduledTasks: [],
+    }));
+
+  // Suppress unused-variable warning in some bundlers
+  void maxOffset;
+
+  return { weeks, anytimeTasks };
+}
+
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p.charAt(0).toUpperCase()).join("") || "?";
 }
 
 // Templates

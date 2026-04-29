@@ -1,110 +1,148 @@
-# Onboarding module — UX & design polish
+# Redesigning the new hire view
 
-The module works, but it currently *looks* and *feels* like an admin CRUD form on both sides. This pass focuses on visual polish, information hierarchy, and small interaction wins — no new data model. Pick any subset.
+Goal: a beautiful, calm, intuitive experience for someone on day 1. Right now the page asks the new hire to juggle 3+ ideas at once: a hero, a "Today" card, a tab strip with N tabs, plus separate timeline and checklist views. We'll consolidate.
 
----
+## The core idea: 3 tabs instead of 5+
 
-## 1. Hire-side: make day 1 feel personal
+Collapse the navigation to a clean, predictable shell:
 
-The page a new hire opens on their first morning should feel like a welcome, not a settings screen.
+```text
+┌──────────────────────────────────────────┐
+│  [Home]   [Your plan]   [Resources ▾]    │
+└──────────────────────────────────────────┘
+```
 
-**a. Hero header on the Welcome tab.** Replace the small "Onboarding / Welcome, Alex" header with a real hero on the first tab only:
-- Big greeting: "Welcome, Alex 👋" (uses `hire.name`)
-- Subline: role + start date + coordinator ("Junior Designer · Started Mon, May 4 · Onboarded by Jamie")
-- Soft gradient background tile with the PCC mark
+- **Home** — landing screen. Personalized hero, "Today" focus card, a peek at the next 2 timeline items, and a peek at the next 3 unchecked checklist items. One screen that answers *"what am I doing today?"*
+- **Your plan** — the unified day-by-day view. Timeline milestones and checklist tasks **interleaved by date** (the checklist no longer lives apart from the schedule). Filter chips for "This week / All / Just to-dos / Just events".
+- **Resources ▾** — a dropdown (or grouped section) for the static content pages (Welcome, Team, Tools, FAQs, etc.). These are reference material; they don't need top-level real estate.
 
-**b. "Today" card above the tabs.** A persistent strip showing:
-- Day N of 30 (computed from `start_date`)
-- Today's milestone title (if any) with a "Jump to first month →" link
-- Checklist pulse: "3 of 12 done — 2 due this week"
+Net effect: 2 active tabs do all the work. Reference reading is one click away but out of the way.
 
-This turns the hub into something they want to revisit daily, not just on day 1.
+## Home screen layout
 
-**c. Timeline polish.**
-- Group the rail by **Week 1 / Week 2 / Week 3 / Week 4** headings (the editor already groups by week — mirror it).
-- Auto-scroll to today's milestone on load with a subtle pulse animation on the dot.
-- Past items collapse to a single line (date + title) with a "Show 4 completed" expander to keep the page short by week 3.
-- Replace the flat green dot with a small icon: ✓ for past, ● ring for today, ○ for upcoming.
+```text
+┌─ Hero ──────────────────────────────────────────────┐
+│ Welcome, Karis 👋                                   │
+│ Operations · Day 3 of 30 · 14 of 58 tasks done      │
+│ [progress bar ────────●─────────────────]           │
+└─────────────────────────────────────────────────────┘
 
-**d. Checklist polish.**
-- Section cards get a per-section progress chip ("Paperwork · 3/4").
-- Confetti / "Section complete" toast when the last item in a section is ticked.
-- Sticky overall progress bar at the top of the checklist tab while scrolling.
-- Larger tap targets — currently `size-4` checkboxes are tight on mobile.
+┌─ Today, Wed Apr 29 ─────────────────────────────────┐
+│ ● Team Day at the studio                            │
+│   10:00 AM kickoff with Jacob, lunch on us.         │
+│                                                     │
+│ To do today (3)                                     │
+│ ☐ Set up Slack profile photo                        │
+│ ☐ Review Q2 calendar with Jacob                     │
+│ ☐ Sign payroll form  · HR                           │
+│                              [Open full checklist →]│
+└─────────────────────────────────────────────────────┘
 
-**e. Mobile.** Tab pills wrap awkwardly past 4 tabs. On `<sm` switch to a horizontal scroll row with snap, or a `<select>` dropdown.
+┌─ Coming up this week ───────────────────────────────┐
+│ Thu Apr 30  US> Night recap                         │
+│ Fri May 1   1:1 with Chaise                         │
+│                              [Open full plan →]     │
+└─────────────────────────────────────────────────────┘
 
----
+┌─ Need help? ────────────────────────────────────────┐
+│ Reach out to Jacob (your coordinator) any time.     │
+│ [Slack Jacob]   [Email Jacob]                       │
+└─────────────────────────────────────────────────────┘
+```
 
-## 2. Admin overview: more glanceable
+Why it works: the hire opens the page and immediately sees today's event + today's tasks + who to ask for help. No tab hunting.
 
-The admin landing page is three stacked sections of similar-looking cards. Add hierarchy and at-a-glance status.
+## "Your plan" — unified day-by-day
 
-**a. Status chips on hire rows.** Compute from `start_date` + checklist progress and render as a small pill on the right:
-- "Starts in 3 days" (amber) — start_date in the future
-- "Day 12 of 30" (neutral) — in the first month
-- "Onboarded" (muted) — past day 30 and 100% complete
-- "Behind" (red) — past day 7 and <25% checklist done
+Replace the separate "First month" + "Checklist" tabs with one merged view. Each day is a single block containing both events and tasks for that day:
 
-**b. Filter / segment bar** above the hires list: All · Starting soon · Active · Completed · Archived. Just client-side filtering of the existing query.
+```text
+─── This week ──────────────────────────────────────────
 
-**c. Archive UI.** The `archived` column exists but has no surface. Add a row menu (`⋯`) with Archive / Delete (delete moves behind a confirm). Default the list to hiding archived, with a toggle.
+  WED · APR 29 · TODAY                       ●
+  ┌──────────────────────────────────────────┐
+  │ EVENTS                                   │
+  │ • Team Day at the studio                 │
+  │   10am kickoff, lunch provided           │
+  │                                          │
+  │ TO DO  (1 of 3 done)                     │
+  │ ☑ Get badge from front desk              │
+  │ ☐ Set up Slack profile  · You            │
+  │ ☐ Sign payroll form     · HR             │
+  └──────────────────────────────────────────┘
 
-**d. Group "Shared pages" + "Templates" into a single "Content" section** with a tab switcher. They take up two-thirds of the screen today and aren't touched daily — push the hires list to the top.
+  THU · APR 30                               ○
+  ┌──────────────────────────────────────────┐
+  │ • US> Night recap (6pm)                  │
+  │ ☐ Bring camera B-roll      · You         │
+  └──────────────────────────────────────────┘
 
-**e. Empty states with art.** The current empty states are a single line of muted text. Add a small inline SVG illustration + a one-button next action.
+─── Next week ──────────────────────────────────────────
+  ▸ Mon May 4 — 2 events, 4 tasks  (collapsed)
+  ▸ Tue May 5 — 1 event, 2 tasks   (collapsed)
+  ...
 
----
+─── Completed (14) ▸                          (collapsed)
+```
 
-## 3. Hire editor: reduce cognitive load
+Behaviors:
+- This week is expanded; future weeks are collapsed summaries you can expand.
+- Today's card is visually elevated (subtle ring, slight scale, sticky-on-scroll header).
+- Filter chips above the list: **All · Events · To-dos · Mine** ("Mine" = owner is the hire).
+- Auto-scroll to today on load (already exists; preserve).
+- Checking off a task animates a strikethrough and updates the day's "X of Y done" inline — no page jump.
+- Section-complete confetti stays.
 
-The editor at `/admin/onboarding/hires/$hireId` currently shows: meta card, 3 stat tiles, then tabs with long auto-saving forms. Some friction:
+Owner pills become small avatars or initials chips (e.g. `JR` for Jacob) with a tooltip — easier to scan than text labels.
 
-**a. Sticky save indicator.** The `<SaveIndicator>` lives at the bottom of the meta card and on each row — easy to miss whether anything is in flight. Move a single global indicator into the page header next to "Open hire view".
+## Resources area
 
-**b. Collapse the meta card by default** once filled in — show a compact summary line ("Alex Liu · alex@… · Junior Designer · Starts May 4 · Coordinator: Jamie") with an Edit button. Saves vertical space for the actual work (timeline + checklist).
+The current static content tabs (Welcome, Tools, Team, FAQs, etc.) move into a "Resources" dropdown in the top nav, plus a lightweight grid on the Home screen footer:
 
-**c. Timeline editor density.** Each milestone row is a 4-column grid that wraps on this 867px viewport into a tall card. Tighten to: drag handle · date picker · title (full width) · day# + label collapsed into a popover · description (textarea below, expands on focus only).
+```text
+RESOURCES
+┌────────┬────────┬────────┬────────┐
+│ 📖     │ 👥     │ 🔧     │ ❓     │
+│Welcome │ Team   │ Tools  │ FAQs   │
+└────────┴────────┴────────┴────────┘
+```
 
-**d. "Apply template" needs more context.** Today the button just merges. Show a preview dialog: "This will add 12 checklist items and 8 timeline milestones. Skip duplicates? [Apply / Cancel]".
+Each card is a one-line summary + click-through. Keeps the home dense with utility but visually calm.
 
-**e. Replace `confirm()` and `prompt()`** with the project's `<ConfirmDialog>` component (already exists in `src/components/confirm-dialog.tsx`). The browser dialogs look out of place against the rest of the design.
+## Visual & typography polish
 
----
+- **One column, max 720px** on the plan view (currently 4xl / 896px) — easier reading rhythm.
+- **Larger headings, more whitespace** between day cards (24px gap → 32px).
+- **Soften the timeline rail** — currently a hard border-l line; switch to a subtle dotted/gradient line that fades into the background.
+- **Today indicator**: replace the pulsing emerald dot with a soft ring + "TODAY" pill — pulse animation is distracting after the first few seconds. Reduce to a single subtle pulse on mount.
+- **Status colors**: past = neutral gray (not green), today = brand primary, upcoming = quiet outline. Green is overused right now; reserve it for the checked-off state only.
+- **Skeleton states**: match the new layout (today card skeleton + 3 day-card skeletons).
+- **Empty states** get illustrations or large emoji + a friendly sentence + a CTA to message the coordinator.
 
-## 4. Content blocks: visual upgrades
+## Mobile
 
-The renderer covers a lot of types but they all look like the same bordered card.
+- Tabs become a segmented control that fits the screen (3 items, no overflow).
+- Today card is sticky under the header on scroll so the hire never loses context.
+- Day cards stack edge-to-edge with rounded corners only on top/bottom of the group.
 
-**a. Distinct block styling.**
-- `callout` → colored left border + tinted background + an icon picked from the label ("Note" → ℹ, "Warning" → ⚠, "Tip" → 💡).
-- `accordion` → the project already has `@radix-ui/react-accordion` — wire the renderer to use it instead of plain `<details>` for a smoother open/close.
-- `link_list` → render as cards with a favicon (auto-fetched via `https://www.google.com/s2/favicons?domain=…`) + arrow icon — currently they look like bullet points.
-- `people` → render as avatar circles (initials fallback) in a horizontal scroll on mobile.
-- `embed` → detect Loom/YouTube/Figma URLs and use their proper aspect ratio and a poster fallback before iframe loads.
+## Technical notes
 
-**b. Block editor: visual block picker.** The "Add block" `<Select>` is a long alphabetical dropdown. Replace with a small popover grid of icons + labels (Notion-style), grouped: Text · Media · Lists · Layout.
+- **One file**: most edits land in `src/routes/onboarding.tsx`. Add a small helper in `src/lib/onboarding.ts` to merge `TimelineItemRow[]` and `ChecklistItemRow[]` into a per-day data structure (`{ date, dayOffset, events, tasks }[]`). Note: checklist items don't currently have a `day_offset` — we'll need to either (a) add an optional `day_offset` column to `onboarding_hire_checklist` so tasks can be tied to a day, or (b) keep "section" as the grouping and only merge events by date while showing all tasks under "Anytime this week" buckets. **Recommendation: add a nullable `day_offset` column** so coordinators can pin tasks to specific days; tasks without one fall into a per-week "Anytime this week" bucket.
+- New components: `<HomeView>`, `<PlanDayCard>`, `<TodayFocus>`, `<ResourceGrid>`. Existing `<TodayCard>` becomes `<TodayFocus>` and is only rendered on Home.
+- The 3-tab nav becomes a `<SegmentedNav>` component (3 fixed items + a "Resources" dropdown using existing `dropdown-menu` primitives).
+- Admin preview banner and the existing checklist toggle/confetti behavior are preserved.
+- Migration: add `day_offset INT NULL` to `onboarding_hire_checklist`. Backfill is a no-op (NULL → "Anytime this week" bucket). Editor UI in `admin_.onboarding_.hires.$hireId.tsx` gets a small day-picker per task.
 
-**c. Better drag affordance.** The grip icon is faint; on hover the row should get a subtle background tint to telegraph drag-target behavior.
+## What we're explicitly removing
 
----
+- The separate "First month" and "Checklist" tabs (merged into "Your plan").
+- The standalone tab pills row when there are 5+ static pages — those move into the Resources dropdown.
+- The Today card on every tab — it now lives on Home only, where it belongs.
 
-## 5. Small but high-impact touches
+## Out of scope (worth flagging for later)
 
-- **Section dividers between weeks** in the hire timeline view, with the date range ("May 4 – May 10").
-- **Keyboard shortcut: `e` to enter edit mode** on a focused block, `↵` to add a new block below.
-- **Top-of-page breadcrumbs** in the editor: `Onboarding › Hires › Alex Liu` — currently just a Back button, doesn't communicate where you are in deeper flows.
-- **Toast on auto-save error** with a "Retry" action — silent failure today.
-- **Loading skeletons** instead of "Loading…" text on all three pages (use the existing `list-skeleton.tsx` pattern).
-- **Date display consistency.** Mix of "EEE, MMM d, yyyy", "MMM d, yyyy", and "MMM d" across pages — pick one short form ("Mon, May 4") and use it everywhere.
+- Calendar export (.ics) of the first-month plan.
+- Email/Slack reminders the morning of each day.
+- A "Done with onboarding" celebration screen at day 30.
 
----
-
-## Recommended first batch (highest visible impact, ~1 implementation pass)
-
-1. **Hire-side hero + "Today" card** (§1a, §1b) — transforms the perceived quality of the hub immediately.
-2. **Timeline auto-scroll-to-today + week dividers + past-collapse** (§1c) — makes the page feel alive and focused.
-3. **Status chips + filter bar on the admin overview** (§2a, §2b) — coordinator dashboards become useful at a glance.
-4. **Loading skeletons + ConfirmDialog + sticky save indicator** (§3a, §3e, §5) — removes the "this is a prototype" tells.
-
-Tell me which sections (or numbered items) to do and I'll build them.
+Approve and I'll implement.
