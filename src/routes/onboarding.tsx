@@ -24,11 +24,13 @@ import {
 
 interface Search {
   tab?: string;
+  previewHire?: string;
 }
 
 export const Route = createFileRoute("/onboarding")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     tab: typeof s.tab === "string" ? s.tab : undefined,
+    previewHire: typeof s.previewHire === "string" ? s.previewHire : undefined,
   }),
   head: () => ({
     meta: [{ title: "Onboarding · Passion Staff Hub" }],
