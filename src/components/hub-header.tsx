@@ -43,6 +43,9 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
   const gearActive =
     pathname.startsWith("/admin/gear") ||
     pathname.startsWith("/admin/requests-gear");
+  const teamActive =
+    pathname.startsWith("/admin/team") ||
+    pathname.startsWith("/admin/onboarding");
 
   return (
     <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
@@ -148,19 +151,33 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/admin/team" activeProps={{ className: "bg-muted" }}>
-              <Users className="size-4" />
-              <span className="hidden md:inline">Team</span>
-            </Link>
-          </Button>
-
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/admin/onboarding" activeProps={{ className: "bg-muted" }}>
-              <ListChecks className="size-4" />
-              <span className="hidden md:inline">Onboarding</span>
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(teamActive && "bg-muted")}
+              >
+                <Users className="size-4" />
+                <span className="hidden md:inline">Team</span>
+                <ChevronDown className="size-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>Team</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/team">
+                  <Users className="size-4" /> Members
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/onboarding">
+                  <ListChecks className="size-4" /> Onboarding
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button variant="ghost" size="sm" onClick={onLogout}>
             <LogOut className="size-4" />
