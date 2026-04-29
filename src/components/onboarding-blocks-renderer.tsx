@@ -1,5 +1,46 @@
 import { Card } from "@/components/ui/card";
-import type { ContentBlock } from "@/lib/onboarding";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ExternalLink } from "lucide-react";
+import { renderInlineMarkdown, type ContentBlock } from "@/lib/onboarding";
+
+function MD({ text, className }: { text: string; className?: string }) {
+  return (
+    <span
+      className={className}
+      dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(text) }}
+    />
+  );
+}
+
+function getEmbedUrl(raw: string): string | null {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    // YouTube
+    if (u.hostname.includes("youtube.com") && u.searchParams.get("v")) {
+      return `https://www.youtube.com/embed/${u.searchParams.get("v")}`;
+    }
+    if (u.hostname === "youtu.be") {
+      return `https://www.youtube.com/embed${u.pathname}`;
+    }
+    // Loom
+    if (u.hostname.includes("loom.com")) {
+      return raw.replace("/share/", "/embed/");
+    }
+    // Figma
+    if (u.hostname.includes("figma.com")) {
+      return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(raw)}`;
+    }
+    return raw;
+  } catch {
+    return null;
+  }
+}
 
 export function BlocksRenderer({ blocks }: { blocks: ContentBlock[] }) {
   if (blocks.length === 0) {
@@ -24,7 +65,9 @@ function BlockView({ block }: { block: ContentBlock }) {
       return <h2 className="text-lg font-semibold tracking-tight mt-2">{block.text}</h2>;
     case "paragraph":
       return (
-        <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">{block.text}</p>
+        <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+          <MD text={block.text} />
+        </p>
       );
     case "callout":
       return (
@@ -34,7 +77,9 @@ function BlockView({ block }: { block: ContentBlock }) {
               {block.label}
             </div>
           )}
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">{block.text}</div>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">
+            <MD text={block.text} />
+          </div>
         </div>
       );
     case "card":
@@ -42,7 +87,7 @@ function BlockView({ block }: { block: ContentBlock }) {
         <Card className="p-5">
           <div className="font-semibold mb-1.5">{block.title}</div>
           <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-            {block.body}
+            <MD text={block.body} />
           </div>
         </Card>
       );
@@ -53,7 +98,7 @@ function BlockView({ block }: { block: ContentBlock }) {
             <Card key={i} className="p-5">
               <div className="font-semibold mb-1.5">{side.title}</div>
               <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {side.body}
+                <MD text={side.body} />
               </div>
             </Card>
           ))}
@@ -82,7 +127,7 @@ function BlockView({ block }: { block: ContentBlock }) {
                   <tr key={i} className="border-b last:border-0">
                     {block.columns.map((_, j) => (
                       <td key={j} className="py-2 px-2 align-top whitespace-pre-wrap">
-                        {row[j] ?? ""}
+                        <MD text={row[j] ?? ""} />
                       </td>
                     ))}
                   </tr>
@@ -120,9 +165,99 @@ function BlockView({ block }: { block: ContentBlock }) {
           {block.title && <div className="font-semibold mb-3">{block.title}</div>}
           <ul className="space-y-1.5 text-sm list-disc list-inside text-foreground/90">
             {block.items.map((item, i) => (
-              <li key={i} className="whitespace-pre-wrap">{item}</li>
+              <li key={i} className="whitespace-pre-wrap">
+                <MD text={item} />
+              </li>
             ))}
           </ul>
+        </Card>
+      );
+    case "image":
+      if (!block.url) return null;
+      return (
+        <figure className="space-y-2">
+          <img
+            src={block.url}
+            alt={block.alt ?? ""}
+            className="w-full rounded-md border bg-muted"
+            loading="lazy"
+          />
+          {block.caption && (
+            <figcaption className="text-xs text-muted-foreground text-center">
+              {block.caption}
+            </figcaption>
+          )}
+        </figure>
+      );
+    case "embed": {
+      const src = getEmbedUrl(block.url);
+      if (!src) return null;
+      return (
+        <Card className="p-3 space-y-2">
+          {block.title && <div className="font-semibold text-sm px-1">{block.title}</div>}
+          <div className="aspect-video w-full overflow-hidden rounded">
+            <iframe
+              src={src}
+              className="w-full h-full border-0"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+              title={block.title || "Embed"}
+            />
+          </div>
+        </Card>
+      );
+    }
+    case "link_list":
+      return (
+        <div className="space-y-2">
+          {block.title && <div className="font-semibold mb-1">{block.title}</div>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {block.links.map((l, i) =>
+              l.url ? (
+                <a
+                  key={i}
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block group"
+                >
+                  <Card className="p-3 hover:border-foreground/30 transition-colors h-full">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-medium text-sm">{l.title || l.url}</div>
+                      <ExternalLink className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    </div>
+                    {l.description && (
+                      <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {l.description}
+                      </div>
+                    )}
+                  </Card>
+                </a>
+              ) : null,
+            )}
+          </div>
+        </div>
+      );
+    case "divider":
+      return <hr className="border-t border-border my-2" />;
+    case "accordion":
+      return (
+        <Card className="p-2">
+          {block.title && (
+            <div className="font-semibold px-3 pt-2 pb-1">{block.title}</div>
+          )}
+          <Accordion type="multiple" className="w-full">
+            {block.items.map((item, i) => (
+              <AccordionItem key={i} value={`item-${i}`}>
+                <AccordionTrigger className="px-3 text-sm text-left">
+                  {item.question || "Untitled question"}
+                </AccordionTrigger>
+                <AccordionContent className="px-3 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  <MD text={item.answer} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </Card>
       );
   }
