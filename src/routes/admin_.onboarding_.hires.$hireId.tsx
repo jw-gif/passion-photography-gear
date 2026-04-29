@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, GripVertical, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, GripVertical, Plus, Sparkles, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   DndContext,
   closestCenter,
