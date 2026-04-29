@@ -1,100 +1,110 @@
-# Suggestions for the Onboarding Module
+# Onboarding module — UX & design polish
 
-After reviewing the current admin pages, hire editor, blocks editor, and renderer, here are the highest-impact improvements grouped by theme. Each item is independent — tell me which ones to do.
-
----
-
-## 1. Faster, less-clunky editing (biggest UX wins)
-
-**a. Auto-save instead of per-row Save buttons.** Right now every checklist item, timeline milestone, hire detail, and page block needs a manual save click. Switch to debounced auto-save (~600ms after typing stops) with a small "Saved" indicator. Removes ~80% of clicks during real editing.
-
-**b. Inline rich-text formatting for paragraph/callout/card bodies.** Today they're plain `<textarea>`. Add a minimal toolbar (bold, italic, link, bullet list) — most onboarding content needs at least links and bold.
-
-**c. Drag-and-drop reordering.** Replace the up/down arrow buttons on blocks, checklist items, and timeline milestones with drag handles (`@dnd-kit/sortable`). Much faster when reorganizing a long page.
-
-**d. Keyboard shortcuts in the block editor.** Enter at end of a paragraph adds a new paragraph block; `/` opens the "add block" menu inline (Notion-style). Optional but feels much more like a real editor.
-
-**e. Replace `prompt()` for new section names** with a proper inline input — `prompt()` looks unprofessional and is blocked by some browsers.
+The module works, but it currently *looks* and *feels* like an admin CRUD form on both sides. This pass focuses on visual polish, information hierarchy, and small interaction wins — no new data model. Pick any subset.
 
 ---
 
-## 2. Checklist & timeline templates
+## 1. Hire-side: make day 1 feel personal
 
-Right now every new hire starts with an empty checklist and empty timeline. You'll be entering the same ~30 standard items every time.
+The page a new hire opens on their first morning should feel like a welcome, not a settings screen.
 
-**a. Template library.** Add an `onboarding_templates` table (checklist + timeline presets). When creating a hire, pick a template and it pre-populates everything. Templates editable from the admin index.
+**a. Hero header on the Welcome tab.** Replace the small "Onboarding / Welcome, Alex" header with a real hero on the first tab only:
+- Big greeting: "Welcome, Alex 👋" (uses `hire.name`)
+- Subline: role + start date + coordinator ("Junior Designer · Started Mon, May 4 · Onboarded by Jamie")
+- Soft gradient background tile with the PCC mark
 
-**b. Apply template to existing hire.** Button on the hire page to merge in a template (skipping duplicates).
+**b. "Today" card above the tabs.** A persistent strip showing:
+- Day N of 30 (computed from `start_date`)
+- Today's milestone title (if any) with a "Jump to first month →" link
+- Checklist pulse: "3 of 12 done — 2 due this week"
 
-**c. Duplicate from another hire.** "Copy timeline/checklist from [previous hire]" — useful when onboarding multiple people in the same role.
+This turns the hub into something they want to revisit daily, not just on day 1.
 
----
+**c. Timeline polish.**
+- Group the rail by **Week 1 / Week 2 / Week 3 / Week 4** headings (the editor already groups by week — mirror it).
+- Auto-scroll to today's milestone on load with a subtle pulse animation on the dot.
+- Past items collapse to a single line (date + title) with a "Show 4 completed" expander to keep the page short by week 3.
+- Replace the flat green dot with a small icon: ✓ for past, ● ring for today, ○ for upcoming.
 
-## 3. Smarter timeline
+**d. Checklist polish.**
+- Section cards get a per-section progress chip ("Paperwork · 3/4").
+- Confetti / "Section complete" toast when the last item in a section is ticked.
+- Sticky overall progress bar at the top of the checklist tab while scrolling.
+- Larger tap targets — currently `size-4` checkboxes are tight on mobile.
 
-**a. Group milestones by week** in both the editor and hire view (Week 1 / Week 2 / Week 3 / Week 4) instead of a flat list. Easier to scan a 30-day plan.
-
-**b. Date picker alongside day-offset.** Admins think in dates, not "day 14". Let them pick a date and auto-compute the offset (or vice versa).
-
-**c. "Today" anchor in the hire view** — auto-scroll to today's milestone on load, with a colored marker line.
-
-**d. Optional checklist linkage.** Let a timeline milestone reference checklist items so completing the milestone shows progress.
-
----
-
-## 4. Admin overview improvements
-
-**a. Filter/sort hires** by status (active / archived / starts this week / overdue checklist).
-
-**b. At-a-glance status chips** on the hires list: "Starts in 3 days", "Day 12 of 30", "Onboarding complete".
-
-**c. Archive instead of delete** as the default action — you already have an `archived` column but no UI for it. Hard delete should require a confirm + be in a menu.
-
-**d. Coordinator view.** If `coordinator_name` matches the logged-in admin, surface "My hires" at the top.
+**e. Mobile.** Tab pills wrap awkwardly past 4 tabs. On `<sm` switch to a horizontal scroll row with snap, or a `<select>` dropdown.
 
 ---
 
-## 5. Hire-side experience
+## 2. Admin overview: more glanceable
 
-**a. Welcome email on hire creation** with a sign-in link, sent via the existing email setup.
+The admin landing page is three stacked sections of similar-looking cards. Add hierarchy and at-a-glance status.
 
-**b. Progress celebration.** When the hire ticks the last checklist item in a section, show a small confetti / "Section complete" toast.
+**a. Status chips on hire rows.** Compute from `start_date` + checklist progress and render as a small pill on the right:
+- "Starts in 3 days" (amber) — start_date in the future
+- "Day 12 of 30" (neutral) — in the first month
+- "Onboarded" (muted) — past day 30 and 100% complete
+- "Behind" (red) — past day 7 and <25% checklist done
 
-**c. Notes field per checklist item** so the hire can leave a comment ("done — talked with Alex on Slack") that the coordinator sees.
+**b. Filter / segment bar** above the hires list: All · Starting soon · Active · Completed · Archived. Just client-side filtering of the existing query.
 
-**d. Mobile polish.** The hire view is the page they'll actually open on their phone day 1; worth a focused mobile pass.
+**c. Archive UI.** The `archived` column exists but has no surface. Add a row menu (`⋯`) with Archive / Delete (delete moves behind a confirm). Default the list to hiding archived, with a toggle.
 
----
+**d. Group "Shared pages" + "Templates" into a single "Content" section** with a tab switcher. They take up two-thirds of the screen today and aren't touched daily — push the hires list to the top.
 
-## 6. Content & structure
-
-**a. More block types:**
-- Image / embed (Loom, YouTube, Figma)
-- Link list (cards with icon + title + description + URL — perfect for the Tools page)
-- Divider
-- Accordion / FAQ block (for the "Who to ask" page)
-
-**b. Markdown shortcuts in textareas** — `**bold**`, `[link](url)`, `- bullets` rendered in the viewer (already established convention from the Slack template).
-
-**c. Page versioning / draft mode.** Edits go live instantly today. A "Publish" button (with a draft preview) prevents half-edited pages being seen by hires mid-edit.
+**e. Empty states with art.** The current empty states are a single line of muted text. Add a small inline SVG illustration + a one-button next action.
 
 ---
 
-## 7. Code hygiene (not user-facing but worth it)
+## 3. Hire editor: reduce cognitive load
 
-- The hire page does a full reload after every tiny edit (`onChanged → load()` refetches all 3 tables). Switch to React Query so individual mutations only invalidate their slice.
-- Several `any` casts around `safeBlocks`/types could be tightened.
-- Extract the renderer's markdown-ish parsing into a shared util (will be needed for #6b).
+The editor at `/admin/onboarding/hires/$hireId` currently shows: meta card, 3 stat tiles, then tabs with long auto-saving forms. Some friction:
+
+**a. Sticky save indicator.** The `<SaveIndicator>` lives at the bottom of the meta card and on each row — easy to miss whether anything is in flight. Move a single global indicator into the page header next to "Open hire view".
+
+**b. Collapse the meta card by default** once filled in — show a compact summary line ("Alex Liu · alex@… · Junior Designer · Starts May 4 · Coordinator: Jamie") with an Edit button. Saves vertical space for the actual work (timeline + checklist).
+
+**c. Timeline editor density.** Each milestone row is a 4-column grid that wraps on this 867px viewport into a tall card. Tighten to: drag handle · date picker · title (full width) · day# + label collapsed into a popover · description (textarea below, expands on focus only).
+
+**d. "Apply template" needs more context.** Today the button just merges. Show a preview dialog: "This will add 12 checklist items and 8 timeline milestones. Skip duplicates? [Apply / Cancel]".
+
+**e. Replace `confirm()` and `prompt()`** with the project's `<ConfirmDialog>` component (already exists in `src/components/confirm-dialog.tsx`). The browser dialogs look out of place against the rest of the design.
 
 ---
 
-## My recommended first batch
+## 4. Content blocks: visual upgrades
 
-If you just want the highest ROI, do these four together:
+The renderer covers a lot of types but they all look like the same bordered card.
 
-1. **Templates** (#2a + #2b) — saves the most time long-term
-2. **Auto-save** (#1a) — biggest day-to-day annoyance gone
-3. **Drag-and-drop reordering** (#1c) — feels dramatically more polished
-4. **Image / link-list block types** (#6a) — unlocks the Tools page
+**a. Distinct block styling.**
+- `callout` → colored left border + tinted background + an icon picked from the label ("Note" → ℹ, "Warning" → ⚠, "Tip" → 💡).
+- `accordion` → the project already has `@radix-ui/react-accordion` — wire the renderer to use it instead of plain `<details>` for a smoother open/close.
+- `link_list` → render as cards with a favicon (auto-fetched via `https://www.google.com/s2/favicons?domain=…`) + arrow icon — currently they look like bullet points.
+- `people` → render as avatar circles (initials fallback) in a horizontal scroll on mobile.
+- `embed` → detect Loom/YouTube/Figma URLs and use their proper aspect ratio and a poster fallback before iframe loads.
 
-Tell me which items (or batches) you want and I'll implement them.
+**b. Block editor: visual block picker.** The "Add block" `<Select>` is a long alphabetical dropdown. Replace with a small popover grid of icons + labels (Notion-style), grouped: Text · Media · Lists · Layout.
+
+**c. Better drag affordance.** The grip icon is faint; on hover the row should get a subtle background tint to telegraph drag-target behavior.
+
+---
+
+## 5. Small but high-impact touches
+
+- **Section dividers between weeks** in the hire timeline view, with the date range ("May 4 – May 10").
+- **Keyboard shortcut: `e` to enter edit mode** on a focused block, `↵` to add a new block below.
+- **Top-of-page breadcrumbs** in the editor: `Onboarding › Hires › Alex Liu` — currently just a Back button, doesn't communicate where you are in deeper flows.
+- **Toast on auto-save error** with a "Retry" action — silent failure today.
+- **Loading skeletons** instead of "Loading…" text on all three pages (use the existing `list-skeleton.tsx` pattern).
+- **Date display consistency.** Mix of "EEE, MMM d, yyyy", "MMM d, yyyy", and "MMM d" across pages — pick one short form ("Mon, May 4") and use it everywhere.
+
+---
+
+## Recommended first batch (highest visible impact, ~1 implementation pass)
+
+1. **Hire-side hero + "Today" card** (§1a, §1b) — transforms the perceived quality of the hub immediately.
+2. **Timeline auto-scroll-to-today + week dividers + past-collapse** (§1c) — makes the page feel alive and focused.
+3. **Status chips + filter bar on the admin overview** (§2a, §2b) — coordinator dashboards become useful at a glance.
+4. **Loading skeletons + ConfirmDialog + sticky save indicator** (§3a, §3e, §5) — removes the "this is a prototype" tells.
+
+Tell me which sections (or numbered items) to do and I'll build them.
