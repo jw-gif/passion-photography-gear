@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -40,8 +41,20 @@ export function useAutoSave<T>(
         }
         setState("saved");
         setTimeout(() => setState((s) => (s === "saved" ? "idle" : s)), 1500);
-      } catch {
+      } catch (err) {
         setState("error");
+        const msg = err instanceof Error ? err.message : "Save failed";
+        toast.error(msg, {
+          action: {
+            label: "Retry",
+            onClick: () => {
+              save(latest.current).then(
+                () => setState("saved"),
+                () => setState("error"),
+              );
+            },
+          },
+        });
       } finally {
         inFlight.current = false;
       }

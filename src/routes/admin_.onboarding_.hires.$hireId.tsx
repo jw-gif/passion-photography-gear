@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, GripVertical, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, GripVertical, Plus, Sparkles, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   DndContext,
   closestCenter,
@@ -121,8 +122,15 @@ function HireEditor({ onLogout }: { onLogout: () => void }) {
     return (
       <main className="min-h-screen">
         <HubHeader onLogout={onLogout} title="Hire" subtitle="Staff Onboarding" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 text-sm text-muted-foreground">
-          Loading…
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <div className="h-8 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-24 w-full rounded-xl bg-muted animate-pulse" />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+            <div className="h-20 rounded-xl bg-muted animate-pulse" />
+          </div>
+          <div className="h-64 w-full rounded-xl bg-muted animate-pulse" />
         </div>
       </main>
     );
@@ -217,6 +225,9 @@ function HireMetaCard({ hire, onChanged }: { hire: HireRow; onChanged: () => voi
   const [roleLabel, setRoleLabel] = useState(hire.role_label ?? "");
   const [startDate, setStartDate] = useState(hire.start_date);
   const [coordinator, setCoordinator] = useState(hire.coordinator_name ?? "");
+  // Start collapsed if hire already has a name and email filled in
+  const [expanded, setExpanded] = useState(!hire.name || !hire.email);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const value = useMemo(
     () => ({ name, email, roleLabel, startDate, coordinator }),
@@ -238,13 +249,31 @@ function HireMetaCard({ hire, onChanged }: { hire: HireRow; onChanged: () => voi
   });
 
   async function remove() {
-    if (!confirm(`Delete ${hire.name}? This removes their timeline and checklist.`)) return;
     const { error } = await supabase.from("onboarding_hires").delete().eq("id", hire.id);
     if (error) toast.error(error.message);
     else {
       toast.success("Deleted");
       window.location.href = "/admin/onboarding";
     }
+  }
+
+  if (!expanded) {
+    return (
+      <Card className="p-3 flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0 text-sm">
+          <span className="font-medium">{name}</span>
+          <span className="text-muted-foreground"> · {email}</span>
+          {roleLabel && <span className="text-muted-foreground"> · {roleLabel}</span>}
+          {coordinator && (
+            <span className="text-muted-foreground"> · Coord: {coordinator}</span>
+          )}
+        </div>
+        <SaveIndicator state={saveState} />
+        <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>
+          <ChevronDown className="size-4" /> Edit details
+        </Button>
+      </Card>
+    );
   }
 
   return (
@@ -271,12 +300,31 @@ function HireMetaCard({ hire, onChanged }: { hire: HireRow; onChanged: () => voi
           <Input value={coordinator} onChange={(e) => setCoordinator(e.target.value)} />
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={remove} className="text-destructive hover:text-destructive">
+      <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setConfirmDelete(true)}
+          className="text-destructive hover:text-destructive"
+        >
           <Trash2 className="size-4" /> Delete hire
         </Button>
-        <SaveIndicator state={saveState} />
+        <div className="flex items-center gap-3">
+          <SaveIndicator state={saveState} />
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>
+            <ChevronUp className="size-4" /> Collapse
+          </Button>
+        </div>
       </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete ${hire.name}?`}
+        description="This permanently removes their timeline and checklist. This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={remove}
+      />
     </Card>
   );
 }
