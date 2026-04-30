@@ -902,12 +902,18 @@ function InviteAdminDialog({
   onInvite,
   onClose,
 }: {
-  onInvite: (input: { email: string; display_name: string; password: string }) => Promise<void>;
+  onInvite: (input: {
+    email: string;
+    display_name: string;
+    password: string;
+    role: "admin" | "team";
+  }) => Promise<void>;
   onClose: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "team">("team");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -936,6 +942,7 @@ function InviteAdminDialog({
       email: email.trim(),
       display_name: displayName.trim(),
       password: password.trim(),
+      role,
     });
     setSubmitting(false);
   }
@@ -944,9 +951,9 @@ function InviteAdminDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add admin</DialogTitle>
+          <DialogTitle>Add member</DialogTitle>
           <DialogDescription>
-            Invite a new admin. You'll see their temporary password once.
+            Invite a new team member or admin. You'll see their temporary password once.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -973,6 +980,18 @@ function InviteAdminDialog({
               autoComplete="off"
               className="mt-1.5"
             />
+          </div>
+          <div>
+            <Label>Role</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as "admin" | "team")}>
+              <SelectTrigger className="mt-1.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="team">Team — full access except onboarding backend</SelectItem>
+                <SelectItem value="admin">Admin — full access including onboarding</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
