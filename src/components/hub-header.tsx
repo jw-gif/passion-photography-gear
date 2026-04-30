@@ -173,11 +173,13 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
                   <Users className="size-4" /> Members
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin/onboarding">
-                  <ListChecks className="size-4" /> Onboarding
-                </Link>
-              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/onboarding">
+                    <ListChecks className="size-4" /> Onboarding
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
