@@ -88,6 +88,13 @@ function OnboardingPage() {
 
   async function loadAll(uid: string) {
     setLoadingData(true);
+
+    // Kick off pages query in parallel with hire resolution
+    const pagesPromise = supabase
+      .from("onboarding_pages")
+      .select("id, slug, title, subtitle, blocks, sort_order")
+      .order("sort_order");
+
     let hireRow: HireRow | null = null;
 
     if (isPreview && previewHire) {
@@ -119,10 +126,7 @@ function OnboardingPage() {
     }
 
     const [{ data: p }, t, c] = await Promise.all([
-      supabase
-        .from("onboarding_pages")
-        .select("id, slug, title, subtitle, blocks, sort_order")
-        .order("sort_order"),
+      pagesPromise,
       hireRow
         ? supabase
             .from("onboarding_hire_timeline")
