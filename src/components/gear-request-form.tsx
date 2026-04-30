@@ -87,21 +87,14 @@ export function GearRequestForm() {
       from.setDate(today.getDate() - 30);
       const to = new Date(today);
       to.setDate(today.getDate() + 90);
-      const { data } = await supabase
-        .from("gear_requests")
-        .select("id, needed_date, status, gear_request_items(gear_id)")
-        .gte("needed_date", format(from, "yyyy-MM-dd"))
-        .lte("needed_date", format(to, "yyyy-MM-dd"))
-        .in("status", ["pending", "approved"]);
+      const { data } = await supabase.rpc("get_gear_conflicts", {
+        _from: format(from, "yyyy-MM-dd"),
+        _to: format(to, "yyyy-MM-dd"),
+      });
       const map: ConflictMap = {};
-      for (const row of (data ?? []) as Array<{
-        needed_date: string;
-        gear_request_items: { gear_id: string }[] | null;
-      }>) {
-        for (const item of row.gear_request_items ?? []) {
-          if (!map[item.gear_id]) map[item.gear_id] = [];
-          map[item.gear_id].push(row.needed_date);
-        }
+      for (const row of (data ?? []) as Array<{ gear_id: string; needed_date: string }>) {
+        if (!map[row.gear_id]) map[row.gear_id] = [];
+        map[row.gear_id].push(row.needed_date);
       }
       setConflicts(map);
     })();
