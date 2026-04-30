@@ -357,8 +357,15 @@ function statusChip(e: EnrichedHire) {
       className: "border-destructive/30 bg-destructive/10 text-destructive",
     };
   // active
+  if (e.dayN >= 90) {
+    const months = Math.floor(e.dayN / 30);
+    return {
+      label: `Month ${months}`,
+      className: "border-border bg-card text-foreground",
+    };
+  }
   return {
-    label: `Day ${e.dayN} of 30`,
+    label: `Day ${e.dayN}`,
     className: "border-border bg-card text-foreground",
   };
 }
