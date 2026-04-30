@@ -862,6 +862,7 @@ export type Database = {
         Args: { _opening_id: string; _token: string }
         Returns: Json
       }
+      has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -923,7 +924,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "team"
       gear_request_status: "pending" | "approved" | "denied"
       gear_status: "active" | "out_of_service" | "out_for_repair"
       photo_coverage_type: "live_event" | "photo_booth" | "other"
@@ -1071,7 +1072,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "team"],
       gear_request_status: ["pending", "approved", "denied"],
       gear_status: ["active", "out_of_service", "out_for_repair"],
       photo_coverage_type: ["live_event", "photo_booth", "other"],

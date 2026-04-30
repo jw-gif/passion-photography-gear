@@ -65,7 +65,7 @@ export const Route = createFileRoute("/admin_/onboarding")({
 function Page() {
   const { signOut } = useAuth();
   return (
-    <RequireAdmin>
+    <RequireAdmin requireAdmin>
       <Inner onLogout={() => signOut()} />
     </RequireAdmin>
   );

@@ -55,7 +55,7 @@ export const Route = createFileRoute("/admin_/onboarding_/templates/$templateId"
 function PageWrapper() {
   const { signOut } = useAuth();
   return (
-    <RequireAdmin>
+    <RequireAdmin requireAdmin>
       <Editor onLogout={() => signOut()} />
     </RequireAdmin>
   );
