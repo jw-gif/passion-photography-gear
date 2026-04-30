@@ -21,20 +21,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isAdminFlag, setIsAdminFlag] = useState(false);
+  const [isTeamFlag, setIsTeamFlag] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(uid: string) {
-    const [{ data: profile }, { data: roleRow }] = await Promise.all([
+    const [{ data: profile }, { data: roleRows }] = await Promise.all([
       supabase.from("admin_profiles").select("display_name").eq("id", uid).maybeSingle(),
       supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", uid)
-        .eq("role", "admin")
-        .maybeSingle(),
+        .eq("user_id", uid),
     ]);
     setDisplayName(profile?.display_name ?? null);
-    setIsAdminFlag(!!roleRow);
+    const roles = (roleRows ?? []).map((r) => r.role);
+    const admin = roles.includes("admin");
+    const team = admin || roles.includes("team");
+    setIsAdminFlag(admin);
+    setIsTeamFlag(team);
   }
 
   useEffect(() => {
