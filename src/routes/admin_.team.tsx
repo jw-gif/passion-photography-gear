@@ -769,8 +769,15 @@ function AdminsPanel() {
                       <>
                         <div className="font-medium flex items-center gap-2">
                           <span className="truncate">{a.display_name}</span>
-                          <span className="text-xs px-1.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20 font-semibold">
-                            Admin
+                          <span
+                            className={cn(
+                              "text-xs px-1.5 py-0.5 rounded-full border font-semibold",
+                              a.role === "admin"
+                                ? "bg-primary/10 text-primary border-primary/20"
+                                : "bg-muted text-muted-foreground border-border",
+                            )}
+                          >
+                            {a.role === "admin" ? "Admin" : "Team"}
                           </span>
                           {isMe && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">
@@ -800,6 +807,23 @@ function AdminsPanel() {
                       </>
                     )}
                   </div>
+
+                  <Select
+                    value={a.role}
+                    onValueChange={(v) => handleRoleChange(a, v as "admin" | "team")}
+                    disabled={isMe}
+                  >
+                    <SelectTrigger
+                      className="h-8 w-[110px]"
+                      title={isMe ? "You can't change your own role" : "Change role"}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="team">Team</SelectItem>
+                    </SelectContent>
+                  </Select>
 
                   <Button
                     variant="ghost"
