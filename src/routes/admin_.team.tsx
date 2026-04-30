@@ -1022,7 +1022,7 @@ function InviteAdminDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Adding…" : "Add admin"}
+              {submitting ? "Adding…" : "Add member"}
             </Button>
           </DialogFooter>
         </form>
