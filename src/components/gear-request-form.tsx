@@ -109,25 +109,12 @@ export function GearRequestForm() {
     }
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase
-        .from("gear_requests")
-        .select("id, gear_request_items(gear_id)")
-        .ilike("requestor_name", requestor)
-        .order("created_at", { ascending: false })
-        .limit(8);
+      const { data } = await supabase.rpc("get_recent_gear_for_requestor", {
+        _name: requestor,
+        _limit: 5,
+      });
       if (cancelled) return;
-      const seen = new Set<string>();
-      const ids: string[] = [];
-      for (const row of (data ?? []) as Array<{ gear_request_items: { gear_id: string }[] | null }>) {
-        for (const item of row.gear_request_items ?? []) {
-          if (!seen.has(item.gear_id)) {
-            seen.add(item.gear_id);
-            ids.push(item.gear_id);
-            if (ids.length === 5) break;
-          }
-        }
-        if (ids.length === 5) break;
-      }
+      const ids = ((data ?? []) as Array<{ gear_id: string }>).map((r) => r.gear_id);
       setRecentlyRequested(ids.map((id) => gear.find((g) => g.id === id)).filter(Boolean) as GearRow[]);
     })();
     return () => {
