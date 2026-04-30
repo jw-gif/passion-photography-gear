@@ -94,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         displayName,
         isAdmin: isAdminFlag,
+        isTeam: isTeamFlag,
         loading,
         signIn,
         signOut,
