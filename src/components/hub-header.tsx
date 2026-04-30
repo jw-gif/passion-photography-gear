@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import pccLogo from "@/assets/pcc-logo.png";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 interface HubHeaderProps {
   onLogout: () => void;
@@ -35,6 +36,7 @@ interface HubHeaderProps {
 export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
   const showInnerLabel = !!title;
   const { pathname } = useLocation();
+  const { isAdmin } = useAuth();
 
   // Highlight dropdown triggers when on any of their sub-routes.
   const photographyActive =
