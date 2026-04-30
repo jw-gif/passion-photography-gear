@@ -40,6 +40,7 @@ interface AdminListItem {
   id: string;
   email: string | null;
   display_name: string;
+  role: "admin" | "team";
   created_at: string;
   last_sign_in_at: string | null;
 }
@@ -47,11 +48,19 @@ interface AdminListItem {
 async function listAdmins(): Promise<AdminListItem[]> {
   const { data: roles, error: rolesErr } = await supabaseAdmin
     .from("user_roles")
-    .select("user_id")
-    .eq("role", "admin");
+    .select("user_id, role")
+    .in("role", ["admin", "team"]);
   if (rolesErr) throw new Response(rolesErr.message, { status: 500 });
-  const ids = (roles ?? []).map((r) => r.user_id);
-  if (ids.length === 0) return [];
+  if (!roles || roles.length === 0) return [];
+
+  // If a user has both roles, prefer admin.
+  const roleByUser = new Map<string, "admin" | "team">();
+  for (const r of roles) {
+    const cur = roleByUser.get(r.user_id);
+    if (cur === "admin") continue;
+    roleByUser.set(r.user_id, r.role as "admin" | "team");
+  }
+  const ids = Array.from(roleByUser.keys());
 
   const { data: profiles } = await supabaseAdmin
     .from("admin_profiles")
@@ -59,7 +68,6 @@ async function listAdmins(): Promise<AdminListItem[]> {
     .in("id", ids);
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-  // Fetch users in a single page (small team — fine).
   const { data: usersPage, error: usersErr } = await supabaseAdmin.auth.admin.listUsers({
     page: 1,
     perPage: 200,
@@ -74,6 +82,7 @@ async function listAdmins(): Promise<AdminListItem[]> {
       id,
       email: u?.email ?? null,
       display_name: p?.display_name ?? "(no name)",
+      role: roleByUser.get(id)!,
       created_at: p?.created_at ?? u?.created_at ?? new Date().toISOString(),
       last_sign_in_at: u?.last_sign_in_at ?? null,
     };
