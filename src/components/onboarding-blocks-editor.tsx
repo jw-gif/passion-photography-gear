@@ -156,9 +156,29 @@ function SortableBlockCard({
             >
               <GripVertical className="size-4" />
             </button>
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {BLOCK_TYPE_LABELS[block.type]}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 -ml-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  {BLOCK_TYPE_LABELS[block.type]}
+                  <ChevronDown className="size-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {(Object.keys(BLOCK_TYPE_LABELS) as BlockType[]).map((t) => (
+                  <DropdownMenuItem
+                    key={t}
+                    disabled={t === block.type}
+                    onClick={() => onChange(convertBlock(block, t))}
+                  >
+                    {BLOCK_TYPE_LABELS[t]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <Button
             size="sm"
