@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setDisplayName(null);
         setIsAdminFlag(false);
+        setIsTeamFlag(false);
       }
     });
 
