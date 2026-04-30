@@ -69,7 +69,7 @@ export const Route = createFileRoute("/admin_/onboarding_/hires/$hireId")({
 function PageWrapper() {
   const { signOut } = useAuth();
   return (
-    <RequireAdmin>
+    <RequireAdmin requireAdmin>
       <HireEditor onLogout={() => signOut()} />
     </RequireAdmin>
   );
