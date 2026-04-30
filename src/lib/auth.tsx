@@ -7,6 +7,7 @@ interface AuthContextValue {
   session: Session | null;
   displayName: string | null;
   isAdmin: boolean;
+  isTeam: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
