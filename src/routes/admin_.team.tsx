@@ -549,6 +549,7 @@ interface AdminItem {
   id: string;
   email: string | null;
   display_name: string;
+  role: "admin" | "team";
   created_at: string;
   last_sign_in_at: string | null;
 }
@@ -603,6 +604,7 @@ function AdminsPanel() {
     email: string;
     display_name: string;
     password: string;
+    role: "admin" | "team";
   }) {
     const res = await authedFetch("/api/admins", {
       method: "POST",
@@ -613,7 +615,7 @@ function AdminsPanel() {
       error?: string;
     };
     if (!res.ok || !json.admin) {
-      toast.error("Couldn't invite admin", { description: json.error });
+      toast.error("Couldn't invite member", { description: json.error });
       return;
     }
     setShowInvite(false);
@@ -622,6 +624,21 @@ function AdminsPanel() {
       password: json.admin.temporary_password,
     });
     await load();
+  }
+
+  async function handleRoleChange(a: AdminItem, role: "admin" | "team") {
+    if (role === a.role) return;
+    const res = await authedFetch("/api/admins", {
+      method: "PATCH",
+      body: JSON.stringify({ id: a.id, role }),
+    });
+    const json = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      toast.error("Couldn't change role", { description: json.error });
+      return;
+    }
+    setAdmins((prev) => prev.map((x) => (x.id === a.id ? { ...x, role } : x)));
+    toast.success(`${a.display_name} is now ${role === "admin" ? "an Admin" : "a Team member"}`);
   }
 
   async function handleRenameSave(a: AdminItem) {
@@ -688,7 +705,7 @@ function AdminsPanel() {
           <ShieldCheck className="size-4" />
           {loading
             ? "Loading…"
-            : `${admins.length} admin${admins.length === 1 ? "" : "s"}`}
+            : `${admins.length} member${admins.length === 1 ? "" : "s"}`}
           {displayName && (
             <span className="ml-2 text-foreground/70">
               · Signed in as <span className="font-medium text-foreground">{displayName}</span>
@@ -696,7 +713,7 @@ function AdminsPanel() {
           )}
         </div>
         <Button onClick={() => setShowInvite(true)}>
-          <UserPlus className="size-4" /> Add admin
+          <UserPlus className="size-4" /> Add member
         </Button>
       </div>
 
@@ -752,8 +769,15 @@ function AdminsPanel() {
                       <>
                         <div className="font-medium flex items-center gap-2">
                           <span className="truncate">{a.display_name}</span>
-                          <span className="text-xs px-1.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20 font-semibold">
-                            Admin
+                          <span
+                            className={cn(
+                              "text-xs px-1.5 py-0.5 rounded-full border font-semibold",
+                              a.role === "admin"
+                                ? "bg-primary/10 text-primary border-primary/20"
+                                : "bg-muted text-muted-foreground border-border",
+                            )}
+                          >
+                            {a.role === "admin" ? "Admin" : "Team"}
                           </span>
                           {isMe && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">
@@ -783,6 +807,23 @@ function AdminsPanel() {
                       </>
                     )}
                   </div>
+
+                  <Select
+                    value={a.role}
+                    onValueChange={(v) => handleRoleChange(a, v as "admin" | "team")}
+                    disabled={isMe}
+                  >
+                    <SelectTrigger
+                      className="h-8 w-[110px]"
+                      title={isMe ? "You can't change your own role" : "Change role"}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="team">Team</SelectItem>
+                    </SelectContent>
+                  </Select>
 
                   <Button
                     variant="ghost"
@@ -861,12 +902,18 @@ function InviteAdminDialog({
   onInvite,
   onClose,
 }: {
-  onInvite: (input: { email: string; display_name: string; password: string }) => Promise<void>;
+  onInvite: (input: {
+    email: string;
+    display_name: string;
+    password: string;
+    role: "admin" | "team";
+  }) => Promise<void>;
   onClose: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "team">("team");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -895,6 +942,7 @@ function InviteAdminDialog({
       email: email.trim(),
       display_name: displayName.trim(),
       password: password.trim(),
+      role,
     });
     setSubmitting(false);
   }
@@ -903,9 +951,9 @@ function InviteAdminDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add admin</DialogTitle>
+          <DialogTitle>Add member</DialogTitle>
           <DialogDescription>
-            Invite a new admin. You'll see their temporary password once.
+            Invite a new team member or admin. You'll see their temporary password once.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -932,6 +980,18 @@ function InviteAdminDialog({
               autoComplete="off"
               className="mt-1.5"
             />
+          </div>
+          <div>
+            <Label>Role</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as "admin" | "team")}>
+              <SelectTrigger className="mt-1.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="team">Team — full access except onboarding backend</SelectItem>
+                <SelectItem value="admin">Admin — full access including onboarding</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -962,7 +1022,7 @@ function InviteAdminDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Adding…" : "Add admin"}
+              {submitting ? "Adding…" : "Add member"}
             </Button>
           </DialogFooter>
         </form>
