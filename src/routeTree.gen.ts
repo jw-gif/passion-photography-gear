@@ -37,6 +37,8 @@ import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-histo
 import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AdminOnboardingTemplatesTemplateIdRouteImport } from './routes/admin_.onboarding_.templates.$templateId'
 import { Route as AdminOnboardingPagesSlugRouteImport } from './routes/admin_.onboarding_.pages.$slug'
 import { Route as AdminOnboardingHiresHireIdRouteImport } from './routes/admin_.onboarding_.hires.$hireId'
@@ -183,6 +185,16 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminOnboardingTemplatesTemplateIdRoute =
   AdminOnboardingTemplatesTemplateIdRouteImport.update({
     id: '/admin_/onboarding_/templates/$templateId',
@@ -233,6 +245,8 @@ export interface FileRoutesByFullPath {
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
@@ -266,6 +280,8 @@ export interface FileRoutesByTo {
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
@@ -300,6 +316,8 @@ export interface FileRoutesById {
   '/admin_/onboarding_/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin_/onboarding_/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin_/onboarding_/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
@@ -335,6 +353,8 @@ export interface FileRouteTypes {
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
     | '/admin/onboarding/templates/$templateId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -368,6 +388,8 @@ export interface FileRouteTypes {
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
     | '/admin/onboarding/templates/$templateId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   id:
     | '__root__'
@@ -401,6 +423,8 @@ export interface FileRouteTypes {
     | '/admin_/onboarding_/hires/$hireId'
     | '/admin_/onboarding_/pages/$slug'
     | '/admin_/onboarding_/templates/$templateId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
@@ -435,6 +459,8 @@ export interface RootRouteChildren {
   AdminOnboardingHiresHireIdRoute: typeof AdminOnboardingHiresHireIdRoute
   AdminOnboardingPagesSlugRoute: typeof AdminOnboardingPagesSlugRoute
   AdminOnboardingTemplatesTemplateIdRoute: typeof AdminOnboardingTemplatesTemplateIdRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -636,6 +662,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/onboarding_/templates/$templateId': {
       id: '/admin_/onboarding_/templates/$templateId'
       path: '/admin/onboarding/templates/$templateId'
@@ -692,6 +732,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOnboardingPagesSlugRoute: AdminOnboardingPagesSlugRoute,
   AdminOnboardingTemplatesTemplateIdRoute:
     AdminOnboardingTemplatesTemplateIdRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
