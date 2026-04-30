@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -389,6 +389,13 @@ function TableEditor({
   function removeRow(i: number) {
     onChange({ ...block, rows: block.rows.filter((_, j) => j !== i) });
   }
+  function moveRow(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= block.rows.length) return;
+    const rows = block.rows.slice();
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    onChange({ ...block, rows });
+  }
 
   return (
     <div className="space-y-3">
@@ -436,9 +443,37 @@ function TableEditor({
                   </td>
                 ))}
                 <td className="p-1 align-top">
-                  <Button size="sm" variant="ghost" onClick={() => removeRow(ri)}>
-                    <Trash2 className="size-3" />
-                  </Button>
+                  <div className="flex flex-col gap-0.5">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveRow(ri, -1)}
+                      disabled={ri === 0}
+                      aria-label="Move row up"
+                      className="h-6 w-6 p-0"
+                    >
+                      <ArrowUp className="size-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveRow(ri, 1)}
+                      disabled={ri === block.rows.length - 1}
+                      aria-label="Move row down"
+                      className="h-6 w-6 p-0"
+                    >
+                      <ArrowDown className="size-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeRow(ri)}
+                      aria-label="Delete row"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-3" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
