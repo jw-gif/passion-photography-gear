@@ -87,21 +87,14 @@ export function GearRequestForm() {
       from.setDate(today.getDate() - 30);
       const to = new Date(today);
       to.setDate(today.getDate() + 90);
-      const { data } = await supabase
-        .from("gear_requests")
-        .select("id, needed_date, status, gear_request_items(gear_id)")
-        .gte("needed_date", format(from, "yyyy-MM-dd"))
-        .lte("needed_date", format(to, "yyyy-MM-dd"))
-        .in("status", ["pending", "approved"]);
+      const { data } = await supabase.rpc("get_gear_conflicts", {
+        _from: format(from, "yyyy-MM-dd"),
+        _to: format(to, "yyyy-MM-dd"),
+      });
       const map: ConflictMap = {};
-      for (const row of (data ?? []) as Array<{
-        needed_date: string;
-        gear_request_items: { gear_id: string }[] | null;
-      }>) {
-        for (const item of row.gear_request_items ?? []) {
-          if (!map[item.gear_id]) map[item.gear_id] = [];
-          map[item.gear_id].push(row.needed_date);
-        }
+      for (const row of (data ?? []) as Array<{ gear_id: string; needed_date: string }>) {
+        if (!map[row.gear_id]) map[row.gear_id] = [];
+        map[row.gear_id].push(row.needed_date);
       }
       setConflicts(map);
     })();
@@ -116,25 +109,12 @@ export function GearRequestForm() {
     }
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase
-        .from("gear_requests")
-        .select("id, gear_request_items(gear_id)")
-        .ilike("requestor_name", requestor)
-        .order("created_at", { ascending: false })
-        .limit(8);
+      const { data } = await supabase.rpc("get_recent_gear_for_requestor", {
+        _name: requestor,
+        _limit: 5,
+      });
       if (cancelled) return;
-      const seen = new Set<string>();
-      const ids: string[] = [];
-      for (const row of (data ?? []) as Array<{ gear_request_items: { gear_id: string }[] | null }>) {
-        for (const item of row.gear_request_items ?? []) {
-          if (!seen.has(item.gear_id)) {
-            seen.add(item.gear_id);
-            ids.push(item.gear_id);
-            if (ids.length === 5) break;
-          }
-        }
-        if (ids.length === 5) break;
-      }
+      const ids = ((data ?? []) as Array<{ gear_id: string }>).map((r) => r.gear_id);
       setRecentlyRequested(ids.map((id) => gear.find((g) => g.id === id)).filter(Boolean) as GearRow[]);
     })();
     return () => {
