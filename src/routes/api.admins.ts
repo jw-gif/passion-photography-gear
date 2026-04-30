@@ -176,8 +176,13 @@ export const Route = createFileRoute("/api/admins")({
       // PATCH: rename or set password for an existing admin
       // body: { id, display_name?, password? }
       PATCH: async ({ request }) => {
-        await requireAdmin(request);
-        let body: { id?: string; display_name?: string; password?: string };
+        const callerId = await requireAdmin(request);
+        let body: {
+          id?: string;
+          display_name?: string;
+          password?: string;
+          role?: "admin" | "team";
+        };
         try {
           body = await request.json();
         } catch {
@@ -207,6 +212,43 @@ export const Route = createFileRoute("/api/admins")({
           }
           const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { password: pw });
           if (error) return Response.json({ error: error.message }, { status: 500 });
+        }
+
+        if (body.role !== undefined) {
+          const newRole: "admin" | "team" = body.role === "team" ? "team" : "admin";
+          // Don't let the caller demote themselves (would lock them out of admin tools).
+          if (id === callerId && newRole !== "admin") {
+            return Response.json(
+              { error: "You can't change your own role" },
+              { status: 400 },
+            );
+          }
+          // If we're moving someone OUT of admin, make sure they're not the last one.
+          if (newRole !== "admin") {
+            const { data: admins, error: aErr } = await supabaseAdmin
+              .from("user_roles")
+              .select("user_id")
+              .eq("role", "admin");
+            if (aErr) return Response.json({ error: aErr.message }, { status: 500 });
+            const isAdmin = (admins ?? []).some((r) => r.user_id === id);
+            if (isAdmin && (admins?.length ?? 0) <= 1) {
+              return Response.json(
+                { error: "Can't demote the last admin" },
+                { status: 400 },
+              );
+            }
+          }
+          // Replace any existing admin/team role with the new one.
+          const { error: delErr } = await supabaseAdmin
+            .from("user_roles")
+            .delete()
+            .eq("user_id", id)
+            .in("role", ["admin", "team"]);
+          if (delErr) return Response.json({ error: delErr.message }, { status: 500 });
+          const { error: insErr } = await supabaseAdmin
+            .from("user_roles")
+            .insert({ user_id: id, role: newRole });
+          if (insErr) return Response.json({ error: insErr.message }, { status: 500 });
         }
 
         return Response.json({ ok: true });
