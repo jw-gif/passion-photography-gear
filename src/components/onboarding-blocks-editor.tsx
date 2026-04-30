@@ -389,6 +389,13 @@ function TableEditor({
   function removeRow(i: number) {
     onChange({ ...block, rows: block.rows.filter((_, j) => j !== i) });
   }
+  function moveRow(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= block.rows.length) return;
+    const rows = block.rows.slice();
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    onChange({ ...block, rows });
+  }
 
   return (
     <div className="space-y-3">
