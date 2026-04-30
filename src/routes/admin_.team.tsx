@@ -604,6 +604,7 @@ function AdminsPanel() {
     email: string;
     display_name: string;
     password: string;
+    role: "admin" | "team";
   }) {
     const res = await authedFetch("/api/admins", {
       method: "POST",
@@ -614,7 +615,7 @@ function AdminsPanel() {
       error?: string;
     };
     if (!res.ok || !json.admin) {
-      toast.error("Couldn't invite admin", { description: json.error });
+      toast.error("Couldn't invite member", { description: json.error });
       return;
     }
     setShowInvite(false);
@@ -623,6 +624,21 @@ function AdminsPanel() {
       password: json.admin.temporary_password,
     });
     await load();
+  }
+
+  async function handleRoleChange(a: AdminItem, role: "admin" | "team") {
+    if (role === a.role) return;
+    const res = await authedFetch("/api/admins", {
+      method: "PATCH",
+      body: JSON.stringify({ id: a.id, role }),
+    });
+    const json = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      toast.error("Couldn't change role", { description: json.error });
+      return;
+    }
+    setAdmins((prev) => prev.map((x) => (x.id === a.id ? { ...x, role } : x)));
+    toast.success(`${a.display_name} is now ${role === "admin" ? "an Admin" : "a Team member"}`);
   }
 
   async function handleRenameSave(a: AdminItem) {
