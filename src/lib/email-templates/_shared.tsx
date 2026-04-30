@@ -143,8 +143,6 @@ export function EmailShell({ preview, children }: ShellProps) {
           <Section style={styles.card}>{children}</Section>
           <Text style={styles.footer}>
             Sent by Passion Photography Team · email.passionphotography.team
-            <br />
-            Capturing the moments that matter.
           </Text>
         </Container>
       </Body>
