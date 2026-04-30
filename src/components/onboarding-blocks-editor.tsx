@@ -52,6 +52,89 @@ function stripIds(blocks: IdBlock[]): ContentBlock[] {
   return blocks.map(({ __id: _ignored, ...rest }) => rest as ContentBlock);
 }
 
+// Best-effort text extraction so we can preserve content when switching block type.
+function extractText(block: ContentBlock): string {
+  switch (block.type) {
+    case "heading":
+    case "paragraph":
+      return block.text;
+    case "callout":
+      return block.text;
+    case "card":
+      return [block.title, block.body].filter(Boolean).join("\n\n");
+    case "two_col":
+      return [block.left.title, block.left.body, block.right.title, block.right.body]
+        .filter(Boolean)
+        .join("\n\n");
+    case "checklist_preview":
+      return block.items.filter(Boolean).join("\n");
+    case "accordion":
+      return block.items.map((i) => `${i.question}\n${i.answer}`).join("\n\n");
+    case "link_list":
+      return block.links.map((l) => l.title).filter(Boolean).join("\n");
+    case "people":
+      return block.people.map((p) => p.name).filter(Boolean).join("\n");
+    case "table":
+      return block.title ?? "";
+    case "image":
+      return block.caption ?? block.alt ?? "";
+    case "embed":
+      return block.title ?? "";
+    case "divider":
+      return "";
+  }
+}
+
+export function convertBlock(block: ContentBlock, target: ContentBlock["type"]): ContentBlock {
+  if (block.type === target) return block;
+  const text = extractText(block);
+  const firstLine = text.split("\n")[0] ?? "";
+  switch (target) {
+    case "heading":
+      return { type: "heading", text: firstLine || "New heading" };
+    case "paragraph":
+      return { type: "paragraph", text };
+    case "callout":
+      return { type: "callout", label: "Note", text };
+    case "card":
+      return { type: "card", title: firstLine || "Card title", body: text };
+    case "two_col":
+      return {
+        type: "two_col",
+        left: { title: firstLine || "Left title", body: text },
+        right: { title: "Right title", body: "" },
+      };
+    case "checklist_preview":
+      return {
+        type: "checklist_preview",
+        items: text ? text.split("\n").filter(Boolean) : [""],
+      };
+    case "accordion":
+      return { type: "accordion", items: [{ question: firstLine || "", answer: text }] };
+    case "link_list": {
+      if (block.type === "embed" || block.type === "image") {
+        return { type: "link_list", links: [{ title: firstLine || block.url, url: block.url }] };
+      }
+      return { type: "link_list", links: [{ title: firstLine || "", url: "" }] };
+    }
+    case "image":
+      if (block.type === "embed") return { type: "image", url: block.url, alt: "", caption: text };
+      return { type: "image", url: "", alt: "", caption: text };
+    case "embed":
+      if (block.type === "image") return { type: "embed", url: block.url, title: text };
+      return { type: "embed", url: "", title: text };
+    case "table":
+      return { type: "table", title: firstLine, columns: ["Column 1", "Column 2"], rows: [["", ""]] };
+    case "people":
+      return {
+        type: "people",
+        people: text ? text.split("\n").filter(Boolean).map((name) => ({ name, role: "", slack: "" })) : [{ name: "", role: "", slack: "" }],
+      };
+    case "divider":
+      return { type: "divider" };
+  }
+}
+
 export function BlocksEditor({ blocks, onChange }: Props) {
   // Maintain a parallel id list keyed by index. Recreated when length changes.
   const [ids, setIds] = useState<string[]>(() => blocks.map((_, i) => `b-${i}-${Math.random().toString(36).slice(2, 8)}`));
@@ -156,9 +239,29 @@ function SortableBlockCard({
             >
               <GripVertical className="size-4" />
             </button>
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {BLOCK_TYPE_LABELS[block.type]}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 -ml-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  {BLOCK_TYPE_LABELS[block.type]}
+                  <ChevronDown className="size-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {(Object.keys(BLOCK_TYPE_LABELS) as BlockType[]).map((t) => (
+                  <DropdownMenuItem
+                    key={t}
+                    disabled={t === block.type}
+                    onClick={() => onChange(convertBlock(block, t))}
+                  >
+                    {BLOCK_TYPE_LABELS[t]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <Button
             size="sm"
