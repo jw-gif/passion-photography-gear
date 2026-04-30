@@ -945,6 +945,14 @@ export type Database = {
         Returns: number
       }
       generate_gear_id: { Args: never; Returns: string }
+      get_gear_conflicts: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          gear_id: string
+          needed_date: string
+          status: Database["public"]["Enums"]["gear_request_status"]
+        }[]
+      }
       get_job: {
         Args: { _opening_id: string; _token: string }
         Returns: {
@@ -975,6 +983,12 @@ export type Database = {
           id: string
           name: string
           tier: Database["public"]["Enums"]["photographer_tier"]
+        }[]
+      }
+      get_recent_gear_for_requestor: {
+        Args: { _limit?: number; _name: string }
+        Returns: {
+          gear_id: string
         }[]
       }
       get_shot_list: {
