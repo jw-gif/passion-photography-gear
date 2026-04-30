@@ -417,7 +417,7 @@ function QrModal({ gear, onClose }: { gear: GearRow; onClose: () => void }) {
   useEffect(() => {
     // Always use the public published URL so QR codes work for anyone,
     // even when this admin page is opened via the Lovable preview origin.
-    const PUBLIC_ORIGIN = "https://passion-photography-gear.lovable.app";
+    const PUBLIC_ORIGIN = "https://passionphotography.team";
     const u = `${PUBLIC_ORIGIN}/?gear=${gear.id}`;
     setUrl(u);
 

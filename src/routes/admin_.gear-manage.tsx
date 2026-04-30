@@ -365,7 +365,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
     }
     setExporting(true);
     try {
-      const PUBLIC_ORIGIN = "https://passion-photography-gear.lovable.app";
+      const PUBLIC_ORIGIN = "https://passionphotography.team";
       const cards = await Promise.all(
         items.map(async (g) => {
           const url = `${PUBLIC_ORIGIN}/?gear=${g.id}`;
