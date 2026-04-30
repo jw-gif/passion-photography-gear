@@ -36,6 +36,7 @@ import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage
 import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
 import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AdminOnboardingTemplatesTemplateIdRouteImport } from './routes/admin_.onboarding_.templates.$templateId'
 import { Route as AdminOnboardingPagesSlugRouteImport } from './routes/admin_.onboarding_.pages.$slug'
 import { Route as AdminOnboardingHiresHireIdRouteImport } from './routes/admin_.onboarding_.hires.$hireId'
@@ -176,6 +177,12 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admin/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOnboardingTemplatesTemplateIdRoute =
   AdminOnboardingTemplatesTemplateIdRouteImport.update({
     id: '/admin_/onboarding_/templates/$templateId',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -258,6 +266,7 @@ export interface FileRoutesByTo {
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -291,6 +300,7 @@ export interface FileRoutesById {
   '/admin_/onboarding_/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin_/onboarding_/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin_/onboarding_/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
     | '/admin/onboarding/templates/$templateId'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
     | '/admin/onboarding/templates/$templateId'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -389,6 +401,7 @@ export interface FileRouteTypes {
     | '/admin_/onboarding_/hires/$hireId'
     | '/admin_/onboarding_/pages/$slug'
     | '/admin_/onboarding_/templates/$templateId'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -422,6 +435,7 @@ export interface RootRouteChildren {
   AdminOnboardingHiresHireIdRoute: typeof AdminOnboardingHiresHireIdRoute
   AdminOnboardingPagesSlugRoute: typeof AdminOnboardingPagesSlugRoute
   AdminOnboardingTemplatesTemplateIdRoute: typeof AdminOnboardingTemplatesTemplateIdRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -615,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/onboarding_/templates/$templateId': {
       id: '/admin_/onboarding_/templates/$templateId'
       path: '/admin/onboarding/templates/$templateId'
@@ -671,6 +692,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOnboardingPagesSlugRoute: AdminOnboardingPagesSlugRoute,
   AdminOnboardingTemplatesTemplateIdRoute:
     AdminOnboardingTemplatesTemplateIdRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
