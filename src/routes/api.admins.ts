@@ -89,10 +89,15 @@ export const Route = createFileRoute("/api/admins")({
         return Response.json({ admins });
       },
 
-      // Create a new admin: { email, display_name, password? }
+      // Create a new admin or team member: { email, display_name, password?, role? }
       POST: async ({ request }) => {
         await requireAdmin(request);
-        let body: { email?: string; display_name?: string; password?: string };
+        let body: {
+          email?: string;
+          display_name?: string;
+          password?: string;
+          role?: "admin" | "team";
+        };
         try {
           body = await request.json();
         } catch {
@@ -101,6 +106,7 @@ export const Route = createFileRoute("/api/admins")({
         const email = body.email?.trim().toLowerCase();
         const display_name = body.display_name?.trim();
         const password = body.password?.trim();
+        const role: "admin" | "team" = body.role === "team" ? "team" : "admin";
         if (!email || !display_name) {
           return Response.json(
             { error: "Email and display name are required" },
@@ -141,7 +147,7 @@ export const Route = createFileRoute("/api/admins")({
         }
         const { error: roleErr } = await supabaseAdmin
           .from("user_roles")
-          .insert({ user_id: newId, role: "admin" });
+          .insert({ user_id: newId, role });
         if (roleErr) {
           await supabaseAdmin.auth.admin.deleteUser(newId);
           return Response.json({ error: roleErr.message }, { status: 500 });
@@ -152,6 +158,7 @@ export const Route = createFileRoute("/api/admins")({
             id: newId,
             email,
             display_name,
+            role,
             temporary_password: password || null,
           },
         });
