@@ -443,9 +443,37 @@ function TableEditor({
                   </td>
                 ))}
                 <td className="p-1 align-top">
-                  <Button size="sm" variant="ghost" onClick={() => removeRow(ri)}>
-                    <Trash2 className="size-3" />
-                  </Button>
+                  <div className="flex flex-col gap-0.5">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveRow(ri, -1)}
+                      disabled={ri === 0}
+                      aria-label="Move row up"
+                      className="h-6 w-6 p-0"
+                    >
+                      <ArrowUp className="size-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveRow(ri, 1)}
+                      disabled={ri === block.rows.length - 1}
+                      aria-label="Move row down"
+                      className="h-6 w-6 p-0"
+                    >
+                      <ArrowDown className="size-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeRow(ri)}
+                      aria-label="Delete row"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-3" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
