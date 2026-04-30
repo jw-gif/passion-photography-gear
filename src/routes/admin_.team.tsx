@@ -705,7 +705,7 @@ function AdminsPanel() {
           <ShieldCheck className="size-4" />
           {loading
             ? "Loading…"
-            : `${admins.length} admin${admins.length === 1 ? "" : "s"}`}
+            : `${admins.length} member${admins.length === 1 ? "" : "s"}`}
           {displayName && (
             <span className="ml-2 text-foreground/70">
               · Signed in as <span className="font-medium text-foreground">{displayName}</span>
@@ -713,7 +713,7 @@ function AdminsPanel() {
           )}
         </div>
         <Button onClick={() => setShowInvite(true)}>
-          <UserPlus className="size-4" /> Add admin
+          <UserPlus className="size-4" /> Add member
         </Button>
       </div>
 
