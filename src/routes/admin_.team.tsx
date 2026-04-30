@@ -549,6 +549,7 @@ interface AdminItem {
   id: string;
   email: string | null;
   display_name: string;
+  role: "admin" | "team";
   created_at: string;
   last_sign_in_at: string | null;
 }
