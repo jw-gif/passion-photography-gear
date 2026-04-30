@@ -46,14 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        // Defer to avoid deadlock
+        // Defer to avoid deadlock; keep loading true until roles resolve
+        setLoading(true);
         setTimeout(() => {
-          loadProfile(newSession.user.id);
+          loadProfile(newSession.user.id).finally(() => setLoading(false));
         }, 0);
       } else {
         setDisplayName(null);
         setIsAdminFlag(false);
         setIsTeamFlag(false);
+        setLoading(false);
       }
     });
 

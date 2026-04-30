@@ -1,58 +1,54 @@
-## Goal
+# Fix "Open hire view" slow load
 
-New hires need accounts that can do everything an admin can — gear, requests, photographers, shot lists, team — **except** see or modify the onboarding admin backend (templates, shared pages, the new-hire roster, other hires' checklists/timelines).
+## Root cause
 
-They should still see their **own** new-hire onboarding view at `/onboarding`.
+When you click "Open hire view", the URL `/onboarding?previewHire=...` opens with admin preview intent. But the page decides which data to load based on this:
 
-## Approach
-
-Add a second role, `team`, alongside the existing `admin` role. Team members get the same permissions as admins on every table **except** the onboarding admin tables. Admin remains the top role and keeps full access including onboarding.
-
-```text
-admin  → everything (you, leadership)
-team   → everything EXCEPT onboarding backend (new hires after they finish)
-hire   → only their own onboarding view (already works via onboarding_hires.user_id)
+```ts
+const isPreview = Boolean(previewHire && isAdmin);
 ```
 
-You'll grant new hires the `team` role from the Admins page once they're ready to be team members. Their personal new-hire view keeps working because it's gated by `user_id` on `onboarding_hires`, not by role.
+On first paint:
+1. `loading` flips to false as soon as the session is restored.
+2. `isAdmin` is still `false` because the `user_roles` lookup (`loadProfile`) runs separately and hasn't finished yet.
+3. `loadAll` therefore runs in the **non-preview branch** — it tries to find a hire row whose `user_id` equals your admin user id, finds nothing, and renders the "no plan / welcome" fallback.
+4. A moment later `isAdmin` flips to `true`, the effect re-fires, `loadAll` re-runs in **preview branch**, fetches the hire by id, and finally the hire's view appears.
 
-## What changes
+That's the multi-second flash of the welcome page followed by the real page.
 
-**Database (one migration)**
-- Add `'team'` to the `app_role` enum.
-- Add a `has_admin_access()` helper = `has_role(uid,'admin') OR has_role(uid,'team')`.
-- Update RLS policies on every non-onboarding table currently checking `has_role(uid,'admin')` to use `has_admin_access(uid)` instead. Tables: `gear`, `gear_history`, `gear_requests`, `gear_request_items`, `photo_requests`, `photo_request_openings`, `photo_request_assignments`, `photo_request_shot_lists`, `photographers`, `shot_list_templates`, `shot_list_segment_blocks`, `shot_list_location_blocks`, `admin_profiles`, `user_roles`.
-- Leave the onboarding tables (`onboarding_pages`, `onboarding_templates`, `onboarding_hires`, `onboarding_hire_checklist`, `onboarding_hire_timeline`) checking `has_role(uid,'admin')` only — team members will be blocked from the backend automatically.
+## Fix
 
-**Auth context (`src/lib/auth.tsx`)**
-- Load both roles in `loadProfile`.
-- Expose `isAdmin` (admin only) and a new `isTeam` flag (admin OR team).
+Two small, targeted changes — no architectural changes, no new dependencies.
 
-**Route guard (`src/components/require-admin.tsx`)**
-- Accept an optional `requireAdmin` prop (defaults to false).
-- Default behavior: allow admins **and** team.
-- When `requireAdmin` is true: only admins pass; team members see the "No admin access" card.
+### 1. `src/lib/auth.tsx` — keep `loading` true until roles resolve
 
-**Route updates**
-- All four onboarding admin routes (`admin_.onboarding.tsx`, `admin_.onboarding_.hires.$hireId.tsx`, `admin_.onboarding_.pages.$slug.tsx`, `admin_.onboarding_.templates.$templateId.tsx`) wrap with `<RequireAdmin requireAdmin>` so team members get bounced out.
-- Every other admin route stays as-is and now admits team members automatically.
+Right now `loading` is set to false when `getSession` returns, before `loadProfile` (which fetches `user_roles`) finishes. Change the initial-session branch to await `loadProfile` fully, and also flip `loading` to false from the `onAuthStateChange` path once the deferred `loadProfile` completes (so login flows still work).
 
-**Admin landing page (`admin.tsx`)**
-- Hide the "Onboarding" tile from team members (only render when `isAdmin`).
+Result: `useAuth().loading` stays `true` until both session and roles are known. Consumers that gate on `loading` won't see a stale `isAdmin: false`.
 
-**Admins management page (`admin_.admins.tsx`)**
-- Add UI to grant/revoke the `team` role alongside `admin`. (Existing admins-only — team members can't promote others.)
-- Show role badges next to each user.
+### 2. `src/routes/onboarding.tsx` — gate render and data load on `loading`
 
-## Result
+- Show a skeleton (not the "no hire" welcome) while `loading || loadingData`.
+- Only call `loadAll` after `loading` is false, so `isPreview` is correct on the first call.
+- Run the pages query in parallel with the hire lookup (currently the hire lookup blocks the pages query). Minor win, but removes one serial round-trip.
 
-- A new hire signs up, completes their personal onboarding view at `/onboarding` (unchanged).
-- When they're ready to be on the team, an admin grants them `team` from the Admins page.
-- They get the full toolset: gear, requests, photographers, shot lists, history, team.
-- Onboarding tile is hidden for them; direct URLs to onboarding admin pages show "No admin access".
-- You stay an `admin` and retain full visibility, including managing the onboarding backend.
+Pseudocode:
 
-## Notes
+```ts
+useEffect(() => {
+  if (loading) return;          // wait for auth + roles
+  if (user) loadAll(user.id);
+}, [loading, user, previewHire, isPreview]);
 
-- This is additive and reversible: existing admins keep working immediately, no data migration needed.
-- The `user_roles` table is read by team (so badges render), but only admins can insert/delete roles — promotion stays gated to you.
+// in render
+if (loading || loadingData) return <PageSkeleton />;
+```
+
+## Files touched
+
+- `src/lib/auth.tsx` — make `loading` reflect both session and role load.
+- `src/routes/onboarding.tsx` — gate effect and render on `loading`; parallelize pages + hire fetch.
+
+## Expected result
+
+Clicking "Open hire view" goes straight to a brief skeleton, then directly to the hire's onboarding view. No more welcome-page flash, and the perceived load time drops to roughly a single round-trip.

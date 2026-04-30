@@ -88,6 +88,13 @@ function OnboardingPage() {
 
   async function loadAll(uid: string) {
     setLoadingData(true);
+
+    // Kick off pages query in parallel with hire resolution
+    const pagesPromise = supabase
+      .from("onboarding_pages")
+      .select("id, slug, title, subtitle, blocks, sort_order")
+      .order("sort_order");
+
     let hireRow: HireRow | null = null;
 
     if (isPreview && previewHire) {
@@ -119,10 +126,7 @@ function OnboardingPage() {
     }
 
     const [{ data: p }, t, c] = await Promise.all([
-      supabase
-        .from("onboarding_pages")
-        .select("id, slug, title, subtitle, blocks, sort_order")
-        .order("sort_order"),
+      pagesPromise,
       hireRow
         ? supabase
             .from("onboarding_hire_timeline")
@@ -155,9 +159,10 @@ function OnboardingPage() {
   }
 
   useEffect(() => {
+    if (loading) return;
     if (user) loadAll(user.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, previewHire, isPreview]);
+  }, [loading, user, previewHire, isPreview]);
 
   const validTabs: TopTab[] = useMemo(() => {
     const list: TopTab[] = ["home"];
@@ -275,7 +280,7 @@ function OnboardingPage() {
       )}
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {loadingData ? (
+        {loading || loadingData ? (
           <PageSkeleton />
         ) : !hire ? (
           // No hire linked — fall back to a simple welcome list of pages
