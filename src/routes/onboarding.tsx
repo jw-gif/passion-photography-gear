@@ -6,7 +6,6 @@ import {
   BookOpen,
   Check,
   ChevronDown,
-  ChevronRight,
   HelpCircle,
   LogOut,
   Mail,
