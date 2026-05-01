@@ -661,7 +661,7 @@ function HomeView({
 /* Plan view (unified day-by-day)                                     */
 /* ------------------------------------------------------------------ */
 
-type PlanFilter = "all" | "events" | "tasks" | "mine";
+type PlanFilter = "all" | "events" | "tasks";
 
 function PlanView({
   hire,
@@ -680,30 +680,37 @@ function PlanView({
   );
 
   const todayRef = useRef<HTMLDivElement | null>(null);
+  const [showJumpToday, setShowJumpToday] = useState(false);
+
+  function jumpToToday() {
+    todayRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   useEffect(() => {
-    const id = window.setTimeout(() => {
-      todayRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 250);
+    const id = window.setTimeout(() => jumpToToday(), 250);
     return () => window.clearTimeout(id);
+  }, [weeks.length]);
+
+  // Show "Jump to today" button when today scrolls out of view
+  useEffect(() => {
+    const el = todayRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowJumpToday(!entry.isIntersecting),
+      { rootMargin: "-100px 0px -100px 0px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
   }, [weeks.length]);
 
   const [filter, setFilter] = useState<PlanFilter>("all");
   const [showCompleted, setShowCompleted] = useState(false);
-
-  const firstName = hire.name.split(" ")[0];
 
   function dayMatchesFilter(d: DayBucket): { events: TimelineItemRow[]; tasks: ChecklistItemRow[] } {
     let events = d.events;
     let tasks = d.tasks;
     if (filter === "events") tasks = [];
     if (filter === "tasks") events = [];
-    if (filter === "mine") {
-      events = [];
-      tasks = tasks.filter((t) => {
-        const o = (t.owner ?? "").toLowerCase();
-        return !o || o === firstName.toLowerCase() || o === "you" || o === hire.name.toLowerCase();
-      });
-    }
     if (!showCompleted && d.isPast) {
       tasks = tasks.filter((t) => !t.completed);
     }
@@ -726,84 +733,91 @@ function PlanView({
     );
   }
 
-  // Find current week index
-  const currentWeekIdx = weeks.findIndex((w) =>
-    w.days.some((d) => d.isToday),
-  );
-
+  const currentWeekIdx = weeks.findIndex((w) => w.days.some((d) => d.isToday));
   const completedTasksCount = checklist.filter((c) => c.completed).length;
+  const totalTasksCount = checklist.length;
+  const overallPct =
+    totalTasksCount === 0 ? 0 : Math.round((completedTasksCount / totalTasksCount) * 100);
 
   return (
     <article>
-      <div className="mb-5">
+      {/* Header */}
+      <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Your plan</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Day by day from {format(new Date(`${hire.start_date}T00:00:00`), "MMM d")}.
-          Events and to-dos in one place.
+          Day by day from {format(new Date(`${hire.start_date}T00:00:00`), "MMM d")} —
+          events and to-dos in one place.
         </p>
-      </div>
-
-      {/* Filter chips */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        {(
-          [
-            { key: "all", label: "All" },
-            { key: "events", label: "Events" },
-            { key: "tasks", label: "To-dos" },
-            { key: "mine", label: "Mine" },
-          ] as { key: PlanFilter; label: string }[]
-        ).map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={cn(
-              "text-xs px-3 py-1.5 rounded-full border transition-colors",
-              filter === f.key
-                ? "bg-foreground text-background border-foreground"
-                : "bg-card border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-        {completedTasksCount > 0 && (
-          <button
-            onClick={() => setShowCompleted((s) => !s)}
-            className="text-xs px-3 py-1.5 rounded-full border border-dashed border-border text-muted-foreground hover:text-foreground inline-flex items-center gap-1 ml-auto"
-          >
-            {showCompleted ? (
-              <>
-                <ChevronDown className="size-3" /> Hide completed
-              </>
-            ) : (
-              <>
-                <ChevronRight className="size-3" /> Show {completedTasksCount} completed
-              </>
-            )}
-          </button>
+        {totalTasksCount > 0 && (
+          <div className="mt-4 flex items-center gap-3">
+            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden max-w-xs">
+              <div
+                className="h-full bg-emerald-500 transition-all"
+                style={{ width: `${overallPct}%` }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {completedTasksCount}/{totalTasksCount} tasks · {overallPct}%
+            </span>
+          </div>
         )}
       </div>
 
-      <div className="space-y-8">
+      {/* Sticky filter bar */}
+      <div className="sticky top-[121px] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 mb-5 bg-background/85 backdrop-blur border-b border-border/60">
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              { key: "all", label: "All" },
+              { key: "events", label: "Events" },
+              { key: "tasks", label: "To-dos" },
+            ] as { key: PlanFilter; label: string }[]
+          ).map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                "text-xs font-medium px-3 py-1.5 rounded-full border transition-colors",
+                filter === f.key
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-card border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+          {completedTasksCount > 0 && (
+            <button
+              onClick={() => setShowCompleted((s) => !s)}
+              className="text-xs px-3 py-1.5 rounded-full border border-dashed border-border text-muted-foreground hover:text-foreground inline-flex items-center gap-1 ml-auto"
+            >
+              {showCompleted ? "Hide completed" : `Show ${completedTasksCount} completed`}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-10">
         {weeks.map((week) => {
           const isCurrent = week.weekIndex === currentWeekIdx;
           return (
             <WeekSection
               key={week.weekIndex}
               week={week}
-              hireStart={hire.start_date}
-              defaultOpen={isCurrent || currentWeekIdx === -1}
+              isCurrent={isCurrent}
               dayMatchesFilter={dayMatchesFilter}
               onToggleTask={onToggleTask}
               todayRef={todayRef}
-              showCompleted={showCompleted}
             />
           );
         })}
 
         {filter !== "events" && anytimeTasks.length > 0 && (
           <section>
-            <SectionHeader title="Anytime — no specific day" />
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-sm font-semibold tracking-tight">Anytime</h2>
+              <span className="text-[11px] text-muted-foreground">No specific day</span>
+            </div>
             <Card className="p-4 sm:p-5">
               <ul className="divide-y divide-border/60">
                 {anytimeTasks
@@ -816,28 +830,35 @@ function PlanView({
           </section>
         )}
       </div>
+
+      {/* Floating jump-to-today button */}
+      {showJumpToday && currentWeekIdx !== -1 && (
+        <button
+          type="button"
+          onClick={jumpToToday}
+          className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
+        >
+          <ArrowRight className="size-3.5 -rotate-90" />
+          Today
+        </button>
+      )}
     </article>
   );
 }
 
 function WeekSection({
   week,
-  hireStart,
-  defaultOpen,
+  isCurrent,
   dayMatchesFilter,
   onToggleTask,
   todayRef,
-  showCompleted,
 }: {
   week: ReturnType<typeof buildPlan>["weeks"][number];
-  hireStart: string;
-  defaultOpen: boolean;
+  isCurrent: boolean;
   dayMatchesFilter: (d: DayBucket) => { events: TimelineItemRow[]; tasks: ChecklistItemRow[] };
   onToggleTask: (t: ChecklistItemRow) => void;
   todayRef: React.RefObject<HTMLDivElement | null>;
-  showCompleted: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   const visibleDays = week.days
     .map((d) => ({ d, ...dayMatchesFilter(d) }))
     .filter((x) => x.events.length > 0 || x.tasks.length > 0);
@@ -848,50 +869,57 @@ function WeekSection({
 
   return (
     <section>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-3 pb-1.5 border-b border-border group"
-      >
-        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground group-hover:text-foreground transition-colors">
-          Week {week.weekIndex + 1}
-          <span className="ml-2 text-foreground/60 normal-case tracking-normal font-normal">
+      {/* Week heading */}
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <div className="flex items-baseline gap-3">
+          <h2
+            className={cn(
+              "text-sm font-semibold tracking-tight",
+              isCurrent ? "text-foreground" : "text-foreground/80",
+            )}
+          >
+            Week {week.weekIndex + 1}
+          </h2>
+          <span className="text-xs text-muted-foreground">
             {format(week.weekStart, "MMM d")} – {format(week.weekEnd, "MMM d")}
           </span>
-        </h2>
-        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-2">
-          {totalEvents > 0 && <span>{totalEvents} event{totalEvents === 1 ? "" : "s"}</span>}
-          {totalTasks > 0 && <span>{totalTasks} task{totalTasks === 1 ? "" : "s"}</span>}
-          <ChevronDown
-            className={cn(
-              "size-3.5 transition-transform",
-              open ? "rotate-0" : "-rotate-90",
-            )}
-          />
+          {isCurrent && (
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+              This week
+            </span>
+          )}
+        </div>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {totalEvents > 0 && `${totalEvents} event${totalEvents === 1 ? "" : "s"}`}
+          {totalEvents > 0 && totalTasks > 0 && " · "}
+          {totalTasks > 0 && `${totalTasks} task${totalTasks === 1 ? "" : "s"}`}
         </span>
-      </button>
+      </div>
 
-      {open && (
-        <div className="space-y-3">
+      {/* Vertical timeline rail */}
+      <div className="relative pl-10 sm:pl-14">
+        <div
+          className="absolute left-[18px] sm:left-[22px] top-2 bottom-2 w-px bg-border"
+          aria-hidden
+        />
+        <div className="space-y-5">
           {visibleDays.map(({ d, events, tasks }) => (
-            <DayCard
+            <DayRow
               key={d.dayOffset}
               day={d}
               events={events}
               tasks={tasks}
-              hireStart={hireStart}
               onToggleTask={onToggleTask}
               todayRef={d.isToday ? todayRef : undefined}
-              showCompleted={showCompleted}
             />
           ))}
         </div>
-      )}
+      </div>
     </section>
   );
 }
 
-function DayCard({
+function DayRow({
   day,
   events,
   tasks,
@@ -901,83 +929,116 @@ function DayCard({
   day: DayBucket;
   events: TimelineItemRow[];
   tasks: ChecklistItemRow[];
-  hireStart: string;
   onToggleTask: (t: ChecklistItemRow) => void;
   todayRef?: React.RefObject<HTMLDivElement | null>;
-  showCompleted: boolean;
 }) {
   const taskDone = tasks.filter((t) => t.completed).length;
+  const allDone = tasks.length > 0 && taskDone === tasks.length;
+
   return (
-    <div ref={todayRef} className="scroll-mt-32">
-      <Card
+    <div ref={todayRef} className="scroll-mt-40 relative">
+      {/* Date marker on rail */}
+      <div
         className={cn(
-          "overflow-hidden transition-shadow",
-          day.isToday && "ring-2 ring-primary/60 shadow-lg",
+          "absolute -left-10 sm:-left-14 top-0 w-9 sm:w-11 flex flex-col items-center",
         )}
       >
-        {/* Date header */}
         <div
           className={cn(
-            "px-4 sm:px-5 py-2.5 flex items-center justify-between border-b border-border",
-            day.isToday ? "bg-primary/10" : day.isPast ? "bg-muted/40" : "bg-muted/20",
+            "size-9 sm:size-11 rounded-full border-2 flex flex-col items-center justify-center text-center leading-none transition-colors",
+            day.isToday
+              ? "bg-primary text-primary-foreground border-primary shadow-md"
+              : day.isPast
+                ? "bg-muted border-border text-muted-foreground"
+                : "bg-card border-border text-foreground",
           )}
         >
-          <div className="flex items-baseline gap-2">
+          <span className="text-[8px] sm:text-[9px] uppercase font-semibold tracking-wider opacity-80">
+            {format(day.date, "EEE")}
+          </span>
+          <span className="text-[13px] sm:text-sm font-bold tabular-nums">
+            {format(day.date, "d")}
+          </span>
+        </div>
+      </div>
+
+      <Card
+        className={cn(
+          "overflow-hidden transition-all",
+          day.isToday && "ring-2 ring-primary/50 shadow-md",
+          day.isPast && !day.isToday && "bg-muted/30",
+        )}
+      >
+        {/* Compact day header */}
+        <div className="px-4 sm:px-5 pt-3 pb-2 flex items-baseline justify-between gap-2">
+          <div className="flex items-baseline gap-2 min-w-0">
             <span
               className={cn(
-                "text-[11px] font-semibold uppercase tracking-[0.14em]",
-                day.isToday ? "text-primary" : "text-muted-foreground",
+                "text-xs font-semibold",
+                day.isToday ? "text-primary" : "text-foreground/70",
               )}
             >
-              {format(day.date, "EEE")} · {format(day.date, "MMM d")}
+              {format(day.date, "EEEE, MMMM d")}
             </span>
             {day.isToday && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/15 px-1.5 py-0.5 rounded">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-primary">
                 Today
               </span>
             )}
           </div>
           {tasks.length > 0 && (
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {taskDone}/{tasks.length} done
+            <span
+              className={cn(
+                "text-[10px] tabular-nums shrink-0",
+                allDone ? "text-emerald-600 font-medium" : "text-muted-foreground",
+              )}
+            >
+              {allDone ? "All done ✓" : `${taskDone}/${tasks.length}`}
             </span>
           )}
         </div>
 
-        <div className="p-4 sm:p-5 space-y-4">
+        <div className="px-4 sm:px-5 pb-4 space-y-3">
+          {/* Events */}
           {events.length > 0 && (
-            <ul className="space-y-3">
+            <ul className="space-y-2.5">
               {events.map((e) => (
-                <li key={e.id} className="flex gap-3">
+                <li key={e.id} className="flex gap-2.5">
                   <span
                     className={cn(
-                      "mt-1.5 size-1.5 rounded-full shrink-0",
-                      day.isToday ? "bg-primary" : day.isPast ? "bg-muted-foreground/40" : "bg-foreground/40",
+                      "mt-2 size-2 rounded-full shrink-0",
+                      day.isToday
+                        ? "bg-primary"
+                        : day.isPast
+                          ? "bg-muted-foreground/40"
+                          : "bg-foreground/50",
                     )}
                   />
-                  <div className="flex-1">
-                    <div
-                      className={cn(
-                        "font-medium leading-tight",
-                        day.isPast && "text-muted-foreground",
-                      )}
-                    >
-                      {e.title}
-                    </div>
-                    {e.label && e.label !== "Day" && (
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-0.5">
-                        {e.label}
-                      </div>
-                    )}
-                    {e.description && (
-                      <div
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span
                         className={cn(
-                          "text-sm mt-1 whitespace-pre-wrap",
-                          day.isPast ? "text-muted-foreground/80" : "text-foreground/80",
+                          "font-medium text-[15px] leading-snug",
+                          day.isPast && "text-muted-foreground",
+                        )}
+                      >
+                        {e.title}
+                      </span>
+                      {e.label && e.label !== "Day" && (
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
+                          {e.label}
+                        </span>
+                      )}
+                    </div>
+                    {e.description && (
+                      <p
+                        className={cn(
+                          "text-sm mt-0.5 whitespace-pre-wrap leading-relaxed",
+                          day.isPast ? "text-muted-foreground/80" : "text-foreground/75",
                         )}
                       >
                         {e.description}
-                      </div>
+                      </p>
                     )}
                   </div>
                 </li>
@@ -985,19 +1046,18 @@ function DayCard({
             </ul>
           )}
 
+          {/* Divider between events and tasks */}
+          {events.length > 0 && tasks.length > 0 && (
+            <div className="h-px bg-border/60" aria-hidden />
+          )}
+
+          {/* Tasks */}
           {tasks.length > 0 && (
-            <div>
-              {events.length > 0 && (
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  To do
-                </div>
-              )}
-              <ul className="divide-y divide-border/60">
-                {tasks.map((t) => (
-                  <TaskRow key={t.id} task={t} onToggle={onToggleTask} />
-                ))}
-              </ul>
-            </div>
+            <ul className="divide-y divide-border/50 -mx-1">
+              {tasks.map((t) => (
+                <TaskRow key={t.id} task={t} onToggle={onToggleTask} />
+              ))}
+            </ul>
           )}
         </div>
       </Card>
