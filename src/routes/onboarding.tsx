@@ -1155,16 +1155,6 @@ function PageView({ page }: { page: PageRow | undefined }) {
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <div className="mb-3 pb-1.5 border-b border-border">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        {title}
-      </h2>
-    </div>
-  );
-}
-
 function PageSkeleton() {
   return (
     <div className="space-y-4">
