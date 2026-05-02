@@ -484,14 +484,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
                   </div>
                 )}
               </div>
-            </section>
-          </div>
-
-          {/* Activity rail */}
-          <aside className="xl:sticky xl:top-6 xl:self-start">
-            <ActivityFeed items={activityItems} />
-          </aside>
-        </div>
+        </section>
       </div>
 
       <EventDetailDialog
