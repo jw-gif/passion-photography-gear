@@ -90,7 +90,8 @@ export function HubCalendar({
       };
     }
     const rows = density === "week" ? 1 : 2;
-    const start = startOfWeek(cursor, { weekStartsOn: 0 });
+    // Week / 2-week views start at the cursor day (today by default), not Sunday
+    const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
     return { gridStart: start, gridEnd: addDays(start, rows * 7 - 1), weekRows: rows };
   }, [cursor, density]);
 
