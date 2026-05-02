@@ -8,8 +8,6 @@ import { HubHeader } from "@/components/hub-header";
 import { HubCalendar, type CalendarEvent } from "@/components/hub-calendar";
 import { EventDetailDialog, type DetailEvent } from "@/components/event-detail-dialog";
 import { NeedsAttentionStrip } from "@/components/needs-attention-strip";
-import { ActivityFeed, type ActivityItem } from "@/components/activity-feed";
-import { StaffingHealthBar, type StaffingItem } from "@/components/staffing-health-bar";
 import { CommandPalette } from "@/components/command-palette";
 import { ListSkeleton, CalendarSkeleton } from "@/components/list-skeleton";
 import { Card } from "@/components/ui/card";
