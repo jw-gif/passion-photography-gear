@@ -307,7 +307,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
           ) : (
             <HubCalendar
               events={events}
-              defaultDensity="twoweek"
+              defaultDensity="week"
               onEventClick={(ev) => {
                 const isPhoto = ev.id.startsWith("p-");
                 setSelected({
@@ -319,16 +319,8 @@ function HubView({ onLogout }: { onLogout: () => void }) {
           )}
         </section>
 
-        {/* Two-column with activity rail */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-          <div className="space-y-6">
-            {/* Staffing health */}
-            <Card className="p-4">
-              <StaffingHealthBar items={staffingItems} />
-            </Card>
-
-            {/* Upcoming lists */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Upcoming lists */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-semibold tracking-tight inline-flex items-center gap-2">
