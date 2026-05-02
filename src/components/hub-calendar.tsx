@@ -200,7 +200,7 @@ export function HubCalendar({
           const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
           const isToday = isSameDay(day, new Date());
           const isOutside = density === "month" && !isSameMonth(day, cursor);
-          const weekend = isWeekend(day);
+          const weekend = false;
           return (
             <div
               key={key}
