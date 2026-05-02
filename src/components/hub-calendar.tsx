@@ -141,8 +141,8 @@ export function HubCalendar({
   }
 
   const minHeight =
-    density === "month" ? "min-h-[110px]" : density === "week" ? "min-h-[180px]" : "min-h-[140px]";
-  const maxEvents = density === "month" ? 2 : density === "week" ? 5 : 3;
+    density === "month" ? "min-h-[110px]" : density === "week" ? "min-h-[200px]" : "min-h-[150px]";
+  const maxEvents = density === "month" ? 2 : density === "week" ? 6 : 4;
 
   return (
     <div>
