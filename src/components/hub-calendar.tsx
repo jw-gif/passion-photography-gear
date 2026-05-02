@@ -71,7 +71,7 @@ function locationStripeClass(loc: string | null | undefined): string {
 export function HubCalendar({
   events,
   onEventClick,
-  defaultDensity = "twoweek",
+  defaultDensity = "week",
 }: HubCalendarProps) {
   const [cursor, setCursor] = useState<Date>(new Date());
   const [density, setDensity] = useState<CalendarDensity>(defaultDensity);
