@@ -183,9 +183,12 @@ export function HubCalendar({
       </div>
 
       <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden border border-border">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+        {(density === "month"
+          ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+          : days.slice(0, 7).map((d) => format(d, "EEE"))
+        ).map((d, i) => (
           <div
-            key={d}
+            key={`${d}-${i}`}
             className="bg-muted/40 text-xs uppercase tracking-wider font-medium text-muted-foreground px-2 py-1.5 text-center"
           >
             {d}
