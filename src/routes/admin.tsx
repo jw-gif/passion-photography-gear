@@ -8,8 +8,6 @@ import { HubHeader } from "@/components/hub-header";
 import { HubCalendar, type CalendarEvent } from "@/components/hub-calendar";
 import { EventDetailDialog, type DetailEvent } from "@/components/event-detail-dialog";
 import { NeedsAttentionStrip } from "@/components/needs-attention-strip";
-import { ActivityFeed, type ActivityItem } from "@/components/activity-feed";
-import { StaffingHealthBar, type StaffingItem } from "@/components/staffing-health-bar";
 import { CommandPalette } from "@/components/command-palette";
 import { ListSkeleton, CalendarSkeleton } from "@/components/list-skeleton";
 import { Card } from "@/components/ui/card";
@@ -257,84 +255,6 @@ function HubView({ onLogout }: { onLogout: () => void }) {
     }).length;
   }, [photo, rosterByRequest, todayKey, week7Key]);
 
-  // Activity feed (last ~10 mixed events)
-  const activityItems = useMemo<ActivityItem[]>(() => {
-    const items: ActivityItem[] = [];
-    for (const p of photo) {
-      items.push({
-        id: `pn-${p.id}`,
-        kind: "photo_new",
-        title: `New request: ${p.event_name || `${p.first_name} ${p.last_name}`}`,
-        subtitle: p.event_location ?? undefined,
-        at: p.created_at,
-      });
-      if (p.reviewed_at && p.reviewed_by) {
-        items.push({
-          id: `pr-${p.id}`,
-          kind: "photo_reviewed",
-          title: `${p.reviewed_by} reviewed ${p.event_name || `${p.first_name} ${p.last_name}`}`,
-          subtitle: statusLabel(p.status),
-          at: p.reviewed_at,
-        });
-      }
-    }
-    for (const g of gearReqs) {
-      items.push({
-        id: `gn-${g.id}`,
-        kind: "gear_new",
-        title: `Gear request from ${g.requestor_name}`,
-        subtitle: locationLabel(g.location),
-        at: g.created_at,
-      });
-      if (g.reviewed_at) {
-        items.push({
-          id: `gr-${g.id}`,
-          kind: "gear_reviewed",
-          title: `Gear request ${gearRequestStatusLabel(g.status).toLowerCase()}`,
-          subtitle: g.requestor_name,
-          at: g.reviewed_at,
-        });
-      }
-    }
-    for (const a of assignments) {
-      const ph = photographers.find((x) => x.id === a.photographer_id);
-      const req = photo.find((p) => p.id === a.request_id);
-      items.push({
-        id: `as-${a.id}`,
-        kind: "claim",
-        title: `${ph?.name ?? "Photographer"} claimed a shoot`,
-        subtitle: req
-          ? req.event_name || `${req.first_name} ${req.last_name}`
-          : undefined,
-        at: a.claimed_at,
-      });
-    }
-    items.sort((a, b) => (a.at < b.at ? 1 : -1));
-    return items.slice(0, 10);
-  }, [photo, gearReqs, assignments, photographers]);
-
-  // Staffing health for next 14 days
-  const staffingItems = useMemo<StaffingItem[]>(() => {
-    return photo
-      .filter((p) => p.event_date && p.event_date >= todayKey && p.event_date <= week14Key)
-      .map((p) => {
-        const r = rosterByRequest.get(p.id) ?? { filled: 0, total: 0 };
-        let status: StaffingItem["status"] = "open";
-        if (p.status === "denied" || p.status === "declined") status = "denied";
-        else if (r.total === 0) status = "open";
-        else if (r.filled >= r.total) status = "full";
-        else if (r.filled === 0) status = "open";
-        else status = "partial";
-        return {
-          request_id: p.id,
-          event_date: p.event_date!,
-          filled: r.filled,
-          total: r.total,
-          status,
-        };
-      });
-  }, [photo, rosterByRequest, todayKey, week14Key]);
-
   const attentionTotal = newPhotoCount + unstaffedNext7 + pendingGearCount;
 
   return (
@@ -387,7 +307,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
           ) : (
             <HubCalendar
               events={events}
-              defaultDensity="twoweek"
+              defaultDensity="week"
               onEventClick={(ev) => {
                 const isPhoto = ev.id.startsWith("p-");
                 setSelected({
@@ -399,16 +319,8 @@ function HubView({ onLogout }: { onLogout: () => void }) {
           )}
         </section>
 
-        {/* Two-column with activity rail */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-          <div className="space-y-6">
-            {/* Staffing health */}
-            <Card className="p-4">
-              <StaffingHealthBar items={staffingItems} />
-            </Card>
-
-            {/* Upcoming lists */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Upcoming lists */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-semibold tracking-tight inline-flex items-center gap-2">
@@ -572,14 +484,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
                   </div>
                 )}
               </div>
-            </section>
-          </div>
-
-          {/* Activity rail */}
-          <aside className="xl:sticky xl:top-6 xl:self-start">
-            <ActivityFeed items={activityItems} />
-          </aside>
-        </div>
+        </section>
       </div>
 
       <EventDetailDialog

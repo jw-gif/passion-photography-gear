@@ -71,7 +71,7 @@ function locationStripeClass(loc: string | null | undefined): string {
 export function HubCalendar({
   events,
   onEventClick,
-  defaultDensity = "twoweek",
+  defaultDensity = "week",
 }: HubCalendarProps) {
   const [cursor, setCursor] = useState<Date>(new Date());
   const [density, setDensity] = useState<CalendarDensity>(defaultDensity);
@@ -141,8 +141,8 @@ export function HubCalendar({
   }
 
   const minHeight =
-    density === "month" ? "min-h-[110px]" : density === "week" ? "min-h-[180px]" : "min-h-[140px]";
-  const maxEvents = density === "month" ? 2 : density === "week" ? 5 : 3;
+    density === "month" ? "min-h-[110px]" : density === "week" ? "min-h-[200px]" : "min-h-[150px]";
+  const maxEvents = density === "month" ? 2 : density === "week" ? 6 : 4;
 
   return (
     <div>
@@ -245,17 +245,10 @@ export function HubCalendar({
         })}
       </div>
 
-      <div className="mt-4 flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-          <Camera className="size-3.5" /> Photo
-        </span>
-        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-          <Wrench className="size-3.5" /> Gear
-        </span>
-        <span className="h-3 w-px bg-border mx-1" />
+      <div className="mt-3 flex items-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
         {LEGEND.map((l) => (
           <span key={l.label} className="inline-flex items-center gap-1.5">
-            <span className={cn("size-2 rounded-full", l.color)} aria-hidden />
+            <span className={cn("size-1.5 rounded-full", l.color)} aria-hidden />
             {l.label}
           </span>
         ))}
@@ -273,29 +266,20 @@ function EventChip({ ev, onClick }: { ev: CalendarEvent; onClick: () => void }) 
         <button
           onClick={onClick}
           className={cn(
-            "group flex items-stretch w-full text-left rounded-md overflow-hidden border border-border/60 bg-card hover:bg-accent/40 hover:border-foreground/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "group flex items-center w-full text-left rounded-md border border-transparent bg-transparent hover:bg-accent/60 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors py-1 pr-1.5",
           )}
         >
           <span
-            className={cn("w-1 shrink-0", locationStripeClass(ev.location))}
+            className={cn("w-0.5 self-stretch shrink-0 rounded-full mr-1.5", locationStripeClass(ev.location))}
             aria-hidden
           />
           <span
-            className={cn(
-              "flex items-center justify-center px-1.5 shrink-0",
-              ev.statusColor,
-            )}
+            className={cn("size-1.5 rounded-full shrink-0 mr-1.5", ev.statusColor)}
             aria-hidden
-          >
-            <Icon className="size-3 text-white" strokeWidth={2.5} />
-          </span>
-          <span className="flex-1 min-w-0 px-2 py-1 flex flex-col gap-0">
-            <span className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground leading-none">
-              {ev.statusLabel}
-            </span>
-            <span className="text-xs font-medium truncate leading-tight text-foreground">
-              {ev.title}
-            </span>
+          />
+          <Icon className="size-3 text-muted-foreground shrink-0 mr-1" strokeWidth={2} />
+          <span className="text-xs font-medium truncate leading-tight text-foreground flex-1 min-w-0">
+            {ev.title}
           </span>
         </button>
       </PopoverTrigger>
