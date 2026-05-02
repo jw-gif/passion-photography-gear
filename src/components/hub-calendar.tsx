@@ -266,29 +266,20 @@ function EventChip({ ev, onClick }: { ev: CalendarEvent; onClick: () => void }) 
         <button
           onClick={onClick}
           className={cn(
-            "group flex items-stretch w-full text-left rounded-md overflow-hidden border border-border/60 bg-card hover:bg-accent/40 hover:border-foreground/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "group flex items-center w-full text-left rounded-md border border-transparent bg-transparent hover:bg-accent/60 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors py-1 pr-1.5",
           )}
         >
           <span
-            className={cn("w-1 shrink-0", locationStripeClass(ev.location))}
+            className={cn("w-0.5 self-stretch shrink-0 rounded-full mr-1.5", locationStripeClass(ev.location))}
             aria-hidden
           />
           <span
-            className={cn(
-              "flex items-center justify-center px-1.5 shrink-0",
-              ev.statusColor,
-            )}
+            className={cn("size-1.5 rounded-full shrink-0 mr-1.5", ev.statusColor)}
             aria-hidden
-          >
-            <Icon className="size-3 text-white" strokeWidth={2.5} />
-          </span>
-          <span className="flex-1 min-w-0 px-2 py-1 flex flex-col gap-0">
-            <span className="text-[9px] uppercase tracking-wider font-semibold text-muted-foreground leading-none">
-              {ev.statusLabel}
-            </span>
-            <span className="text-xs font-medium truncate leading-tight text-foreground">
-              {ev.title}
-            </span>
+          />
+          <Icon className="size-3 text-muted-foreground shrink-0 mr-1" strokeWidth={2} />
+          <span className="text-xs font-medium truncate leading-tight text-foreground flex-1 min-w-0">
+            {ev.title}
           </span>
         </button>
       </PopoverTrigger>
