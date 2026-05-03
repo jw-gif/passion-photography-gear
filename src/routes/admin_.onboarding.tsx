@@ -491,6 +491,7 @@ function NewHireDialog({
   templates: TemplateRow[];
   onCreated: () => void;
 }) {
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -556,10 +557,15 @@ function NewHireDialog({
     // Don't roll back the hire if email send fails — admin can resend.
     let inviteOk = true;
     try {
+      const accessToken = session?.access_token;
+      if (!accessToken) throw new Error("Your session expired. Please sign in again.");
       const res = await inviteHireFn({
-        data: { email: email.trim().toLowerCase(), name: name.trim() },
+        data: { email: email.trim().toLowerCase(), name: name.trim(), accessToken },
       });
       inviteOk = Boolean(res?.ok);
+      if (!res?.ok) {
+        console.error("Invite email failed:", res?.error);
+      }
     } catch (err) {
       inviteOk = false;
       console.error("Invite email failed:", err);
