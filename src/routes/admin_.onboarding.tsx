@@ -14,7 +14,9 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { inviteHire } from "@/server/hires.functions";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { HubHeader } from "@/components/hub-header";
@@ -498,6 +500,8 @@ function NewHireDialog({
   const [templateId, setTemplateId] = useState<string>("__none");
   const [saving, setSaving] = useState(false);
 
+  const inviteHireFn = useServerFn(inviteHire);
+
   async function submit() {
     if (!name.trim() || !email.trim() || !startDate) {
       toast.error("Name, email, and start date are required");
@@ -548,8 +552,25 @@ function NewHireDialog({
       }
     }
 
+    // Send branded invite email so the hire can set their password.
+    // Don't roll back the hire if email send fails — admin can resend.
+    let inviteOk = true;
+    try {
+      const res = await inviteHireFn({
+        data: { email: email.trim().toLowerCase(), name: name.trim() },
+      });
+      inviteOk = Boolean(res?.ok);
+    } catch (err) {
+      inviteOk = false;
+      console.error("Invite email failed:", err);
+    }
+
     setSaving(false);
-    toast.success("Hire created");
+    toast.success(
+      inviteOk
+        ? `Hire created — invite sent to ${email.trim().toLowerCase()}`
+        : "Hire created — invite email failed (you can resend later)",
+    );
     setOpen(false);
     setName("");
     setEmail("");
