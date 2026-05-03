@@ -500,6 +500,8 @@ function NewHireDialog({
   const [templateId, setTemplateId] = useState<string>("__none");
   const [saving, setSaving] = useState(false);
 
+  const inviteHireFn = useServerFn(inviteHire);
+
   async function submit() {
     if (!name.trim() || !email.trim() || !startDate) {
       toast.error("Name, email, and start date are required");
