@@ -55,13 +55,26 @@ function ResetPasswordPage() {
     }
     setSubmitting(true);
     const { error: updateError } = await supabase.auth.updateUser({ password: pw });
-    setSubmitting(false);
     if (updateError) {
+      setSubmitting(false);
       setError(updateError.message);
       return;
     }
+    // Link onboarding hire row by email if applicable
+    await supabase.rpc("link_hire_to_current_user");
+    // Determine where to send the user based on their roles
+    const { data: { user: u } } = await supabase.auth.getUser();
+    let isAdmin = false;
+    if (u) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.id);
+      isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    }
+    setSubmitting(false);
     toast.success("Password updated");
-    navigate({ to: "/admin", replace: true });
+    navigate({ to: isAdmin ? "/admin" : "/onboarding", replace: true });
   }
 
   return (

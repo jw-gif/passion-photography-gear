@@ -111,15 +111,14 @@ function OnboardingPage() {
         .maybeSingle();
       hireRow = (data as HireRow | null) ?? null;
       if (!hireRow && user?.email) {
-        const { data: byEmail } = await supabase
-          .from("onboarding_hires")
-          .select("id, user_id, name, email, role_label, start_date, coordinator_name, archived")
-          .eq("email", user.email.toLowerCase())
-          .is("user_id", null)
-          .maybeSingle();
-        if (byEmail) {
-          await supabase.from("onboarding_hires").update({ user_id: uid }).eq("id", byEmail.id);
-          hireRow = { ...(byEmail as HireRow), user_id: uid };
+        const { data: linkedId } = await supabase.rpc("link_hire_to_current_user");
+        if (linkedId) {
+          const { data: linked } = await supabase
+            .from("onboarding_hires")
+            .select("id, user_id, name, email, role_label, start_date, coordinator_name, archived")
+            .eq("id", linkedId)
+            .maybeSingle();
+          hireRow = (linked as HireRow | null) ?? null;
         }
       }
     }

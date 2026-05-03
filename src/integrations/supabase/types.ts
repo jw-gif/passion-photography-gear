@@ -1003,6 +1003,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      link_hire_to_current_user: { Args: never; Returns: string }
       list_my_jobs: {
         Args: { _token: string }
         Returns: {
