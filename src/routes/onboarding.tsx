@@ -724,7 +724,7 @@ function PlanView({
     let tasks = d.tasks;
     if (filter === "events") tasks = [];
     if (filter === "tasks") events = [];
-    if (!showCompleted && d.isPast) {
+    if (!showCompleted) {
       tasks = tasks.filter((t) => !t.completed);
     }
     return { events, tasks };
