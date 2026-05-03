@@ -548,8 +548,25 @@ function NewHireDialog({
       }
     }
 
+    // Send branded invite email so the hire can set their password.
+    // Don't roll back the hire if email send fails — admin can resend.
+    let inviteOk = true;
+    try {
+      const res = await inviteHireFn({
+        data: { email: email.trim().toLowerCase(), name: name.trim() },
+      });
+      inviteOk = Boolean(res?.ok);
+    } catch (err) {
+      inviteOk = false;
+      console.error("Invite email failed:", err);
+    }
+
     setSaving(false);
-    toast.success("Hire created");
+    toast.success(
+      inviteOk
+        ? `Hire created — invite sent to ${email.trim().toLowerCase()}`
+        : "Hire created — invite email failed (you can resend later)",
+    );
     setOpen(false);
     setName("");
     setEmail("");
