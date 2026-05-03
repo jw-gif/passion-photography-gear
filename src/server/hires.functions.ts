@@ -1,24 +1,52 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const InviteInput = z.object({
   email: z.string().email().max(255),
   name: z.string().min(1).max(255).optional(),
+  accessToken: z.string().min(1).max(4096),
 });
 
 export const inviteHire = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data) => InviteInput.parse(data))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     try {
-      // Verify caller is an admin
-      const { data: roleRows, error: roleErr } = await context.supabase
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+      if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+        console.error("inviteHire: missing backend environment variables");
+        return { ok: false as const, error: "Server misconfigured" };
+      }
+
+      const userClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        },
+        auth: {
+          storage: undefined,
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
+
+      const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(data.accessToken);
+      const userId = claimsData?.claims?.sub;
+      if (claimsErr || !userId) {
+        console.error("inviteHire: invalid token", claimsErr);
+        return { ok: false as const, error: "Unauthorized" };
+      }
+
+      const { data: roleRows, error: roleErr } = await userClient
         .from("user_roles")
         .select("role")
-        .eq("user_id", context.userId);
+        .eq("user_id", userId);
       if (roleErr) {
         console.error("inviteHire: role check failed", roleErr);
         return { ok: false as const, error: "Failed to verify role" };
