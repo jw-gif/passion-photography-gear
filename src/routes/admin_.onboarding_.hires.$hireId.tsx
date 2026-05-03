@@ -150,6 +150,7 @@ function HireEditor({ onLogout }: { onLogout: () => void }) {
           </Button>
           <div className="flex items-center gap-2">
             <ApplyTemplateButton hireId={hire.id} onApplied={load} />
+            <ResendInviteButton email={hire.email} name={hire.name} hasUser={Boolean(hire.user_id)} />
             <Button asChild variant="outline" size="sm">
               <a
                 href={`/onboarding?previewHire=${hire.id}`}
