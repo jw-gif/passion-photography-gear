@@ -197,8 +197,7 @@ export const Route = createFileRoute("/api/admins")({
           if (dn.length > 50) return Response.json({ error: "Display name too long" }, { status: 400 });
           const { error } = await supabaseAdmin
             .from("admin_profiles")
-            .update({ display_name: dn })
-            .eq("id", id);
+            .upsert({ id, display_name: dn }, { onConflict: "id" });
           if (error) return Response.json({ error: error.message }, { status: 500 });
         }
 
