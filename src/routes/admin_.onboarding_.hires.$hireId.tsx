@@ -104,6 +104,7 @@ function HireEditor({ onLogout }: { onLogout: () => void }) {
         .from("onboarding_hire_checklist")
         .select("id, hire_id, section, label, owner, completed, completed_at, sort_order, day_offset")
         .eq("hire_id", hireId)
+        .order("day_offset", { nullsFirst: true })
         .order("sort_order"),
     ]);
     if (!h) {
