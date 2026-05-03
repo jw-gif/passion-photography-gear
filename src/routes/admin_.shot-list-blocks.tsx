@@ -27,7 +27,7 @@ import { PHOTOGRAPHER_TIERS } from "@/lib/photographers";
 
 export const Route = createFileRoute("/admin_/shot-list-blocks")({
   head: () => ({
-    meta: [{ title: "Manage Shot List Blocks · Passion Photography Hub" }],
+    meta: [{ title: "Manage Shot List Blocks · Passion Photography Team" }],
   }),
   component: BlocksRoute,
 });

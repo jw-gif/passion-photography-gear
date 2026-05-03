@@ -495,7 +495,7 @@ function HomeView({
         <div className="relative">
           <div className="text-[11px] uppercase tracking-[0.18em] text-primary/80 font-semibold mb-1.5">
             <Sparkles className="size-3 inline -mt-0.5 mr-1" />
-            Welcome to Passion
+            Welcome to Passion Photography Team
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
             Hi, {hire.name.split(" ")[0]} 👋

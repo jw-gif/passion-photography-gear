@@ -54,7 +54,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/jobs")({
   head: () => ({
     meta: [
-      { title: "Serving Opportunities · Passion Photography Hub" },
+      { title: "Serving Opportunities · Passion Photography Team" },
       {
         name: "description",
         content: "Pick up upcoming photography shoots from your personal serving opportunities board.",

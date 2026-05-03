@@ -84,7 +84,7 @@ export const Route = createFileRoute("/admin_/team")({
   },
   head: () => ({
     meta: [
-      { title: "Team · Passion Photography Hub" },
+      { title: "Team · Passion Photography Team" },
       {
         name: "description",
         content: "Manage photographers and admins.",

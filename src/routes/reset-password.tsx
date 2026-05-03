@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Reset password · Passion Gear Tracking" },
+      { title: "Reset password · Passion Photography Team" },
       { name: "description", content: "Set a new password for your admin account." },
     ],
   }),
@@ -86,7 +86,7 @@ function ResetPasswordPage() {
           </div>
           <div>
             <div className="font-semibold tracking-tight leading-tight">Set a new password</div>
-            <div className="text-xs text-muted-foreground">Passion Gear Tracking</div>
+            <div className="text-xs text-muted-foreground">Passion Photography Team</div>
           </div>
         </div>
 

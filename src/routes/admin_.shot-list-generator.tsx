@@ -34,7 +34,7 @@ import {
 export const Route = createFileRoute("/admin_/shot-list-generator")({
   head: () => ({
     meta: [
-      { title: "Shot List Generator · Passion Photography Hub" },
+      { title: "Shot List Generator · Passion Photography Team" },
       {
         name: "description",
         content:

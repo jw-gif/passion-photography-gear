@@ -247,7 +247,7 @@ export function GearRequestForm() {
             </div>
             <div>
               <div className="font-semibold tracking-tight leading-tight">Request Gear</div>
-              <div className="text-xs text-muted-foreground">Passion Photography Hub</div>
+              <div className="text-xs text-muted-foreground">Passion Photography Team</div>
             </div>
           </Link>
           <Button asChild variant="ghost" size="sm" className="gap-1.5">

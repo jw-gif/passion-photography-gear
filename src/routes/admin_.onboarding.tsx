@@ -60,7 +60,7 @@ import { cn } from "@/lib/utils";
 import { NewTemplateDialog } from "./admin_.onboarding_.templates.$templateId";
 
 export const Route = createFileRoute("/admin_/onboarding")({
-  head: () => ({ meta: [{ title: "Staff Onboarding · Passion Photography Hub" }] }),
+  head: () => ({ meta: [{ title: "Staff Onboarding · Passion Photography Team" }] }),
   component: Page,
 });
 

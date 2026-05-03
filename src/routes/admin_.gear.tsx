@@ -16,7 +16,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin_/gear")({
   head: () => ({
     meta: [
-      { title: "Gear Board · Passion Photography Hub" },
+      { title: "Gear Board · Passion Photography Team" },
       { name: "description", content: "Drag-and-drop gear locations across 515, CBL, and TRL." },
     ],
   }),

@@ -63,7 +63,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin_/gear-manage")({
   head: () => ({
     meta: [
-      { title: "Manage Gear · Passion Photography Hub" },
+      { title: "Manage Gear · Passion Photography Team" },
       {
         name: "description",
         content: "Add, rename, retire, and manage availability of photography gear.",
@@ -469,7 +469,7 @@ function ManageView({ onLogout }: { onLogout: () => void }) {
 </head>
 <body>
   <div class="toolbar">
-    <h1>${cards.length} QR code${cards.length === 1 ? "" : "s"} · Passion Gear</h1>
+    <h1>${cards.length} QR code${cards.length === 1 ? "" : "s"} · Passion Photography Team</h1>
     <button onclick="window.print()">Print</button>
   </div>
   <div class="sheet">
