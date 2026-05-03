@@ -456,11 +456,26 @@ function HomeView({
       .slice(0, 4);
   }, [timeline, hire.start_date, today]);
 
-  // Fallback "to-do soon" if no day-pinned tasks today: surface next 3 unchecked
-  const fallbackTasks =
-    todaysTasks.length === 0
-      ? checklist.filter((c) => !c.completed).slice(0, 3)
-      : todaysTasks;
+  // Fallback "to-do soon" if no day-pinned tasks today: surface next unchecked
+  // tasks in chronological order (overdue first, then nearest upcoming).
+  const fallbackTasks = useMemo(() => {
+    if (todaysTasks.length > 0) return todaysTasks;
+    const todayOffset = differenceInCalendarDays(today, start);
+    return checklist
+      .filter((c) => !c.completed)
+      .slice()
+      .sort((a, b) => {
+        const ao = a.day_offset ?? Number.POSITIVE_INFINITY;
+        const bo = b.day_offset ?? Number.POSITIVE_INFINITY;
+        // Prefer overdue/today (offset <= todayOffset) first, then nearest upcoming.
+        const aOverdue = ao <= todayOffset;
+        const bOverdue = bo <= todayOffset;
+        if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+        if (aOverdue) return bo - ao; // most-recent overdue first
+        return ao - bo; // soonest upcoming first
+      })
+      .slice(0, 3);
+  }, [todaysTasks, checklist, start, today]);
 
   const dayLabel =
     dayN <= 0

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
-import { getRequestHeader } from "@tanstack/react-start/server";
+
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -54,14 +54,10 @@ export const inviteHire = createServerFn({ method: "POST" })
       const isAdmin = (roleRows ?? []).some((r) => r.role === "admin");
       if (!isAdmin) return { ok: false as const, error: "Forbidden: admin only" };
 
-      const origin =
-        getRequestHeader("origin") ||
-        (() => {
-          const host = getRequestHeader("host");
-          const proto = getRequestHeader("x-forwarded-proto") || "https";
-          return host ? `${proto}://${host}` : "";
-        })();
-      const redirectTo = `${origin}/reset-password`;
+      // Always send invite/reset emails pointing to the canonical site,
+      // never to a preview/lovable.app origin the admin happens to be on.
+      const SITE_URL = "https://passionphotography.team";
+      const redirectTo = `${SITE_URL}/reset-password`;
 
       const email = data.email.toLowerCase();
 

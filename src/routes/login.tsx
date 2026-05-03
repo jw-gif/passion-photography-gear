@@ -72,7 +72,7 @@ function LoginPage() {
     setError("");
     setSubmitting(true);
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: "https://passionphotography.team/reset-password",
     });
     setSubmitting(false);
     if (resetError) {
