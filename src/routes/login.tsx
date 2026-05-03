@@ -63,14 +63,7 @@ function LoginPage() {
     // once useAuth picks up the new session. We also try to link the auth
     // user to a matching onboarding_hires row by email (if one exists and
     // hasn't been linked yet).
-    const { data: { user: u } } = await supabase.auth.getUser();
-    if (u?.email) {
-      await supabase
-        .from("onboarding_hires")
-        .update({ user_id: u.id })
-        .eq("email", u.email.toLowerCase())
-        .is("user_id", null);
-    }
+    await supabase.rpc("link_hire_to_current_user");
     setSubmitting(false);
   }
 
