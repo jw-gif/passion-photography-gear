@@ -1048,13 +1048,17 @@ function ResendInviteButton({
   name: string;
   hasUser: boolean;
 }) {
+  const { session } = useAuth();
   const inviteHireFn = useServerFn(inviteHire);
   const [sending, setSending] = useState(false);
 
   async function send() {
     setSending(true);
     try {
-      const res = await inviteHireFn({ data: { email, name } });
+      const accessToken = session?.access_token;
+      if (!accessToken) throw new Error("Your session expired. Please sign in again.");
+      const res = await inviteHireFn({ data: { email, name, accessToken } });
+      if (!res?.ok) throw new Error(res?.error || "Failed to send invite");
       toast.success(
         res.alreadyExists
           ? `Password reset email sent to ${email}`
