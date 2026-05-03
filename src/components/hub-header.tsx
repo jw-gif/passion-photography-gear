@@ -70,7 +70,7 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
               {showInnerLabel ? title : "Photography Hub"}
             </div>
             <div className="text-xs text-muted-foreground">
-              {showInnerLabel ? subtitle ?? "Passion Photography Hub" : "Passion"}
+              {showInnerLabel ? subtitle ?? "Passion Photography Team" : "Passion"}
             </div>
           </div>
         </Link>

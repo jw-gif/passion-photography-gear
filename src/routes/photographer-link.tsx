@@ -11,7 +11,7 @@ import pccLogo from "@/assets/pcc-logo.png";
 export const Route = createFileRoute("/photographer-link")({
   head: () => ({
     meta: [
-      { title: "Find your Serving Opportunities · Passion Photography Hub" },
+      { title: "Find your Serving Opportunities · Passion Photography Team" },
       {
         name: "description",
         content:
@@ -62,7 +62,7 @@ function PhotographerLinkPage() {
               style={{ filter: "brightness(0) invert(1)" }}
             />
           </div>
-          <span className="font-semibold tracking-tight">Passion Photography Hub</span>
+          <span className="font-semibold tracking-tight">Passion Photography Team</span>
         </Link>
         <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-3" /> Home

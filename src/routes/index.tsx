@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
   }),
   head: () => ({
     meta: [
-      { title: "Passion Photography Hub" },
+      { title: "Passion Photography Team" },
       { name: "description", content: "Request photography gear for your event. Quick, simple, and tracked." },
     ],
   }),
@@ -218,7 +218,7 @@ function PublicGearView({ gearId }: { gearId: string }) {
           <div className="size-7 rounded-full bg-primary flex items-center justify-center">
             <Camera className="size-3.5" />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Passion Photography Hub</span>
+          <span className="text-sm font-semibold tracking-tight">Passion Photography Team</span>
         </div>
 
         <GearIcon name={gear.name} iconKind={gear.icon_kind} className="size-12 text-foreground/80 mb-4" />

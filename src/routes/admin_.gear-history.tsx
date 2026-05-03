@@ -22,7 +22,7 @@ import {
 export const Route = createFileRoute("/admin_/gear-history")({
   head: () => ({
     meta: [
-      { title: "Gear Activity Log · Passion Photography Hub" },
+      { title: "Gear Activity Log · Passion Photography Team" },
       { name: "description", content: "Chronological log of all gear location changes." },
     ],
   }),

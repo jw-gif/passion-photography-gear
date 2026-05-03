@@ -29,7 +29,7 @@ import { greetingForNow, relativeDayLabel } from "@/lib/relative-date";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Dashboard · Passion Photography Hub" },
+      { title: "Dashboard · Passion Photography Team" },
       { name: "description", content: "Centralized view of upcoming photography and gear requests." },
     ],
   }),

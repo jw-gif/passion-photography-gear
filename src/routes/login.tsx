@@ -19,7 +19,7 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign in · Passion Gear Tracking" },
+      { title: "Sign in · Passion Photography Team" },
       { name: "description", content: "Sign in to manage gear inventory and requests." },
     ],
   }),

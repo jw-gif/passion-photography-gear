@@ -61,7 +61,7 @@ import {
 export const Route = createFileRoute("/admin_/requests-photography")({
   head: () => ({
     meta: [
-      { title: "Photography Requests · Passion Photography Hub" },
+      { title: "Photography Requests · Passion Photography Team" },
       { name: "description", content: "Triage and manage incoming photography requests." },
     ],
   }),

@@ -43,7 +43,7 @@ export function buildIcs(input: IcsInput): string {
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Passion Photography Hub//EN",
+    "PRODID:-//Passion Photography Team//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

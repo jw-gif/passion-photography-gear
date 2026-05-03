@@ -31,7 +31,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin_/requests-gear")({
   head: () => ({
     meta: [
-      { title: "Gear Requests · Passion Photography Hub" },
+      { title: "Gear Requests · Passion Photography Team" },
       { name: "description", content: "Approve or deny gear requests and view upcoming needs." },
     ],
   }),
