@@ -1,52 +1,60 @@
-## Goal
+## Root cause
 
-When an admin creates a new hire in **Admin → Onboarding**, automatically email them a branded invite that lets them set a password and sign in. On first sign-in they land on `/onboarding` with their plan already linked.
+Two bugs prevent Jenna (and any newly-invited hire) from being linked to her `onboarding_hires` row:
 
-## How it works
+1. **`/reset-password` always redirects to `/admin`** after a successful password set. Hires aren't admins, so `RequireAdmin` shows the "No access" card. Nothing ever takes them to `/onboarding`.
 
-```
-Admin clicks "Create"  →  insert onboarding_hires row
-                       →  call invite-hire server fn
-                       →  supabase.auth.admin.inviteUserByEmail(email, redirectTo: /reset-password)
-                       →  Supabase fires email hook → auth-email-hook → renders InviteEmail
-                       →  Hire clicks link → /reset-password → sets password → signs in
-                       →  login.tsx already links onboarding_hires.user_id by email
-```
+2. **The "link hire by email on first sign-in" code can't actually run for hires.** Both `login.tsx` and `onboarding.tsx` try to:
+   - `select` from `onboarding_hires where email = ... and user_id is null`, then
+   - `update onboarding_hires set user_id = ...`
 
-The `InviteEmail` template, `auth-email-hook`, and email queue are already wired up — we just need to trigger the invite.
+   But the RLS policies on `onboarding_hires` only allow:
+   - SELECT: `has_role(auth.uid(), 'admin')` OR `user_id = auth.uid()`
+   - UPDATE: admin only
 
-## Changes
+   For a freshly-signed-in hire whose row has `user_id = null`, both the SELECT and the UPDATE silently return nothing. The link never happens, so `/onboarding` shows the generic welcome page and the admin dashboard keeps showing "not linked".
 
-### 1. New server function: `src/server/hires.functions.ts`
-- `inviteHire({ email, name })` — admin-only.
-- Uses `supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo: \`${origin}/reset-password\`, data: { name } })`.
-- Verifies caller is admin via `requireSupabaseAuth` middleware + `has_role` check.
-- Returns `{ ok, alreadyExists }` so the UI can show "invite resent" vs "invite sent".
-- Idempotent: if the user already exists in auth, fall back to `generateLink({ type: 'recovery' })` so they still get an email (handles re-invite case).
+   I confirmed Jenna's row in the DB still has `user_id = null` and her email is already lowercase, ruling out a casing mismatch.
 
-### 2. Hook into hire creation: `src/routes/admin_.onboarding.tsx`
-In `NewHireDialog.submit()`, after the `onboarding_hires` insert and template population succeed, call `inviteHire({ email, name })`. Show a toast: "Hire created — invite email sent to {email}". Failure to send the invite does NOT roll back the hire (admin can resend).
+## Fix
 
-### 3. Add a "Resend invite" action on the hire detail page
-`src/routes/admin_.onboarding_.hires.$hireId.tsx` — small button in the header that calls `inviteHire` again. Useful when the original email is lost or the hire was created before this feature existed (e.g., Jenna).
+### 1. New SECURITY DEFINER function: `link_hire_to_current_user()`
 
-### 4. Tweak the existing `InviteEmail` template
-`src/lib/email-templates/invite.tsx` — copy already says "You've been invited to join the hub." Verify `confirmationUrl` redirects through `/reset-password` so the hire sets a password rather than getting auto-logged-in. The auth-email-hook already passes the right URL based on Supabase's `email_action_type = 'invite'`.
+Migration adds a Postgres function that:
+- Reads `auth.uid()` and `auth.jwt() ->> 'email'` (lowercased).
+- Updates `onboarding_hires set user_id = auth.uid() where email = <jwt email> and user_id is null`.
+- Returns the linked hire id (or null).
+- `GRANT EXECUTE ... TO authenticated`.
 
-### 5. Login page
-No changes needed. `login.tsx` already:
-- Links `onboarding_hires.user_id` by email on first sign-in.
-- Routes non-admin users to `/onboarding`.
+This bypasses RLS safely because it only ever links a row to the currently-authenticated user's own email.
 
-`/reset-password` already exists and handles the recovery/invite token flow.
+### 2. Reset-password redirect (`src/routes/reset-password.tsx`)
+
+After `updateUser({ password })` succeeds:
+- Call `supabase.rpc("link_hire_to_current_user")`.
+- Re-check role via `useAuth` / a fresh `user_roles` query.
+- Route admins → `/admin`, everyone else → `/onboarding`. (Mirrors the logic already in `login.tsx`.)
+
+### 3. Login page (`src/routes/login.tsx`)
+
+Replace the inline `update onboarding_hires` call with `supabase.rpc("link_hire_to_current_user")`. The existing `useAuth` effect already handles admin-vs-hire routing.
+
+### 4. Onboarding page (`src/routes/onboarding.tsx`)
+
+In `loadData`, when no hire row is found by `user_id`, call `supabase.rpc("link_hire_to_current_user")` and re-query by `user_id` instead of trying to SELECT an unlinked row directly. Removes the dead by-email SELECT branch that RLS was blocking.
+
+### 5. Backfill Jenna
+
+The migration also runs a one-shot UPDATE to link her existing auth user to her hire row by email, so she doesn't have to log out/in again.
+
+## Files
+
+- new migration: `link_hire_to_current_user()` function + grant + Jenna backfill
+- `src/routes/reset-password.tsx` — call RPC, route by role
+- `src/routes/login.tsx` — call RPC instead of direct update
+- `src/routes/onboarding.tsx` — call RPC in the unlinked-hire fallback
 
 ## Out of scope
 
-- Self-signup form (option B) — not building this.
-- Bulk invite for existing un-invited hires — admin can use the per-hire "Resend invite" button.
-
-## Notes
-
-- No new env vars or secrets needed; `SUPABASE_SERVICE_ROLE_KEY` is already set.
-- No DB migration needed.
-- Branded invite email already routes through `auth-email-hook` and the email queue — DNS for `email.passionphotography.team` must be verified for delivery (you can check in Cloud → Emails).
+- Changing the invite email template or auth-email-hook.
+- Adding RLS policies that would let hires see/update their own pre-link row directly (the SECURITY DEFINER RPC is safer and narrower).
