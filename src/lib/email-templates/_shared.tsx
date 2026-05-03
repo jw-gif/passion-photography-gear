@@ -23,7 +23,7 @@ export const brand = {
   text: '#1a1a1a',
   muted: '#6b6b68',
   // Bright cyan brand accent
-  primary: '#5bc7e8',
+  primary: '#3fc3f0',
   primaryText: '#0c2733',
   link: '#0e7c97',
   radius: '12px',
@@ -49,7 +49,7 @@ const styles = {
   wordmark: {
     fontSize: '14px',
     fontWeight: 700,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.02em',
     textTransform: 'uppercase' as const,
     color: brand.link,
     margin: 0,
