@@ -14,7 +14,9 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { inviteHire } from "@/server/hires.functions";
 import { useAuth } from "@/lib/auth";
 import { RequireAdmin } from "@/components/require-admin";
 import { HubHeader } from "@/components/hub-header";
