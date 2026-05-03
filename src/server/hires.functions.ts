@@ -52,12 +52,14 @@ export const inviteHire = createServerFn({ method: "POST" })
         (inviteErr as unknown as { status?: number }).status === 422;
 
       if (alreadyExists) {
-        const { error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
-          type: "recovery",
+        // User already has an auth account — send a password reset email
+        // so they can re-establish access. resetPasswordForEmail actually
+        // dispatches the email (generateLink does not).
+        const { error: resetErr } = await supabaseAdmin.auth.resetPasswordForEmail(
           email,
-          options: { redirectTo },
-        });
-        if (linkErr) throw new Error(linkErr.message);
+          { redirectTo },
+        );
+        if (resetErr) throw new Error(resetErr.message);
         return { ok: true, alreadyExists: true };
       }
 
