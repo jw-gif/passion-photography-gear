@@ -1037,3 +1037,39 @@ function ApplyTemplateButton({
     </Dialog>
   );
 }
+
+function ResendInviteButton({
+  email,
+  name,
+  hasUser,
+}: {
+  email: string;
+  name: string;
+  hasUser: boolean;
+}) {
+  const inviteHireFn = useServerFn(inviteHire);
+  const [sending, setSending] = useState(false);
+
+  async function send() {
+    setSending(true);
+    try {
+      const res = await inviteHireFn({ data: { email, name } });
+      toast.success(
+        res.alreadyExists
+          ? `Password reset email sent to ${email}`
+          : `Invite sent to ${email}`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send invite");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Button onClick={send} disabled={sending} variant="outline" size="sm">
+      <Mail className="size-4" />
+      {sending ? "Sending…" : hasUser ? "Resend reset link" : "Send invite"}
+    </Button>
+  );
+}
