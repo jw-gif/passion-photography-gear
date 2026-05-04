@@ -399,11 +399,6 @@ export function EventDetailDialog({ event, onClose, onChanged, navList, onNaviga
                 <Row icon={<MapPin className="size-4" />}>{photo.event_location}</Row>
               )}
               <Row icon={<UserIcon className="size-4" />}>
-                {photo.first_name} {photo.last_name}
-                <span className="text-muted-foreground"> · {photo.company}</span>
-                {photo.team && <span className="text-muted-foreground"> · {photo.team}</span>}
-              </Row>
-              <Row icon={<UserIcon className="size-4" />}>
                 <span className="flex-1">
                   {photo.first_name} {photo.last_name}
                   <span className="text-muted-foreground"> · {photo.company}</span>
