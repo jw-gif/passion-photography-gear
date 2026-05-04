@@ -247,8 +247,16 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", req.id);
-    if (error) toast.error(`Update failed: ${error.message}`);
-    else toast.success(`Marked ${statusLabel(status)}`);
+    if (error) {
+      toast.error(`Update failed: ${error.message}`);
+      return;
+    }
+    toast.success(`Marked ${statusLabel(status)}`);
+    // Optimistic refresh — realtime may not be enabled for this table
+    setRequests((prev) =>
+      prev.map((r) => (r.id === req.id ? { ...r, status, reviewed_by: reviewerName, reviewed_at: new Date().toISOString() } : r)),
+    );
+    void loadAll();
   }
 
   async function saveAdminNotes(req: PhotoRequest, notes: string, assignedTo: string) {
@@ -257,7 +265,10 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
       .update({ admin_notes: notes || null, assigned_to: assignedTo || null })
       .eq("id", req.id);
     if (error) toast.error(`Save failed: ${error.message}`);
-    else toast.success("Saved");
+    else {
+      toast.success("Saved");
+      void loadAll();
+    }
   }
 
   async function deleteRequest(req: PhotoRequest) {
@@ -267,6 +278,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
     else {
       toast.success("Deleted");
       setOpenDetailId(null);
+      void loadAll();
     }
   }
 
