@@ -52,7 +52,7 @@ export function RequestActionRail({ current, onSetStatus, disabled }: Props) {
   ];
 
   return (
-    <div className="flex sm:flex-col gap-1.5 flex-wrap">
+    <div className="flex sm:flex-col gap-1.5 flex-wrap w-full">
       {actions.map((a) => {
         const isCurrent = current === a.status;
         return (
@@ -64,13 +64,13 @@ export function RequestActionRail({ current, onSetStatus, disabled }: Props) {
             disabled={disabled}
             onClick={() => onSetStatus(a.status)}
             className={cn(
-              "justify-start gap-2",
+              "justify-start gap-2 w-full h-auto py-1.5 whitespace-normal text-left",
               isCurrent && a.activeClass,
             )}
             title={`Press to mark: ${a.label}`}
           >
-            {a.icon}
-            <span className="text-xs font-medium">{a.label}</span>
+            <span className="shrink-0">{a.icon}</span>
+            <span className="text-xs font-medium leading-tight">{a.label}</span>
           </Button>
         );
       })}
