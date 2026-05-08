@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { LOCATIONS, locationLabel } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,8 @@ interface ConflictMap {
 }
 
 export function GearRequestForm() {
+  const { user, displayName } = useAuth();
+  const [photographerId, setPhotographerId] = useState<string | null>(null);
   const [gear, setGear] = useState<GearRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -64,6 +67,26 @@ export function GearRequestForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Auto-fill requestor name + link photographer record on first load
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: ph } = await supabase
+        .from("photographers")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (ph) {
+        setPhotographerId(ph.id);
+        setName((n) => n || ph.name);
+      } else if (displayName) {
+        setName((n) => n || displayName);
+      } else if (user.email) {
+        setName((n) => n || user.email!.split("@")[0]);
+      }
+    })();
+  }, [user, displayName]);
 
   // Load all active, requestable gear once.
   useEffect(() => {
@@ -187,6 +210,8 @@ export function GearRequestForm() {
         location: location,
         needed_date: format(date!, "yyyy-MM-dd"),
         notes: notes.trim() || null,
+        user_id: user?.id ?? null,
+        photographer_id: photographerId,
       })
       .select("id")
       .single();
