@@ -27,24 +27,27 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, isTeam, isPhotographer } = useAuth();
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "forgot">("signin");
+  const [mode, setMode] = useState<"signin" | "forgot" | "magic">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      if (isAdmin) {
+      if (isTeam || isAdmin) {
         navigate({ to: redirect || "/admin", replace: true });
+      } else if (isPhotographer) {
+        navigate({ to: redirect || "/dashboard", replace: true });
       } else {
         navigate({ to: redirect || "/onboarding", replace: true });
       }
     }
-  }, [loading, user, isAdmin, redirect, navigate]);
+  }, [loading, user, isAdmin, isTeam, isPhotographer, redirect, navigate]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -59,12 +62,30 @@ function LoginPage() {
       setSubmitting(false);
       return;
     }
-    // Sign-in succeeded. Admin vs hire routing happens in the effect above
-    // once useAuth picks up the new session. We also try to link the auth
-    // user to a matching onboarding_hires row by email (if one exists and
-    // hasn't been linked yet).
-    await supabase.rpc("link_hire_to_current_user");
+    // Try to link to existing onboarding hire AND photographer record by email.
+    await Promise.all([
+      supabase.rpc("link_hire_to_current_user"),
+      supabase.rpc("link_photographer_to_current_user"),
+    ]);
     setSubmitting(false);
+  }
+
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    setSubmitting(false);
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+    setMagicSent(true);
   }
 
   async function handleForgot(e: React.FormEvent) {
