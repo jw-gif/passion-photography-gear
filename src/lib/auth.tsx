@@ -8,6 +8,7 @@ interface AuthContextValue {
   displayName: string | null;
   isAdmin: boolean;
   isTeam: boolean;
+  isPhotographer: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isAdminFlag, setIsAdminFlag] = useState(false);
   const [isTeamFlag, setIsTeamFlag] = useState(false);
+  const [isPhotographerFlag, setIsPhotographerFlag] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(uid: string) {
@@ -36,8 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const roles = (roleRows ?? []).map((r) => r.role);
     const admin = roles.includes("admin");
     const team = admin || roles.includes("team");
+    const photographer = roles.includes("photographer");
     setIsAdminFlag(admin);
     setIsTeamFlag(team);
+    setIsPhotographerFlag(photographer);
   }
 
   useEffect(() => {
@@ -55,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setDisplayName(null);
         setIsAdminFlag(false);
         setIsTeamFlag(false);
+        setIsPhotographerFlag(false);
         setLoading(false);
       }
     });
@@ -97,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName,
         isAdmin: isAdminFlag,
         isTeam: isTeamFlag,
+        isPhotographer: isPhotographerFlag,
         loading,
         signIn,
         signOut,
