@@ -17,7 +17,7 @@ export function RequireAdmin({
   /** When true, only `admin` role passes — `team` members are blocked. */
   requireAdmin?: boolean;
 }) {
-  const { user, isAdmin, isTeam, loading } = useAuth();
+  const { user, isAdmin, isTeam, isPhotographer, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,8 +29,13 @@ export function RequireAdmin({
         search: { redirect: location.pathname },
         replace: true,
       });
+      return;
     }
-  }, [loading, user, navigate, location.pathname]);
+    const allowed = requireAdmin ? isAdmin : isTeam;
+    if (!allowed && isPhotographer) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [loading, user, isAdmin, isTeam, isPhotographer, requireAdmin, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -48,6 +53,7 @@ export function RequireAdmin({
   const allowed = requireAdmin ? isAdmin : isTeam;
 
   if (!allowed) {
+    if (isPhotographer) return null; // effect redirects
     const isTeamButNeedsAdmin = requireAdmin && isTeam && !isAdmin;
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
