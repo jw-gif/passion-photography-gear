@@ -34,6 +34,8 @@ import {
   type CoverageType,
 } from "@/lib/orgs";
 
+import { RequireAuth } from "@/components/require-auth";
+
 export const Route = createFileRoute("/request-photography")({
   head: () => ({
     meta: [
@@ -43,9 +45,14 @@ export const Route = createFileRoute("/request-photography")({
         content:
           "Submit a request for the Passion Photography team — bookings, shot list additions, and photoshoots.",
       },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: RequestPhotographyPage,
+  component: () => (
+    <RequireAuth>
+      <RequestPhotographyPage />
+    </RequireAuth>
+  ),
 });
 
 const schema = z
