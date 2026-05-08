@@ -27,24 +27,27 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, isTeam, isPhotographer } = useAuth();
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "forgot">("signin");
+  const [mode, setMode] = useState<"signin" | "forgot" | "magic">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      if (isAdmin) {
+      if (isTeam || isAdmin) {
         navigate({ to: redirect || "/admin", replace: true });
+      } else if (isPhotographer) {
+        navigate({ to: redirect || "/dashboard", replace: true });
       } else {
         navigate({ to: redirect || "/onboarding", replace: true });
       }
     }
-  }, [loading, user, isAdmin, redirect, navigate]);
+  }, [loading, user, isAdmin, isTeam, isPhotographer, redirect, navigate]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -59,12 +62,30 @@ function LoginPage() {
       setSubmitting(false);
       return;
     }
-    // Sign-in succeeded. Admin vs hire routing happens in the effect above
-    // once useAuth picks up the new session. We also try to link the auth
-    // user to a matching onboarding_hires row by email (if one exists and
-    // hasn't been linked yet).
-    await supabase.rpc("link_hire_to_current_user");
+    // Try to link to existing onboarding hire AND photographer record by email.
+    await Promise.all([
+      supabase.rpc("link_hire_to_current_user"),
+      supabase.rpc("link_photographer_to_current_user"),
+    ]);
     setSubmitting(false);
+  }
+
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    setSubmitting(false);
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+    setMagicSent(true);
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -94,13 +115,13 @@ function LoginPage() {
           </div>
           <div>
             <div className="font-semibold tracking-tight leading-tight">
-              {mode === "signin" ? "Sign in" : "Reset password"}
+              {mode === "signin" ? "Sign in" : mode === "forgot" ? "Reset password" : "Email a sign-in link"}
             </div>
             <div className="text-xs text-muted-foreground">Passion Staff Hub</div>
           </div>
         </div>
 
-        {mode === "signin" ? (
+        {mode === "signin" && (
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label className="text-sm font-medium block mb-2" htmlFor="email">Email</label>
@@ -128,6 +149,13 @@ function LoginPage() {
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Signing in…" : "Sign in"}
             </Button>
+            <button
+              type="button"
+              onClick={() => { setMode("magic"); setError(""); setPassword(""); setMagicSent(false); }}
+              className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              Email me a sign-in link instead
+            </button>
             <div className="flex items-center justify-between text-sm">
               <button
                 type="button"
@@ -141,7 +169,49 @@ function LoginPage() {
               </Link>
             </div>
           </form>
-        ) : (
+        )}
+
+        {mode === "magic" && (
+          <form onSubmit={handleMagicLink} className="space-y-4">
+            {magicSent ? (
+              <div className="text-sm text-muted-foreground">
+                If <span className="font-medium text-foreground">{email}</span> has access,
+                you'll receive a sign-in link in your inbox.
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  We'll email you a one-time link that signs you in instantly.
+                </p>
+                <div>
+                  <label className="text-sm font-medium block mb-2" htmlFor="email">Email</label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                    required
+                    autoFocus
+                  />
+                </div>
+                {error && <p className="text-destructive text-sm">{error}</p>}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? "Sending…" : "Email me a sign-in link"}
+                </Button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => { setMode("signin"); setError(""); setMagicSent(false); }}
+              className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              ← Back to password sign-in
+            </button>
+          </form>
+        )}
+
+        {mode === "forgot" && (
           <form onSubmit={handleForgot} className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Enter your email to receive a password reset link.

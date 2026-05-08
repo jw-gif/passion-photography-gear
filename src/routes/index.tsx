@@ -1,23 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock } from "lucide-react";
-import { LOCATIONS, MOVERS, locationClasses, locationLabel, formatDate, getSubLocations, type Location } from "@/lib/locations";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
-import { Camera, Check, CircleSlash, Wrench } from "lucide-react";
-import { GearIcon } from "@/lib/gear-icons";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { GearRequestForm } from "@/components/gear-request-form";
+import { PasswordInput } from "@/components/password-input";
+import { Camera, Mail, KeyRound, ArrowRight, QrCode } from "lucide-react";
+import pccLogo from "@/assets/pcc-logo.png";
+import { PublicGearView } from "@/components/public-gear-view";
 
 interface Search {
   gear?: string;
@@ -32,404 +23,202 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Passion Photography Team" },
-      { name: "description", content: "Request photography gear for your event. Quick, simple, and tracked." },
+      { name: "description", content: "Sign in to manage opportunities, gear, training and events." },
     ],
   }),
   component: IndexPage,
 });
 
+interface LandingPhoto {
+  id: string;
+  image_url: string;
+  alt_text: string | null;
+}
+
 function IndexPage() {
   const { gear } = Route.useSearch();
-  const { isAdmin } = useAuth();
   if (gear) return <PublicGearView gearId={gear} />;
-  return (
-    <>
-      <GearRequestForm />
-      <footer className="pb-10 pt-2 flex justify-center">
-        <Link
-          to={isAdmin ? "/admin" : "/login"}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Lock className="size-3" />
-          {isAdmin ? "Admin portal" : "Admin login"}
-        </Link>
-      </footer>
-    </>
-  );
+  return <Landing />;
 }
 
-
-type GearStatus = "active" | "out_of_service" | "out_for_repair";
-
-interface GearRow {
-  id: string;
-  name: string;
-  current_location: string;
-  sub_location: string | null;
-  last_note: string | null;
-  last_updated: string;
-  moved_by: string | null;
-  status: GearStatus;
-  icon_kind: string | null;
-}
-
-function PublicGearView({ gearId }: { gearId: string }) {
-  const { displayName, isAdmin } = useAuth();
-  const [gear, setGear] = useState<GearRow | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [selectedLoc, setSelectedLoc] = useState<Location>("515");
-  const [subLocChoice, setSubLocChoice] = useState<string>("");
-  const [otherSubLoc, setOtherSubLoc] = useState("");
-  const [subLocError, setSubLocError] = useState("");
-  const [note, setNote] = useState("");
-  const [moverChoice, setMoverChoice] = useState<string>("");
-  const [otherName, setOtherName] = useState("");
-  const [nameError, setNameError] = useState("");
+function Landing() {
+  const { user, loading, isAdmin, isTeam, isPhotographer } = useAuth();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"password" | "magic">("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  // Auto-select admin's display name when signed in
-  useEffect(() => {
-    if (!isAdmin || !displayName || moverChoice) return;
-    if ((MOVERS as readonly string[]).includes(displayName)) {
-      setMoverChoice(displayName);
-    } else {
-      setMoverChoice("Other");
-      setOtherName(displayName);
-    }
-  }, [isAdmin, displayName, moverChoice]);
+  const [error, setError] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
+  const [photos, setPhotos] = useState<LandingPhoto[]>([]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("gear")
-        .select("*")
-        .eq("id", gearId)
-        .maybeSingle();
-      if (cancelled) return;
-      if (error || !data) {
-        setNotFound(true);
-      } else {
-        setGear(data as GearRow);
-        setSelectedLoc(data.current_location as Location);
-        // Pre-populate sub-location if it matches a known option for this location
-        const known = getSubLocations(data.current_location);
-        if (data.sub_location && known.includes(data.sub_location)) {
-          setSubLocChoice(data.sub_location);
-        } else if (data.sub_location) {
-          setSubLocChoice("Other");
-          setOtherSubLoc(data.sub_location);
-        }
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [gearId]);
+    if (loading || !user) return;
+    if (isTeam || isAdmin) navigate({ to: "/admin", replace: true });
+    else if (isPhotographer) navigate({ to: "/dashboard", replace: true });
+    else navigate({ to: "/onboarding", replace: true });
+  }, [loading, user, isAdmin, isTeam, isPhotographer, navigate]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    supabase
+      .from("landing_photos")
+      .select("id, image_url, alt_text")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => setPhotos((data ?? []) as LandingPhoto[]));
+  }, []);
+
+  async function handlePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!gear) return;
-
-    const movedBy =
-      moverChoice === "Other" ? otherName.trim() : moverChoice;
-    if (!movedBy) {
-      setNameError(
-        moverChoice === "Other"
-          ? "Please enter your name"
-          : "Please select your name",
-      );
-      return;
-    }
-    setNameError("");
-
-    const subLocation =
-      subLocChoice === "Other" ? otherSubLoc.trim() : subLocChoice;
-    if (!subLocation) {
-      setSubLocError(
-        subLocChoice === "Other"
-          ? "Please enter the location"
-          : "Please select a location",
-      );
-      return;
-    }
-    setSubLocError("");
-
+    setError("");
     setSubmitting(true);
-    const trimmedNote = note.trim() || null;
-    const { error: updateErr } = await supabase
-      .from("gear")
-      .update({
-        current_location: selectedLoc,
-        sub_location: subLocation,
-        last_note: trimmedNote,
-        last_updated: new Date().toISOString(),
-        moved_by: movedBy,
-      })
-      .eq("id", gear.id);
-    if (!updateErr) {
-      await supabase.from("gear_history").insert({
-        gear_id: gear.id,
-        location: selectedLoc,
-        sub_location: subLocation,
-        note: trimmedNote,
-        moved_by: movedBy,
-      });
-      // refresh
-      const { data } = await supabase
-        .from("gear")
-        .select("*")
-        .eq("id", gear.id)
-        .maybeSingle();
-      if (data) setGear(data as GearRow);
-      setNote("");
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2500);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (signInError) {
+      setError(signInError.message);
+      setSubmitting(false);
+      return;
     }
+    await Promise.all([
+      supabase.rpc("link_hire_to_current_user"),
+      supabase.rpc("link_photographer_to_current_user"),
+    ]);
     setSubmitting(false);
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-muted-foreground">Loading…</div>
-      </main>
-    );
-  }
-  if (notFound || !gear) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold">Gear not found</h1>
-          <p className="text-muted-foreground mt-2">No item with ID {gearId}.</p>
-        </div>
-      </main>
-    );
+  async function handleMagic(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+    });
+    setSubmitting(false);
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+    setMagicSent(true);
   }
 
   return (
-    <main className="min-h-screen px-4 py-8 sm:py-12">
-      <div className="max-w-md mx-auto">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="size-7 rounded-full bg-primary flex items-center justify-center">
-            <Camera className="size-3.5" />
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <header className="px-6 py-5 max-w-6xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="size-9 rounded-full bg-primary flex items-center justify-center overflow-hidden">
+            <img src={pccLogo} alt="Passion" className="size-5 object-contain" style={{ filter: "brightness(0) invert(1)" }} />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Passion Photography Team</span>
+          <span className="font-semibold tracking-tight">Passion Photography Team</span>
+        </div>
+      </header>
+
+      <section className="max-w-6xl mx-auto px-6 pt-8 pb-16 grid gap-12 lg:grid-cols-2 lg:items-center">
+        <div>
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
+            Capture every Passion moment.
+          </h1>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Sign in to claim shoots, request gear, RSVP to events, and watch
+            training videos — all in one hub.
+          </p>
         </div>
 
-        <GearIcon name={gear.name} iconKind={gear.icon_kind} className="size-12 text-foreground/80 mb-4" />
-
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
-          {gear.name}
-        </h1>
-
-        <div className="mt-6">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-            Current location
-          </div>
-          <div
-            className={cn(
-              "inline-flex items-center px-5 py-3 rounded-full text-2xl font-bold",
-              locationClasses(gear.current_location),
-            )}
-          >
-            {locationLabel(gear.current_location)}
-          </div>
-          {gear.sub_location && (
-            <div className="mt-2 text-base font-medium text-foreground/80">
-              {gear.sub_location}
+        <Card className="p-6 sm:p-7 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Camera className="size-4 text-primary" />
             </div>
+            <div>
+              <div className="font-semibold tracking-tight leading-tight">Sign in to your dashboard</div>
+              <div className="text-xs text-muted-foreground">Admins and photographers</div>
+            </div>
+          </div>
+
+          {mode === "password" ? (
+            <form onSubmit={handlePassword} className="space-y-3">
+              <div>
+                <label className="text-sm font-medium block mb-1.5" htmlFor="email">Email</label>
+                <Input id="email" type="email" autoComplete="email" value={email} required
+                  onChange={(e) => { setEmail(e.target.value); setError(""); }} />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1.5" htmlFor="pw">Password</label>
+                <PasswordInput id="pw" autoComplete="current-password" value={password} required
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }} />
+              </div>
+              {error && <p className="text-destructive text-sm">{error}</p>}
+              <Button type="submit" className="w-full" disabled={submitting}>
+                <KeyRound className="size-4" />
+                {submitting ? "Signing in…" : "Sign in"}
+              </Button>
+              <button type="button"
+                onClick={() => { setMode("magic"); setError(""); setPassword(""); setMagicSent(false); }}
+                className="block w-full text-center text-sm text-muted-foreground hover:text-foreground pt-1">
+                Email me a sign-in link instead
+              </button>
+              <div className="text-center text-sm pt-1">
+                <Link to="/login" className="text-muted-foreground hover:text-foreground">Forgot password?</Link>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleMagic} className="space-y-3">
+              {magicSent ? (
+                <p className="text-sm text-muted-foreground">
+                  If <span className="font-medium text-foreground">{email}</span> has access,
+                  a sign-in link is on its way to your inbox.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    We'll email you a one-time link that signs you in instantly.
+                  </p>
+                  <div>
+                    <label className="text-sm font-medium block mb-1.5" htmlFor="memail">Email</label>
+                    <Input id="memail" type="email" autoComplete="email" value={email} required autoFocus
+                      onChange={(e) => { setEmail(e.target.value); setError(""); }} />
+                  </div>
+                  {error && <p className="text-destructive text-sm">{error}</p>}
+                  <Button type="submit" className="w-full" disabled={submitting}>
+                    <Mail className="size-4" />
+                    {submitting ? "Sending…" : "Email me a sign-in link"}
+                  </Button>
+                </>
+              )}
+              <button type="button"
+                onClick={() => { setMode("password"); setError(""); setMagicSent(false); }}
+                className="block w-full text-center text-sm text-muted-foreground hover:text-foreground pt-1">
+                ← Back to password sign-in
+              </button>
+            </form>
           )}
-        </div>
-
-        <div className="mt-6 space-y-1">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Last updated
-          </div>
-          <div className="text-sm">
-            {formatDate(gear.last_updated)}
-            {gear.moved_by && (
-              <span className="text-muted-foreground"> · by {gear.moved_by}</span>
-            )}
-          </div>
-          {gear.last_note && (
-            <div className="text-sm text-muted-foreground italic pt-1">
-              "{gear.last_note}"
-            </div>
-          )}
-        </div>
-
-        {gear.status !== "active" && (
-          <div
-            className={cn(
-              "mt-8 p-4 rounded-xl border-2 flex items-start gap-3",
-              gear.status === "out_of_service"
-                ? "bg-destructive/10 border-destructive/30 text-destructive"
-                : "bg-loc-cumberland/10 border-loc-cumberland/40 text-loc-cumberland-foreground",
-            )}
-          >
-            {gear.status === "out_of_service" ? (
-              <CircleSlash className="size-5 mt-0.5 shrink-0" />
-            ) : (
-              <Wrench className="size-5 mt-0.5 shrink-0" />
-            )}
-            <div>
-              <div className="font-semibold">
-                {gear.status === "out_of_service" ? "Out of service" : "Out for repair"}
-              </div>
-              <div className="text-sm opacity-90 mt-0.5">
-                This gear is currently unavailable and can't be moved. Contact an admin if you need it.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {gear.status === "active" && (
-        <Card className="mt-10 p-5">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <div className="text-sm font-semibold mb-3">Move to</div>
-              <div className="grid grid-cols-3 gap-2">
-                {LOCATIONS.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => {
-                      setSelectedLoc(loc);
-                      setSubLocChoice("");
-                      setOtherSubLoc("");
-                      setSubLocError("");
-                    }}
-                    className={cn(
-                      "py-3 rounded-lg text-sm font-semibold border-2 transition-all",
-                      selectedLoc === loc
-                        ? cn(locationClasses(loc), "border-transparent")
-                        : "bg-background border-border text-foreground hover:border-foreground/30",
-                    )}
-                  >
-                    {locationLabel(loc)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold block mb-2" htmlFor="sublocation">
-                Spot at {selectedLoc} <span className="text-destructive">*</span>
-              </label>
-              <Select
-                value={subLocChoice}
-                onValueChange={(v) => {
-                  setSubLocChoice(v);
-                  setSubLocError("");
-                }}
-              >
-                <SelectTrigger id="sublocation" className="w-full">
-                  <SelectValue placeholder="Select a location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getSubLocations(selectedLoc).map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              {subLocChoice === "Other" && (
-                <Input
-                  className="mt-2"
-                  value={otherSubLoc}
-                  onChange={(e) => {
-                    setOtherSubLoc(e.target.value);
-                    setSubLocError("");
-                  }}
-                  placeholder="Describe the spot"
-                  maxLength={100}
-                  autoFocus
-                />
-              )}
-              {subLocError && (
-                <p className="text-destructive text-sm mt-2">{subLocError}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold block mb-2" htmlFor="mover">
-                Your name <span className="text-destructive">*</span>
-              </label>
-              <Select
-                value={moverChoice}
-                onValueChange={(v) => {
-                  setMoverChoice(v);
-                  setNameError("");
-                }}
-              >
-                <SelectTrigger id="mover" className="w-full">
-                  <SelectValue placeholder="Select your name" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MOVERS.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              {moverChoice === "Other" && (
-                <Input
-                  className="mt-2"
-                  value={otherName}
-                  onChange={(e) => {
-                    setOtherName(e.target.value);
-                    setNameError("");
-                  }}
-                  placeholder="Enter your name"
-                  maxLength={50}
-                  autoFocus
-                />
-              )}
-              {nameError && (
-                <p className="text-destructive text-sm mt-2">{nameError}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold block mb-2" htmlFor="note">
-                Note (optional)
-              </label>
-              <Input
-                id="note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Left at FOH for Ivana"
-                maxLength={200}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="w-full"
-              size="lg"
-            >
-              {submitting ? "Updating…" : "Update location"}
-            </Button>
-
-            {success && (
-              <div className="flex items-center justify-center gap-2 text-sm font-medium text-loc-trilith bg-loc-trilith/10 rounded-lg py-3">
-                <Check className="size-4" /> Location updated
-              </div>
-            )}
-          </form>
         </Card>
-        )}
-      </div>
+      </section>
+
+      {photos.length > 0 && (
+        <section className="max-w-6xl mx-auto px-6 pb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {photos.map((p) => (
+              <div key={p.id} className="aspect-square rounded-xl overflow-hidden bg-muted">
+                <img src={p.image_url} alt={p.alt_text ?? ""} className="w-full h-full object-cover" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <footer className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div className="inline-flex items-center gap-1.5">
+            <QrCode className="size-3.5" />
+            Scanning a gear QR code? Open the link from the sticker — no sign-in needed.
+          </div>
+          <Link to="/login" className="inline-flex items-center gap-1 hover:text-foreground">
+            More sign-in options <ArrowRight className="size-3" />
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 }

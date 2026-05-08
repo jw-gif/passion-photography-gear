@@ -35,6 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          pinned: boolean
+          published: boolean
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          published?: boolean
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          published?: boolean
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -119,6 +155,90 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      event_rsvps: {
+        Row: {
+          event_id: string
+          id: string
+          photographer_id: string | null
+          responded_at: string
+          status: Database["public"]["Enums"]["rsvp_status"]
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          photographer_id?: string | null
+          responded_at?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          photographer_id?: string | null
+          responded_at?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_rsvps_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "photographers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          capacity: number | null
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          location: string | null
+          published: boolean
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          location?: string | null
+          published?: boolean
+          starts_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          location?: string | null
+          published?: boolean
+          starts_at?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -246,10 +366,12 @@ export type Database = {
           needed_date: string
           notes: string | null
           photo_request_id: string | null
+          photographer_id: string | null
           requestor_name: string
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["gear_request_status"]
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -258,10 +380,12 @@ export type Database = {
           needed_date: string
           notes?: string | null
           photo_request_id?: string | null
+          photographer_id?: string | null
           requestor_name: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["gear_request_status"]
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -270,10 +394,12 @@ export type Database = {
           needed_date?: string
           notes?: string | null
           photo_request_id?: string | null
+          photographer_id?: string | null
           requestor_name?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["gear_request_status"]
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -284,6 +410,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      landing_photos: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       onboarding_hire_checklist: {
         Row: {
@@ -728,6 +878,7 @@ export type Database = {
           tier: Database["public"]["Enums"]["photographer_tier"]
           token: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean
@@ -739,6 +890,7 @@ export type Database = {
           tier?: Database["public"]["Enums"]["photographer_tier"]
           token: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean
@@ -750,6 +902,7 @@ export type Database = {
           tier?: Database["public"]["Enums"]["photographer_tier"]
           token?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -906,6 +1059,45 @@ export type Database = {
         }
         Relationships: []
       }
+      training_videos: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          published: boolean
+          sort_order: number
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          sort_order?: number
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          sort_order?: number
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1004,6 +1196,7 @@ export type Database = {
         Returns: boolean
       }
       link_hire_to_current_user: { Args: never; Returns: string }
+      link_photographer_to_current_user: { Args: never; Returns: string }
       list_my_jobs: {
         Args: { _token: string }
         Returns: {
@@ -1075,7 +1268,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "team"
+      app_role: "admin" | "team" | "photographer"
       gear_request_status: "pending" | "approved" | "denied"
       gear_status: "active" | "out_of_service" | "out_for_repair"
       photo_coverage_type: "live_event" | "photo_booth" | "other"
@@ -1096,6 +1289,7 @@ export type Database = {
         | "shot_list_addition"
         | "photoshoot"
       photographer_tier: "point" | "door_holder" | "training_door_holder"
+      rsvp_status: "going" | "maybe" | "declined"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1223,7 +1417,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "team"],
+      app_role: ["admin", "team", "photographer"],
       gear_request_status: ["pending", "approved", "denied"],
       gear_status: ["active", "out_of_service", "out_for_repair"],
       photo_coverage_type: ["live_event", "photo_booth", "other"],
@@ -1246,6 +1440,7 @@ export const Constants = {
         "photoshoot",
       ],
       photographer_tier: ["point", "door_holder", "training_door_holder"],
+      rsvp_status: ["going", "maybe", "declined"],
     },
   },
 } as const
