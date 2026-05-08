@@ -21,6 +21,10 @@ import {
   History,
   ArrowLeft,
   ListChecks,
+  Calendar,
+  PlayCircle,
+  Megaphone,
+  FileText,
 } from "lucide-react";
 import pccLogo from "@/assets/pcc-logo.png";
 import { cn } from "@/lib/utils";
@@ -48,6 +52,11 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
   const teamActive =
     pathname.startsWith("/admin/team") ||
     pathname.startsWith("/admin/onboarding");
+  const contentActive =
+    pathname.startsWith("/admin/events") ||
+    pathname.startsWith("/admin/training") ||
+    pathname.startsWith("/admin/announcements") ||
+    pathname.startsWith("/admin/landing-photos");
 
   return (
     <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
@@ -182,6 +191,26 @@ export function HubHeader({ onLogout, title, subtitle }: HubHeaderProps) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className={cn(contentActive && "bg-muted")}>
+                  <FileText className="size-4" />
+                  <span className="hidden md:inline">Content</span>
+                  <ChevronDown className="size-3 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel>Photographer hub</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link to="/admin/events"><Calendar className="size-4" /> Events</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/admin/training"><PlayCircle className="size-4" /> Training videos</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/admin/announcements"><Megaphone className="size-4" /> Announcements</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/admin/landing-photos"><ImageIcon className="size-4" /> Landing photos</Link></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <Button variant="ghost" size="sm" onClick={onLogout}>
             <LogOut className="size-4" />

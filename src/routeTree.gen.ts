@@ -22,6 +22,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPhotographerLinkRouteImport } from './routes/api.photographer-link'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
+import { Route as AdminTrainingRouteImport } from './routes/admin_.training'
 import { Route as AdminTeamRouteImport } from './routes/admin_.team'
 import { Route as AdminShotListGeneratorRouteImport } from './routes/admin_.shot-list-generator'
 import { Route as AdminShotListBlocksRouteImport } from './routes/admin_.shot-list-blocks'
@@ -32,10 +33,13 @@ import { Route as AdminPhotographersRouteImport } from './routes/admin_.photogra
 import { Route as AdminPhotoRequestsRouteImport } from './routes/admin_.photo-requests'
 import { Route as AdminOnboardingRouteImport } from './routes/admin_.onboarding'
 import { Route as AdminManageRouteImport } from './routes/admin_.manage'
+import { Route as AdminLandingPhotosRouteImport } from './routes/admin_.landing-photos'
 import { Route as AdminHistoryRouteImport } from './routes/admin_.history'
 import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage'
 import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
 import { Route as AdminGearRouteImport } from './routes/admin_.gear'
+import { Route as AdminEventsRouteImport } from './routes/admin_.events'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin_.announcements'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -109,6 +113,11 @@ const ApiAdminsRoute = ApiAdminsRouteImport.update({
   path: '/api/admins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTrainingRoute = AdminTrainingRouteImport.update({
+  id: '/admin_/training',
+  path: '/admin/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTeamRoute = AdminTeamRouteImport.update({
   id: '/admin_/team',
   path: '/admin/team',
@@ -160,6 +169,11 @@ const AdminManageRoute = AdminManageRouteImport.update({
   path: '/admin/manage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLandingPhotosRoute = AdminLandingPhotosRouteImport.update({
+  id: '/admin_/landing-photos',
+  path: '/admin/landing-photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminHistoryRoute = AdminHistoryRouteImport.update({
   id: '/admin_/history',
   path: '/admin/history',
@@ -178,6 +192,16 @@ const AdminGearHistoryRoute = AdminGearHistoryRouteImport.update({
 const AdminGearRoute = AdminGearRouteImport.update({
   id: '/admin_/gear',
   path: '/admin/gear',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminEventsRoute = AdminEventsRouteImport.update({
+  id: '/admin_/events',
+  path: '/admin/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/admin_/announcements',
+  path: '/admin/announcements',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAdminsRoute = AdminAdminsRouteImport.update({
@@ -233,10 +257,13 @@ export interface FileRoutesByFullPath {
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/events': typeof AdminEventsRoute
   '/admin/gear': typeof AdminGearRoute
   '/admin/gear-history': typeof AdminGearHistoryRoute
   '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
+  '/admin/landing-photos': typeof AdminLandingPhotosRoute
   '/admin/manage': typeof AdminManageRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
@@ -247,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/admin/shot-list-blocks': typeof AdminShotListBlocksRoute
   '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
+  '/admin/training': typeof AdminTrainingRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
@@ -269,10 +297,13 @@ export interface FileRoutesByTo {
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/events': typeof AdminEventsRoute
   '/admin/gear': typeof AdminGearRoute
   '/admin/gear-history': typeof AdminGearHistoryRoute
   '/admin/gear-manage': typeof AdminGearManageRoute
   '/admin/history': typeof AdminHistoryRoute
+  '/admin/landing-photos': typeof AdminLandingPhotosRoute
   '/admin/manage': typeof AdminManageRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/photo-requests': typeof AdminPhotoRequestsRoute
@@ -283,6 +314,7 @@ export interface FileRoutesByTo {
   '/admin/shot-list-blocks': typeof AdminShotListBlocksRoute
   '/admin/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin/team': typeof AdminTeamRoute
+  '/admin/training': typeof AdminTrainingRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
@@ -306,10 +338,13 @@ export interface FileRoutesById {
   '/request-photography': typeof RequestPhotographyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin_/admins': typeof AdminAdminsRoute
+  '/admin_/announcements': typeof AdminAnnouncementsRoute
+  '/admin_/events': typeof AdminEventsRoute
   '/admin_/gear': typeof AdminGearRoute
   '/admin_/gear-history': typeof AdminGearHistoryRoute
   '/admin_/gear-manage': typeof AdminGearManageRoute
   '/admin_/history': typeof AdminHistoryRoute
+  '/admin_/landing-photos': typeof AdminLandingPhotosRoute
   '/admin_/manage': typeof AdminManageRoute
   '/admin_/onboarding': typeof AdminOnboardingRoute
   '/admin_/photo-requests': typeof AdminPhotoRequestsRoute
@@ -320,6 +355,7 @@ export interface FileRoutesById {
   '/admin_/shot-list-blocks': typeof AdminShotListBlocksRoute
   '/admin_/shot-list-generator': typeof AdminShotListGeneratorRoute
   '/admin_/team': typeof AdminTeamRoute
+  '/admin_/training': typeof AdminTrainingRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
   '/admin_/onboarding_/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
@@ -344,10 +380,13 @@ export interface FileRouteTypes {
     | '/request-photography'
     | '/reset-password'
     | '/admin/admins'
+    | '/admin/announcements'
+    | '/admin/events'
     | '/admin/gear'
     | '/admin/gear-history'
     | '/admin/gear-manage'
     | '/admin/history'
+    | '/admin/landing-photos'
     | '/admin/manage'
     | '/admin/onboarding'
     | '/admin/photo-requests'
@@ -358,6 +397,7 @@ export interface FileRouteTypes {
     | '/admin/shot-list-blocks'
     | '/admin/shot-list-generator'
     | '/admin/team'
+    | '/admin/training'
     | '/api/admins'
     | '/api/photographer-link'
     | '/admin/onboarding/hires/$hireId'
@@ -380,10 +420,13 @@ export interface FileRouteTypes {
     | '/request-photography'
     | '/reset-password'
     | '/admin/admins'
+    | '/admin/announcements'
+    | '/admin/events'
     | '/admin/gear'
     | '/admin/gear-history'
     | '/admin/gear-manage'
     | '/admin/history'
+    | '/admin/landing-photos'
     | '/admin/manage'
     | '/admin/onboarding'
     | '/admin/photo-requests'
@@ -394,6 +437,7 @@ export interface FileRouteTypes {
     | '/admin/shot-list-blocks'
     | '/admin/shot-list-generator'
     | '/admin/team'
+    | '/admin/training'
     | '/api/admins'
     | '/api/photographer-link'
     | '/admin/onboarding/hires/$hireId'
@@ -416,10 +460,13 @@ export interface FileRouteTypes {
     | '/request-photography'
     | '/reset-password'
     | '/admin_/admins'
+    | '/admin_/announcements'
+    | '/admin_/events'
     | '/admin_/gear'
     | '/admin_/gear-history'
     | '/admin_/gear-manage'
     | '/admin_/history'
+    | '/admin_/landing-photos'
     | '/admin_/manage'
     | '/admin_/onboarding'
     | '/admin_/photo-requests'
@@ -430,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin_/shot-list-blocks'
     | '/admin_/shot-list-generator'
     | '/admin_/team'
+    | '/admin_/training'
     | '/api/admins'
     | '/api/photographer-link'
     | '/admin_/onboarding_/hires/$hireId'
@@ -453,10 +501,13 @@ export interface RootRouteChildren {
   RequestPhotographyRoute: typeof RequestPhotographyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
+  AdminEventsRoute: typeof AdminEventsRoute
   AdminGearRoute: typeof AdminGearRoute
   AdminGearHistoryRoute: typeof AdminGearHistoryRoute
   AdminGearManageRoute: typeof AdminGearManageRoute
   AdminHistoryRoute: typeof AdminHistoryRoute
+  AdminLandingPhotosRoute: typeof AdminLandingPhotosRoute
   AdminManageRoute: typeof AdminManageRoute
   AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPhotoRequestsRoute: typeof AdminPhotoRequestsRoute
@@ -467,6 +518,7 @@ export interface RootRouteChildren {
   AdminShotListBlocksRoute: typeof AdminShotListBlocksRoute
   AdminShotListGeneratorRoute: typeof AdminShotListGeneratorRoute
   AdminTeamRoute: typeof AdminTeamRoute
+  AdminTrainingRoute: typeof AdminTrainingRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
   ApiPhotographerLinkRoute: typeof ApiPhotographerLinkRoute
   AdminOnboardingHiresHireIdRoute: typeof AdminOnboardingHiresHireIdRoute
@@ -570,6 +622,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/training': {
+      id: '/admin_/training'
+      path: '/admin/training'
+      fullPath: '/admin/training'
+      preLoaderRoute: typeof AdminTrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/team': {
       id: '/admin_/team'
       path: '/admin/team'
@@ -640,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminManageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/landing-photos': {
+      id: '/admin_/landing-photos'
+      path: '/admin/landing-photos'
+      fullPath: '/admin/landing-photos'
+      preLoaderRoute: typeof AdminLandingPhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/history': {
       id: '/admin_/history'
       path: '/admin/history'
@@ -666,6 +732,20 @@ declare module '@tanstack/react-router' {
       path: '/admin/gear'
       fullPath: '/admin/gear'
       preLoaderRoute: typeof AdminGearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/events': {
+      id: '/admin_/events'
+      path: '/admin/events'
+      fullPath: '/admin/events'
+      preLoaderRoute: typeof AdminEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/announcements': {
+      id: '/admin_/announcements'
+      path: '/admin/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin_/admins': {
@@ -733,10 +813,13 @@ const rootRouteChildren: RootRouteChildren = {
   RequestPhotographyRoute: RequestPhotographyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdminAdminsRoute: AdminAdminsRoute,
+  AdminAnnouncementsRoute: AdminAnnouncementsRoute,
+  AdminEventsRoute: AdminEventsRoute,
   AdminGearRoute: AdminGearRoute,
   AdminGearHistoryRoute: AdminGearHistoryRoute,
   AdminGearManageRoute: AdminGearManageRoute,
   AdminHistoryRoute: AdminHistoryRoute,
+  AdminLandingPhotosRoute: AdminLandingPhotosRoute,
   AdminManageRoute: AdminManageRoute,
   AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPhotoRequestsRoute: AdminPhotoRequestsRoute,
@@ -747,6 +830,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminShotListBlocksRoute: AdminShotListBlocksRoute,
   AdminShotListGeneratorRoute: AdminShotListGeneratorRoute,
   AdminTeamRoute: AdminTeamRoute,
+  AdminTrainingRoute: AdminTrainingRoute,
   ApiAdminsRoute: ApiAdminsRoute,
   ApiPhotographerLinkRoute: ApiPhotographerLinkRoute,
   AdminOnboardingHiresHireIdRoute: AdminOnboardingHiresHireIdRoute,
