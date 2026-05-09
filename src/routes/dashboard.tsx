@@ -83,7 +83,7 @@ function DashboardPage() {
           .limit(10),
         supabase
           .from("events")
-          .select("id, title, starts_at, location")
+          .select("id, title, starts_at, location, capacity")
           .eq("published", true)
           .gte("starts_at", new Date().toISOString())
           .order("starts_at", { ascending: true })
