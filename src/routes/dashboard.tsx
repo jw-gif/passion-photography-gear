@@ -20,7 +20,7 @@ export const Route = createFileRoute("/dashboard")({
 interface OpenJob { opening_id: string; event_name: string | null; event_date: string | null; }
 interface MyJob { assignment_id: string; event_name: string | null; event_date: string | null; }
 interface MyGearReq { id: string; needed_date: string; status: string; location: string; }
-interface EventRow { id: string; title: string; starts_at: string; location: string | null; }
+interface EventRow { id: string; title: string; starts_at: string; location: string | null; capacity: number | null; }
 interface Announcement { id: string; title: string; body: string; published_at: string; pinned: boolean; }
 interface Video { id: string; title: string; thumbnail_url: string | null; }
 
