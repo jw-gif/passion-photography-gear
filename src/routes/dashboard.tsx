@@ -242,13 +242,17 @@ function DashboardPage() {
                   const full = e.capacity != null && count >= e.capacity && !going;
                   return (
                     <li key={e.id} className="py-2 text-sm flex items-center justify-between gap-3">
-                      <div className="min-w-0">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left hover:text-primary transition-colors"
+                        onClick={() => setOpenEvent(e)}
+                      >
                         <div className="font-medium truncate">{e.title}</div>
                         <div className="text-xs text-muted-foreground">
                           {new Date(e.starts_at).toLocaleString()} {e.location ? `· ${e.location}` : ""}
                           {e.capacity != null && ` · ${count}/${e.capacity}`}
                         </div>
-                      </div>
+                      </button>
                       <Button
                         size="sm"
                         variant={going ? "secondary" : "outline"}
@@ -268,11 +272,19 @@ function DashboardPage() {
             {videos.length === 0 ? <Empty text="No videos posted yet." /> : (
               <div className="grid grid-cols-2 gap-2">
                 {videos.map((v) => (
-                  <div key={v.id} className="aspect-video rounded-md bg-muted overflow-hidden">
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setOpenVideo(v)}
+                    className="group aspect-video rounded-md bg-muted overflow-hidden relative"
+                  >
                     {v.thumbnail_url
                       ? <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">{v.title}</div>}
-                  </div>
+                      : <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-2 text-center">{v.title}</div>}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <Play className="size-8 text-white" />
+                    </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -283,8 +295,14 @@ function DashboardPage() {
               <ul className="divide-y">
                 {anns.map((a) => (
                   <li key={a.id} className="py-2 text-sm">
-                    <div className="font-medium">{a.pinned ? "📌 " : ""}{a.title}</div>
-                    {a.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{a.body}</div>}
+                    <button
+                      type="button"
+                      onClick={() => setOpenAnn(a)}
+                      className="text-left w-full hover:text-primary transition-colors"
+                    >
+                      <div className="font-medium">{a.pinned ? "📌 " : ""}{a.title}</div>
+                      {a.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{a.body}</div>}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -292,8 +310,93 @@ function DashboardPage() {
           </Section>
         </div>
       </div>
+
+      <Dialog open={!!openEvent} onOpenChange={(o) => !o && setOpenEvent(null)}>
+        <DialogContent>
+          {openEvent && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{openEvent.title}</DialogTitle>
+                <DialogDescription>
+                  {new Date(openEvent.starts_at).toLocaleString()}
+                  {openEvent.ends_at ? ` – ${new Date(openEvent.ends_at).toLocaleString()}` : ""}
+                  {openEvent.location ? ` · ${openEvent.location}` : ""}
+                </DialogDescription>
+              </DialogHeader>
+              {openEvent.description && (
+                <p className="text-sm whitespace-pre-wrap">{openEvent.description}</p>
+              )}
+              <div className="flex items-center justify-between pt-2">
+                <div className="text-xs text-muted-foreground">
+                  {(rsvpCounts[openEvent.id] ?? 0)}{openEvent.capacity != null ? ` / ${openEvent.capacity}` : ""} going
+                </div>
+                <Button
+                  size="sm"
+                  variant={rsvps[openEvent.id] ? "secondary" : "default"}
+                  onClick={() => toggleRsvp(openEvent.id)}
+                >
+                  {rsvps[openEvent.id] ? <><Check className="size-3.5" /> Going</> : "RSVP"}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!openVideo} onOpenChange={(o) => !o && setOpenVideo(null)}>
+        <DialogContent className="max-w-3xl">
+          {openVideo && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{openVideo.title}</DialogTitle>
+                {openVideo.description && <DialogDescription>{openVideo.description}</DialogDescription>}
+              </DialogHeader>
+              <div className="aspect-video rounded-md overflow-hidden bg-black">
+                {/youtube\.com|youtu\.be|vimeo\.com/.test(openVideo.video_url) ? (
+                  <iframe
+                    src={toEmbedUrl(openVideo.video_url)}
+                    title={openVideo.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video src={openVideo.video_url} controls className="w-full h-full" />
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!openAnn} onOpenChange={(o) => !o && setOpenAnn(null)}>
+        <DialogContent>
+          {openAnn && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{openAnn.pinned ? "📌 " : ""}{openAnn.title}</DialogTitle>
+                <DialogDescription>{new Date(openAnn.published_at).toLocaleString()}</DialogDescription>
+              </DialogHeader>
+              {openAnn.body && <p className="text-sm whitespace-pre-wrap">{openAnn.body}</p>}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
+}
+
+function toEmbedUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    if (u.hostname.includes("vimeo.com")) return `https://player.vimeo.com/video/${u.pathname.split("/").pop()}`;
+  } catch { /* noop */ }
+  return url;
 }
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
