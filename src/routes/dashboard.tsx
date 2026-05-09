@@ -232,14 +232,30 @@ function DashboardPage() {
           <Section title="Upcoming events" icon={<Calendar className="size-4" />}>
             {events.length === 0 ? <Empty text="No events scheduled." /> : (
               <ul className="divide-y">
-                {events.map((e) => (
-                  <li key={e.id} className="py-2 text-sm">
-                    <div className="font-medium">{e.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(e.starts_at).toLocaleString()} {e.location ? `· ${e.location}` : ""}
-                    </div>
-                  </li>
-                ))}
+                {events.map((e) => {
+                  const going = !!rsvps[e.id];
+                  const count = rsvpCounts[e.id] ?? 0;
+                  const full = e.capacity != null && count >= e.capacity && !going;
+                  return (
+                    <li key={e.id} className="py-2 text-sm flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{e.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(e.starts_at).toLocaleString()} {e.location ? `· ${e.location}` : ""}
+                          {e.capacity != null && ` · ${count}/${e.capacity}`}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={going ? "secondary" : "outline"}
+                        disabled={full}
+                        onClick={() => toggleRsvp(e.id)}
+                      >
+                        {going ? <><Check className="size-3.5" /> Going</> : full ? "Full" : "RSVP"}
+                      </Button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Section>
