@@ -84,7 +84,7 @@ function DashboardPage() {
           .limit(10),
         supabase
           .from("events")
-          .select("id, title, starts_at, location, capacity")
+          .select("id, title, starts_at, ends_at, location, capacity, description")
           .eq("published", true)
           .gte("starts_at", new Date().toISOString())
           .order("starts_at", { ascending: true })
@@ -98,7 +98,7 @@ function DashboardPage() {
           .limit(5),
         supabase
           .from("training_videos")
-          .select("id, title, thumbnail_url")
+          .select("id, title, description, video_url, thumbnail_url")
           .eq("published", true)
           .order("sort_order", { ascending: true })
           .limit(6),
