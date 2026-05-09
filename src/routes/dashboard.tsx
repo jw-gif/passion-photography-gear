@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Wrench, Calendar, PlayCircle, Megaphone, LogOut, Briefcase } from "lucide-react";
+import { Camera, Wrench, Calendar, PlayCircle, Megaphone, LogOut, Briefcase, Check } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/dashboard")({
 interface OpenJob { opening_id: string; event_name: string | null; event_date: string | null; }
 interface MyJob { assignment_id: string; event_name: string | null; event_date: string | null; }
 interface MyGearReq { id: string; needed_date: string; status: string; location: string; }
-interface EventRow { id: string; title: string; starts_at: string; location: string | null; }
+interface EventRow { id: string; title: string; starts_at: string; location: string | null; capacity: number | null; }
 interface Announcement { id: string; title: string; body: string; published_at: string; pinned: boolean; }
 interface Video { id: string; title: string; thumbnail_url: string | null; }
 
@@ -34,6 +35,8 @@ function DashboardPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (loading) return;
@@ -80,7 +83,7 @@ function DashboardPage() {
           .limit(10),
         supabase
           .from("events")
-          .select("id, title, starts_at, location")
+          .select("id, title, starts_at, location, capacity")
           .eq("published", true)
           .gte("starts_at", new Date().toISOString())
           .order("starts_at", { ascending: true })
@@ -100,11 +103,45 @@ function DashboardPage() {
           .limit(6),
       ]);
       setMyGear((g ?? []) as MyGearReq[]);
-      setEvents((ev ?? []) as EventRow[]);
+      const evRows = (ev ?? []) as EventRow[];
+      setEvents(evRows);
       setAnns((an ?? []) as Announcement[]);
       setVideos((vid ?? []) as Video[]);
+
+      if (evRows.length) {
+        const ids = evRows.map((e) => e.id);
+        const [{ data: mine }, { data: all }] = await Promise.all([
+          supabase.from("event_rsvps").select("event_id").in("event_id", ids).eq("user_id", user.id),
+          supabase.from("event_rsvps").select("event_id").in("event_id", ids),
+        ]);
+        const m: Record<string, boolean> = {};
+        (mine ?? []).forEach((r: { event_id: string }) => { m[r.event_id] = true; });
+        setRsvps(m);
+        const c: Record<string, number> = {};
+        (all ?? []).forEach((r: { event_id: string }) => { c[r.event_id] = (c[r.event_id] ?? 0) + 1; });
+        setRsvpCounts(c);
+      }
     })();
   }, [user]);
+
+  async function toggleRsvp(eventId: string) {
+    if (!user) return;
+    if (rsvps[eventId]) {
+      const { error } = await supabase.from("event_rsvps").delete().eq("event_id", eventId).eq("user_id", user.id);
+      if (error) { toast.error(error.message); return; }
+      setRsvps((s) => ({ ...s, [eventId]: false }));
+      setRsvpCounts((s) => ({ ...s, [eventId]: Math.max(0, (s[eventId] ?? 1) - 1) }));
+      toast.success("RSVP removed");
+    } else {
+      const { error } = await supabase.from("event_rsvps").insert({
+        event_id: eventId, user_id: user.id, photographer_id: photographerId, status: "going",
+      });
+      if (error) { toast.error(error.message); return; }
+      setRsvps((s) => ({ ...s, [eventId]: true }));
+      setRsvpCounts((s) => ({ ...s, [eventId]: (s[eventId] ?? 0) + 1 }));
+      toast.success("You're in!");
+    }
+  }
 
   if (loading || !user) {
     return <main className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Loading…</main>;
@@ -195,14 +232,30 @@ function DashboardPage() {
           <Section title="Upcoming events" icon={<Calendar className="size-4" />}>
             {events.length === 0 ? <Empty text="No events scheduled." /> : (
               <ul className="divide-y">
-                {events.map((e) => (
-                  <li key={e.id} className="py-2 text-sm">
-                    <div className="font-medium">{e.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(e.starts_at).toLocaleString()} {e.location ? `· ${e.location}` : ""}
-                    </div>
-                  </li>
-                ))}
+                {events.map((e) => {
+                  const going = !!rsvps[e.id];
+                  const count = rsvpCounts[e.id] ?? 0;
+                  const full = e.capacity != null && count >= e.capacity && !going;
+                  return (
+                    <li key={e.id} className="py-2 text-sm flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{e.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(e.starts_at).toLocaleString()} {e.location ? `· ${e.location}` : ""}
+                          {e.capacity != null && ` · ${count}/${e.capacity}`}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={going ? "secondary" : "outline"}
+                        disabled={full}
+                        onClick={() => toggleRsvp(e.id)}
+                      >
+                        {going ? <><Check className="size-3.5" /> Going</> : full ? "Full" : "RSVP"}
+                      </Button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Section>

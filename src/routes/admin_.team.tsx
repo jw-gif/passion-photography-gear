@@ -259,6 +259,18 @@ function PhotographersPanel() {
     }
   }
 
+  async function sendMagicLink(p: Photographer) {
+    const redirectTo = typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard`
+      : undefined;
+    const { error } = await supabase.auth.signInWithOtp({
+      email: p.email,
+      options: { emailRedirectTo: redirectTo, shouldCreateUser: true },
+    });
+    if (error) toast.error(error.message);
+    else toast.success(`Sign-in link sent to ${p.email}`);
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -366,6 +378,9 @@ function PhotographersPanel() {
                     <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
                     <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
                       Edit
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => sendMagicLink(p)} title="Email a sign-in link">
+                      <Mail className="size-4" /> Sign-in link
                     </Button>
                     <Button
                       size="sm"
