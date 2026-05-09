@@ -103,11 +103,45 @@ function DashboardPage() {
           .limit(6),
       ]);
       setMyGear((g ?? []) as MyGearReq[]);
-      setEvents((ev ?? []) as EventRow[]);
+      const evRows = (ev ?? []) as EventRow[];
+      setEvents(evRows);
       setAnns((an ?? []) as Announcement[]);
       setVideos((vid ?? []) as Video[]);
+
+      if (evRows.length) {
+        const ids = evRows.map((e) => e.id);
+        const [{ data: mine }, { data: all }] = await Promise.all([
+          supabase.from("event_rsvps").select("event_id").in("event_id", ids).eq("user_id", user.id),
+          supabase.from("event_rsvps").select("event_id").in("event_id", ids),
+        ]);
+        const m: Record<string, boolean> = {};
+        (mine ?? []).forEach((r: { event_id: string }) => { m[r.event_id] = true; });
+        setRsvps(m);
+        const c: Record<string, number> = {};
+        (all ?? []).forEach((r: { event_id: string }) => { c[r.event_id] = (c[r.event_id] ?? 0) + 1; });
+        setRsvpCounts(c);
+      }
     })();
   }, [user]);
+
+  async function toggleRsvp(eventId: string) {
+    if (!user) return;
+    if (rsvps[eventId]) {
+      const { error } = await supabase.from("event_rsvps").delete().eq("event_id", eventId).eq("user_id", user.id);
+      if (error) { toast.error(error.message); return; }
+      setRsvps((s) => ({ ...s, [eventId]: false }));
+      setRsvpCounts((s) => ({ ...s, [eventId]: Math.max(0, (s[eventId] ?? 1) - 1) }));
+      toast.success("RSVP removed");
+    } else {
+      const { error } = await supabase.from("event_rsvps").insert({
+        event_id: eventId, user_id: user.id, photographer_id: photographerId, status: "going",
+      });
+      if (error) { toast.error(error.message); return; }
+      setRsvps((s) => ({ ...s, [eventId]: true }));
+      setRsvpCounts((s) => ({ ...s, [eventId]: (s[eventId] ?? 0) + 1 }));
+      toast.success("You're in!");
+    }
+  }
 
   if (loading || !user) {
     return <main className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Loading…</main>;
