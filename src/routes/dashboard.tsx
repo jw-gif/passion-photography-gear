@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Wrench, Calendar, PlayCircle, Megaphone, LogOut, Briefcase } from "lucide-react";
+import { Camera, Wrench, Calendar, PlayCircle, Megaphone, LogOut, Briefcase, Check } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
