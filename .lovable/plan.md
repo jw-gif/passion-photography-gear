@@ -1,46 +1,74 @@
 ## Goal
 
-Make `/photographers/$id` and `/jobs` the same experience: one beautiful, holistic photographer page that keeps the polished card-based look of the current jobs board and adds the dashboard modules (events/RSVPs, gear requests, training videos, announcements, quick actions). Both URLs render the same component; access works either via login or the legacy `?t=token` magic-link.
+Replace the current tabbed `/photographers/$id` page with a single-page, scroll-friendly dashboard inspired by the reference mockup: a compact org header, a personal greeting with weekly summary, an "Open opportunities" card grid, an "Your upcoming opportunities" list, and a "Team & resources" zone with Team events, Workshop library, and Announcements side-by-side.
+
+## Layout
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│ [logo] Lens & Light Studio                  [bell]  [avatar]  │
+│        Photographer dashboard                                 │
+├───────────────────────────────────────────────────────────────┤
+│ Welcome back, {name}                                          │
+│ You have N opportunities this week and M new ones to claim.   │
+├───────────────────────────────────────────────────────────────┤
+│ Open opportunities                              N available   │
+│ ┌─ card ──────────┐  ┌─ card ──────────┐                      │
+│ │ Title    [tag]  │  │ Title    [tag]  │   (2-col grid;       │
+│ │ Place · Date    │  │ Place · Date    │    1-col on mobile)  │
+│ │ hrs · $ · #ph   │  │ hrs · $ · #ph   │                      │
+│ │ [Claim] [Det.]  │  │ [Claim] [Det.]  │                      │
+│ └─────────────────┘  └─────────────────┘                      │
+├───────────────────────────────────────────────────────────────┤
+│ Your upcoming opportunities                  X in next 7 days │
+│ ┌─────────────────────────────────────────────────────────┐   │
+│ │ [MAY 12] Title · time · place · hrs   [status][gear ↗] │   │
+│ │ [MAY 14] Title · …                    [status][gear ↗] │   │
+│ └─────────────────────────────────────────────────────────┘   │
+├───────────────────────────────────────────────────────────────┤
+│ Team & resources                                              │
+│ ┌─ Team events ─────────────────────────────────────────┐     │
+│ │ [date] Title · day · time · N going  [RSVP][Maybe]   │     │
+│ └───────────────────────────────────────────────────────┘     │
+│ ┌─ Workshop library ─────────┐  ┌─ Announcements ─────┐      │
+│ │ [▶] Title · min · level    │  │ • Title             │      │
+│ │ [▶] Title · min · level    │  │   sub · time        │      │
+│ └────────────────────────────┘  └─────────────────────┘      │
+└───────────────────────────────────────────────────────────────┘
+```
 
 ## What changes
 
-**One unified page** at `/photographers/$id` rendered with the jobs page's visual language:
-- Hero header from the jobs page (greeting + tier badge), enriched with a "View as admin" notice when staff browse another photographer.
-- Tabs reused from the jobs page, expanded:
-  1. **Open shoots** — current jobs board with filters, grouped shoot cards, claim/release.
-  2. **My shoots** — current accepted shoots list with ICS export.
-  3. **Events** — upcoming events with RSVP toggle and capacity, click-through to event details dialog.
-  4. **Training** — training video grid with player dialog.
-  5. **Updates** — pinned + recent announcements with detail dialog.
-- A persistent quick-action rail under the header (Request gear, Request photography) and a gear-requests strip showing the photographer's recent requests.
-
-**Routing**
-- `/photographers/$id` becomes the canonical page.
-- `/jobs` keeps working: it reads `?t=token`, resolves the photographer, and forwards to `/photographers/$id?t=token` (preserving the token).
-- `/dashboard` keeps its current redirect behavior.
-- Logged-in admins/team viewing another photographer see the same page in read-only mode (no claim/RSVP/release buttons; "Admin view" banner).
-
-**Access (login OR token)**
-- If `?t=` is present and resolves to this photographer, treat the visitor as the owner — no login required, all owner actions enabled. (Matches today's `/jobs` behavior.)
-- Otherwise require login: owner = signed-in user whose `photographers.user_id` matches; team/admin = read-only view.
-- The page picks the right Supabase calls based on which credential is active (token-based RPCs vs. user-based queries).
-
-**Visual polish (keep the jobs aesthetic, make it more holistic)**
-- Same card style, same tier badge, same filter bar.
-- Wider container (`max-w-5xl`) so the extra modules breathe.
-- Section headers with the existing icon + title pattern; consistent spacing and dividers.
-- Empty states styled like the current jobs empty state (icon + soft copy).
-- Mobile: tabs scroll horizontally; cards stack; quick actions wrap.
+- **Drop the tabbed shell.** Replace with a single scrollable page using the sections above.
+- **New compact header**: small logo tile + org name + "Photographer dashboard" subtitle on the left; bell + avatar (initials) on the right. Sign-out and admin-view banner move into the avatar menu / a thin bar above the header.
+- **Greeting block** computes the week's confirmed shoots count and the open-jobs count to fill the sentence.
+- **Open opportunities**: 2-column card grid (1-col on mobile). Each card shows title, segment tag (right-aligned, colored pill), location · date, then `hours · budget · photographers needed`, and two buttons (`Claim opportunity`, `Details`). "N available" counter in the section header. Keeps existing filter logic but condenses it into a single "Filter" popover button next to the counter (so the cleaner look is preserved). Reuses `claim_job` RPC.
+- **Your upcoming opportunities**: condensed list rows (date chip on left, title + meta in middle, status pill + "Request gear ↗" link on the right). Sourced from existing "my shoots" data. Status pill derives from gear request state (`Confirmed` / `Gear pending`). Clicking a row opens the existing brief/EventGearPanel in a Dialog (instead of inline expand).
+- **Team & resources**:
+  - **Team events** card: rows with date chip, title, "day · time · N going", RSVP yes/maybe buttons (uses existing `event_rsvps` write).
+  - **Workshop library** card: list of training videos with colored play tile, title, "min · level". Click opens the existing video dialog.
+  - **Announcements** card: bulleted list (dot color = unread/pinned), title, sub + relative time. Click opens the existing announcement dialog.
+- **Read-only/admin view**: same data, but Claim / RSVP / Request-gear buttons hidden; an "Admin view" strip sits above the header.
+- **Token + login auth**: unchanged. Both modes still resolve to this page.
 
 ## Files
 
-- **Rewrite** `src/routes/photographers.$id.tsx` — adopt the jobs page layout, add Events / Training / Updates tabs, support both auth modes.
-- **Edit** `src/routes/jobs.tsx` — replace body with a redirect to `/photographers/$id?t=token` after resolving the photographer (keeps emailed links working).
-- **Edit** `src/routes/dashboard.tsx` — unchanged behavior; verify it still routes photographers to the new unified page.
-- No DB or RPC changes. Existing RPCs (`get_photographer_by_token`, `list_open_jobs`, `list_my_jobs`, `claim_job`, `release_job`) and the existing tables (`event_rsvps`, `gear_requests`, `events`, `announcements`, `training_videos`) cover everything.
+- **Rewrite** `src/routes/photographers.$id.tsx` — new layout, same data fetching and RPC calls. Keep all existing query logic; only the presentation changes. Pull section JSX into local components (`OpportunityCard`, `UpcomingRow`, `TeamEventRow`, `WorkshopRow`, `AnnouncementRow`) inside the same file to keep the diff scoped.
+- **No** changes to `jobs.tsx`, `dashboard.tsx`, RPCs, tables, or admin pages.
+- **No** changes to `EventGearPanel`, `ConfirmDialog`, `IcsExportButton`, `event-detail-dialog`, or training/announcement dialogs — they're reused.
+
+## Visual details
+
+- Wider container `max-w-5xl`, generous vertical spacing (`space-y-10`), section headers as `flex justify-between` with title + small right-side meta.
+- Cards: `rounded-xl border bg-card p-5` with subtle shadow on hover for clickable cards.
+- Segment tags reuse the existing colored pill component.
+- Date chips: small rounded square with two lines (`MAY` / `12`) tinted by segment.
+- Mobile: header collapses, grids drop to 1 column, buttons stack full-width.
+- Tokens only — no hardcoded colors.
 
 ## Out of scope
 
-- No changes to admin pages other than the existing "View page" link already pointing to `/photographers/$id`.
-- No changes to email templates or the magic-link generator.
-- Onboarding, gear request forms, photo request form: untouched (the page links to them).
+- Notifications bell behavior (render a static bell icon for now; wire later).
+- Reordering or DB changes.
+- Replacing the gear/photo request forms.
+- Changing onboarding, admin pages, or email templates.
