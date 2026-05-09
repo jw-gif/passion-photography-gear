@@ -20,6 +20,7 @@ import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PhotographersIdRouteImport } from './routes/photographers.$id'
 import { Route as ApiPhotographerLinkRouteImport } from './routes/api.photographer-link'
 import { Route as ApiAdminsRouteImport } from './routes/api.admins'
 import { Route as AdminTrainingRouteImport } from './routes/admin_.training'
@@ -101,6 +102,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotographersIdRoute = PhotographersIdRouteImport.update({
+  id: '/photographers/$id',
+  path: '/photographers/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPhotographerLinkRoute = ApiPhotographerLinkRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/admin/training': typeof AdminTrainingRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
+  '/photographers/$id': typeof PhotographersIdRoute
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
@@ -317,6 +324,7 @@ export interface FileRoutesByTo {
   '/admin/training': typeof AdminTrainingRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
+  '/photographers/$id': typeof PhotographersIdRoute
   '/admin/onboarding/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin/onboarding/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin/onboarding/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
@@ -358,6 +366,7 @@ export interface FileRoutesById {
   '/admin_/training': typeof AdminTrainingRoute
   '/api/admins': typeof ApiAdminsRoute
   '/api/photographer-link': typeof ApiPhotographerLinkRoute
+  '/photographers/$id': typeof PhotographersIdRoute
   '/admin_/onboarding_/hires/$hireId': typeof AdminOnboardingHiresHireIdRoute
   '/admin_/onboarding_/pages/$slug': typeof AdminOnboardingPagesSlugRoute
   '/admin_/onboarding_/templates/$templateId': typeof AdminOnboardingTemplatesTemplateIdRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/admin/training'
     | '/api/admins'
     | '/api/photographer-link'
+    | '/photographers/$id'
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
     | '/admin/onboarding/templates/$templateId'
@@ -440,6 +450,7 @@ export interface FileRouteTypes {
     | '/admin/training'
     | '/api/admins'
     | '/api/photographer-link'
+    | '/photographers/$id'
     | '/admin/onboarding/hires/$hireId'
     | '/admin/onboarding/pages/$slug'
     | '/admin/onboarding/templates/$templateId'
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/admin_/training'
     | '/api/admins'
     | '/api/photographer-link'
+    | '/photographers/$id'
     | '/admin_/onboarding_/hires/$hireId'
     | '/admin_/onboarding_/pages/$slug'
     | '/admin_/onboarding_/templates/$templateId'
@@ -521,6 +533,7 @@ export interface RootRouteChildren {
   AdminTrainingRoute: typeof AdminTrainingRoute
   ApiAdminsRoute: typeof ApiAdminsRoute
   ApiPhotographerLinkRoute: typeof ApiPhotographerLinkRoute
+  PhotographersIdRoute: typeof PhotographersIdRoute
   AdminOnboardingHiresHireIdRoute: typeof AdminOnboardingHiresHireIdRoute
   AdminOnboardingPagesSlugRoute: typeof AdminOnboardingPagesSlugRoute
   AdminOnboardingTemplatesTemplateIdRoute: typeof AdminOnboardingTemplatesTemplateIdRoute
@@ -606,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photographers/$id': {
+      id: '/photographers/$id'
+      path: '/photographers/$id'
+      fullPath: '/photographers/$id'
+      preLoaderRoute: typeof PhotographersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/photographer-link': {
@@ -833,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminTrainingRoute: AdminTrainingRoute,
   ApiAdminsRoute: ApiAdminsRoute,
   ApiPhotographerLinkRoute: ApiPhotographerLinkRoute,
+  PhotographersIdRoute: PhotographersIdRoute,
   AdminOnboardingHiresHireIdRoute: AdminOnboardingHiresHireIdRoute,
   AdminOnboardingPagesSlugRoute: AdminOnboardingPagesSlugRoute,
   AdminOnboardingTemplatesTemplateIdRoute:

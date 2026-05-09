@@ -370,9 +370,14 @@ function PhotographersPanel() {
                     <Button size="sm" variant="outline" onClick={() => copyLink(p)}>
                       <Copy className="size-4" /> Copy link
                     </Button>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/photographers/$id" params={{ id: p.id }}>
+                        <ExternalLink className="size-4" /> View page
+                      </Link>
+                    </Button>
                     <Button size="sm" variant="ghost" asChild>
                       <a href={jobsLink(p.token)} target="_blank" rel="noreferrer">
-                        <ExternalLink className="size-4" /> Open
+                        <ExternalLink className="size-4" /> Jobs link
                       </a>
                     </Button>
                     <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
