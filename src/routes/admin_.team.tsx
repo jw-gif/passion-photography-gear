@@ -379,6 +379,9 @@ function PhotographersPanel() {
                     <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
                       Edit
                     </Button>
+                    <Button size="sm" variant="ghost" onClick={() => sendMagicLink(p)} title="Email a sign-in link">
+                      <Mail className="size-4" /> Sign-in link
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
