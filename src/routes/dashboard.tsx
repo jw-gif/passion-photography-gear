@@ -35,6 +35,8 @@ function DashboardPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (loading) return;
