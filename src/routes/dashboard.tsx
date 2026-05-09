@@ -38,6 +38,9 @@ function DashboardPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
   const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
+  const [openEvent, setOpenEvent] = useState<EventRow | null>(null);
+  const [openVideo, setOpenVideo] = useState<Video | null>(null);
+  const [openAnn, setOpenAnn] = useState<Announcement | null>(null);
 
   useEffect(() => {
     if (loading) return;
