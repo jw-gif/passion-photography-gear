@@ -397,6 +397,7 @@ interface RosterCounts {
   filledDoor: number;
   openPoint: number;
   openDoor: number;
+  assigned: { id: string; name: string }[];
 }
 
 function RequestRow({
@@ -420,6 +421,7 @@ function RequestRow({
     (roster?.openPoint ?? 0) +
     (roster?.openDoor ?? 0);
   const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
+  const assigned = roster?.assigned ?? [];
 
   const isApproved =
     req.status === "approved_job_board" ||
@@ -435,27 +437,29 @@ function RequestRow({
       className="relative p-4 sm:p-5 hover:border-foreground/30 transition-colors cursor-pointer"
       onClick={onOpen}
     >
-      <div className="flex items-start gap-4 sm:gap-6">
-        {/* Date block */}
-        <div className="flex flex-col shrink-0 w-14 sm:w-16">
+      <div className="grid grid-cols-[auto_1fr_auto] lg:grid-cols-[auto_1fr_minmax(180px,220px)_auto] items-center gap-x-5 sm:gap-x-6 gap-y-3">
+        {/* Date */}
+        <div className="shrink-0">
           {eventDate ? (
             <DateBlock date={eventDate} showMonth size="lg" />
           ) : (
-            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
+            <div className="w-14 text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
               NO DATE
             </div>
           )}
         </div>
 
         {/* Title + meta */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="font-semibold text-lg sm:text-xl leading-tight truncate">
-              {req.event_name || `${req.first_name} ${req.last_name}`}
-            </h3>
-            <span className="text-xs text-muted-foreground">· {types}</span>
-          </div>
-          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+        <div className="min-w-0">
+          {types && (
+            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground uppercase mb-1">
+              {types}
+            </div>
+          )}
+          <h3 className="font-semibold text-lg sm:text-xl leading-tight truncate">
+            {req.event_name || `${req.first_name} ${req.last_name}`}
+          </h3>
+          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
             {(req.start_time || req.end_time) && (
               <span className="flex items-center gap-1">
                 <Clock className="size-3.5" />
@@ -463,36 +467,36 @@ function RequestRow({
               </span>
             )}
             {req.event_location && <LocationPill location={req.event_location} />}
-            <span className="text-muted-foreground/60">·</span>
             <span className="flex items-center gap-1">
               <UserIcon className="size-3.5" />
               {req.first_name} {req.last_name}
             </span>
-            <span className="text-muted-foreground/60">·</span>
             <span className="truncate">{req.company}{req.team ? ` / ${req.team}` : ""}</span>
           </div>
         </div>
 
-        {/* Fill bar */}
-        <div className="hidden md:flex flex-col justify-center w-56 shrink-0">
+        {/* Coverage column — fill bar + avatars */}
+        <div className="hidden lg:flex flex-col gap-2 min-w-0">
           {totalOpenings > 0 ? (
-            <FillBar
-              filled={totalFilled}
-              total={totalOpenings}
-              label={
-                <span className="text-sm">
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-foreground/80">
                   {totalFilled}/{totalOpenings} filled
                 </span>
-              }
-            />
+                {assigned.length > 0 && (
+                  <AvatarStack items={assigned} max={4} size="sm" />
+                )}
+              </div>
+              <FillBar filled={totalFilled} total={totalOpenings} />
+            </>
           ) : (
-            <div className="text-xs text-muted-foreground">No openings yet</div>
+            <span className="text-xs text-muted-foreground">No openings yet</span>
           )}
         </div>
 
-        {/* Action cluster */}
+        {/* Actions */}
         <div
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center gap-2 shrink-0 justify-self-end"
           onClick={(e) => e.stopPropagation()}
         >
           {!isDecided ? (
@@ -533,25 +537,26 @@ function RequestRow({
             View
           </Button>
         </div>
-      </div>
 
-      {/* Mobile fill bar */}
-      {totalOpenings > 0 && (
-        <div className="md:hidden mt-3">
-          <FillBar
-            filled={totalFilled}
-            total={totalOpenings}
-            label={
-              <span className="text-sm">
+        {/* Coverage row on smaller screens — spans full width */}
+        {totalOpenings > 0 && (
+          <div className="lg:hidden col-span-full">
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <span className="text-sm font-medium text-foreground/80">
                 {totalFilled}/{totalOpenings} filled
               </span>
-            }
-          />
-        </div>
-      )}
+              {assigned.length > 0 && (
+                <AvatarStack items={assigned} max={4} size="sm" />
+              )}
+            </div>
+            <FillBar filled={totalFilled} total={totalOpenings} />
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
+
 
 function RosterPills({
   roster,
