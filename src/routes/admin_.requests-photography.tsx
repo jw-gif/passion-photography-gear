@@ -392,10 +392,12 @@ function RequestRow({
     (roster?.openDoor ?? 0);
   const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
 
-  const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
-
-  const isApproved = req.status === "approved_job_board" || req.status === "approved_scheduled" || req.status === "done";
-  const isDenied = req.status === "denied";
+  const isApproved =
+    req.status === "approved_job_board" ||
+    req.status === "approved_shot_list" ||
+    req.status === "scheduled" ||
+    req.status === "completed";
+  const isDenied = req.status === "denied" || req.status === "declined";
   const isDecided = isApproved || isDenied;
   const eventDate = req.event_date ? parseISO(req.event_date) : null;
 
