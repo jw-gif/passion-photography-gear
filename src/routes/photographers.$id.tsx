@@ -896,28 +896,35 @@ function OpportunityCard({
   const hours = computeHours(first.start_time, first.end_time);
 
   return (
-    <Card className="p-5 flex flex-col gap-3 hover:border-primary/40 transition-colors">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold leading-tight truncate">{first.event_name || "Untitled shoot"}</h3>
-        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0", tierBadgeClasses(target.role))}>
-          {tierLabel(target.role)}
-        </span>
-      </div>
-      <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
-        {first.event_location && <span>{first.event_location}</span>}
-        {first.event_location && first.event_date && <span>·</span>}
-        {first.event_date && <span>{format(parseISO(first.event_date), "EEE, MMM d")}</span>}
-      </div>
-      <div className="text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
-        {hours && <span>{hours}</span>}
-        {paid && first.budget_cents != null && (
-          <>
-            {hours && <span className="text-muted-foreground">·</span>}
-            <span className="font-medium">{formatBudget(first.budget_cents)}</span>
-          </>
+    <Card className="p-5 flex flex-col gap-4 rounded-2xl border-border/70 hover:border-primary/50 transition-colors">
+      <div className="flex items-start gap-4">
+        {first.event_date && (
+          <DateBlock date={parseISO(first.event_date)} showMonth />
         )}
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{photographerCount} {photographerCount === 1 ? "photographer" : "photographers"}</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold leading-tight truncate text-base">{first.event_name || "Untitled shoot"}</h3>
+          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {hours && <span>{hours}</span>}
+            {paid && first.budget_cents != null && (
+              <>
+                {hours && <span>·</span>}
+                <span className="font-semibold text-foreground">{formatBudget(first.budget_cents)}</span>
+              </>
+            )}
+            {photographerCount > 0 && (
+              <>
+                <span>·</span>
+                <span>{photographerCount} {photographerCount === 1 ? "spot" : "spots"} open</span>
+              </>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <LocationPill location={first.event_location} />
+            <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap", tierBadgeClasses(target.role))}>
+              {tierLabel(target.role)}
+            </span>
+          </div>
+        </div>
       </div>
       {showPointTaken && (
         <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-md border bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
@@ -925,23 +932,22 @@ function OpportunityCard({
           <span>Point spot is taken — Door Holder coverage only.</span>
         </div>
       )}
-      <div className="flex gap-2 mt-auto pt-1">
+      <div className="flex gap-2 mt-auto">
         {canClaim && (
           <Button
-            variant="outline"
-            className="flex-1"
+            className="flex-1 rounded-full"
             onClick={() => onClaim(target.opening_id)}
             disabled={isClaiming}
           >
-            {isClaiming ? "Claiming…" : "Claim opportunity"}
+            {isClaiming ? "Claiming…" : <>Claim <ArrowUpRight className="size-3.5" /></>}
           </Button>
         )}
         <Button
           variant={canClaim ? "ghost" : "outline"}
-          className={canClaim ? "" : "flex-1"}
+          className={cn("rounded-full", canClaim ? "" : "flex-1")}
           onClick={() => onDetails(target)}
         >
-          Details
+          Brief
         </Button>
       </div>
     </Card>
@@ -961,12 +967,7 @@ function UpcomingRow({
   return (
     <li className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors">
       <button type="button" onClick={onOpen} className="flex items-center gap-4 flex-1 min-w-0 text-left">
-        {date && (
-          <div className="size-12 rounded-md bg-primary/10 text-primary flex flex-col items-center justify-center shrink-0">
-            <span className="text-[10px] font-semibold uppercase leading-none">{format(date, "MMM")}</span>
-            <span className="text-base font-bold leading-tight">{format(date, "d")}</span>
-          </div>
-        )}
+        {date && <DateBlock date={date} showMonth />}
         <div className="min-w-0 flex-1">
           <div className="font-semibold truncate">{job.event_name || "Untitled shoot"}</div>
           <div className="text-xs text-muted-foreground truncate">
