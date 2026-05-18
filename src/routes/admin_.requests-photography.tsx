@@ -545,7 +545,7 @@ function RequestRow({
               <DropdownMenuContent align="end" className="w-44">
                 {isApproved ? (
                   <DropdownMenuItem onClick={() => onSetStatus("denied")}>
-                    <X className="size-4" /> Decline instead
+                    <X className="size-4" /> Decline
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={() => onSetStatus("approved_job_board")}>
