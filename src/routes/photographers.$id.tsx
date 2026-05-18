@@ -597,13 +597,17 @@ function PhotographerPage() {
 
         {/* Your upcoming opportunities */}
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Your upcoming opportunities</h2>
-            <span className="text-sm text-muted-foreground">
-              {next7Count} in next 7 days
-            </span>
-          </div>
-          <Card className="overflow-hidden">
+          <SectionHeading
+            eyebrow="Your schedule"
+            title="Upcoming shoots"
+            accent="shoots"
+            actions={
+              <span className="text-sm text-muted-foreground">
+                {next7Count} in next 7 days
+              </span>
+            }
+          />
+          <Card className="overflow-hidden rounded-2xl">
             {upcomingMine.length === 0 ? (
               <div className="p-10 text-center">
                 <CheckCircle2 className="size-8 mx-auto text-muted-foreground mb-3" />
@@ -627,7 +631,12 @@ function PhotographerPage() {
 
         {/* Team & resources */}
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">Team &amp; resources</h2>
+          <SectionHeading
+            eyebrow="Heads up"
+            title="Team & resources"
+            accent="resources"
+          />
+
 
           {/* Team events */}
           <Card className="p-5">
