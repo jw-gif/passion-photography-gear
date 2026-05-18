@@ -126,7 +126,16 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
 
   const [requests, setRequests] = useState<PhotoRequest[]>([]);
   const [rosterByRequest, setRosterByRequest] = useState<
-    Record<string, { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }>
+    Record<
+      string,
+      {
+        filledPoint: number;
+        filledDoor: number;
+        openPoint: number;
+        openDoor: number;
+        assigned: { id: string; name: string }[];
+      }
+    >
   >({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -135,20 +144,32 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
 
   async function loadAll() {
     setLoading(true);
-    const [reqRes, opRes, asgRes] = await Promise.all([
+    const [reqRes, opRes, asgRes, phRes] = await Promise.all([
       supabase.from("photo_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("photo_request_openings").select("id, request_id, role"),
-      supabase.from("photo_request_assignments").select("opening_id").is("released_at", null),
+      supabase
+        .from("photo_request_assignments")
+        .select("opening_id, photographer_id")
+        .is("released_at", null),
+      supabase.from("photographers").select("id, name"),
     ]);
     if (reqRes.error) toast.error(`Couldn't load requests: ${reqRes.error.message}`);
     setRequests((reqRes.data ?? []) as PhotoRequest[]);
 
-    const claimedSet = new Set(
-      ((asgRes.data ?? []) as { opening_id: string }[]).map((a) => a.opening_id),
-    );
+    const assignments = (asgRes.data ?? []) as { opening_id: string; photographer_id: string }[];
+    const photographers = (phRes.data ?? []) as { id: string; name: string }[];
+    const photoById = new Map(photographers.map((p) => [p.id, p.name]));
+    const claimedByOpening = new Map(assignments.map((a) => [a.opening_id, a.photographer_id]));
+
     const map: Record<
       string,
-      { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }
+      {
+        filledPoint: number;
+        filledDoor: number;
+        openPoint: number;
+        openDoor: number;
+        assigned: { id: string; name: string }[];
+      }
     > = {};
     for (const op of (opRes.data ?? []) as { id: string; request_id: string; role: string }[]) {
       const entry = map[op.request_id] ?? {
@@ -156,15 +177,23 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
         filledDoor: 0,
         openPoint: 0,
         openDoor: 0,
+        assigned: [],
       };
       const isPoint = op.role === "point";
-      const claimed = claimedSet.has(op.id);
+      const photographerId = claimedByOpening.get(op.id);
+      const claimed = photographerId != null;
       if (isPoint) {
         if (claimed) entry.filledPoint += 1;
         else entry.openPoint += 1;
       } else {
         if (claimed) entry.filledDoor += 1;
         else entry.openDoor += 1;
+      }
+      if (photographerId) {
+        entry.assigned.push({
+          id: photographerId,
+          name: photoById.get(photographerId) ?? "Unknown",
+        });
       }
       map[op.request_id] = entry;
     }
