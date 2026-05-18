@@ -58,6 +58,10 @@ import {
 } from "@/lib/shot-list";
 import { shortRelative } from "@/lib/relative-date";
 import { EventGearPanel } from "@/components/event-gear-panel";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { DateBlock } from "@/components/ui/date-block";
+import { LocationPill } from "@/components/ui/location-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 
 const searchSchema = z.object({
   t: z.string().min(1).optional(),
