@@ -519,20 +519,37 @@ function RequestRow({
               </Button>
             </>
           ) : (
-            <>
-              <StatusPill variant={isApproved ? "onit" : "neutral"} className="px-3 py-1.5">
-                {isApproved ? "Approved" : "Declined"}
-              </StatusPill>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onSetStatus("pending")}
-                className="h-9 rounded-full px-3 text-muted-foreground"
-                title="Revert to pending"
-              >
-                <Undo2 className="size-4" /> Undo
-              </Button>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
+                    isApproved
+                      ? "bg-status-onit text-status-onit-foreground hover:brightness-95"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  )}
+                >
+                  {isApproved ? <Check className="size-3" strokeWidth={2.5} /> : null}
+                  {isApproved ? "Approved" : "Declined"}
+                  <ChevronDown className="size-3 opacity-70" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {isApproved ? (
+                  <DropdownMenuItem onClick={() => onSetStatus("denied")}>
+                    <X className="size-4" /> Decline instead
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => onSetStatus("approved_job_board")}>
+                    <Check className="size-4" /> Approve instead
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => onSetStatus("pending")}>
+                  <Undo2 className="size-4" /> Revert to pending
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button size="sm" variant="ghost" onClick={onOpen} className="h-9 rounded-full">
             View
