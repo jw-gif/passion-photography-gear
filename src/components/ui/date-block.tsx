@@ -18,9 +18,9 @@ export function DateBlock({ date, showMonth = false, size = "md", className }: D
   const month = format(d, "MMM").toUpperCase();
   const dayClass = size === "lg" ? "text-5xl" : "text-4xl";
   return (
-    <div className={cn("flex flex-col items-center min-w-[3.5rem] leading-none", className)}>
-      <span className={cn("font-display tracking-tight tabular-nums", dayClass)}>{day}</span>
-      <span className="mt-1 text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
+    <div className={cn("flex flex-col items-start min-w-[3.5rem] leading-none", className)}>
+      <span className={cn("font-bold tracking-tight tabular-nums", dayClass)}>{day}</span>
+      <span className="mt-1.5 text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
         {showMonth ? `${weekday} · ${month}` : weekday}
       </span>
     </div>
