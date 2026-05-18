@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Camera,
+  Check,
   Inbox,
   Mail,
   Phone,
@@ -15,8 +16,14 @@ import {
   Settings,
   History,
   Users as UsersIcon,
+  Undo2,
+  X,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { DateBlock } from "@/components/ui/date-block";
+import { FillBar } from "@/components/ui/fill-bar";
+import { LocationPill } from "@/components/ui/location-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
