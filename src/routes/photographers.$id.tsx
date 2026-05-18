@@ -507,72 +507,67 @@ function PhotographerPage() {
             title="Open opportunities"
             accent="opportunities"
             actions={
-              <></>
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 rounded-full text-xs gap-1.5">
+                      <Filter className="size-3.5" /> Filter
+                      {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
+                        <span className="size-1.5 rounded-full bg-primary" />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Date</label>
+                      <Select value={filterDate} onValueChange={(v) => setFilterDate(v as DateFilter)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any date</SelectItem>
+                          <SelectItem value="next7">Next 7 days</SelectItem>
+                          <SelectItem value="next30">Next 30 days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Location</label>
+                      <Select value={filterLocation} onValueChange={setFilterLocation}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">All locations</SelectItem>
+                          {Array.from(new Set(openJobs.map((j) => j.event_location).filter(Boolean) as string[])).map((loc) => (
+                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Role</label>
+                      <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any role</SelectItem>
+                          <SelectItem value="point">Point</SelectItem>
+                          <SelectItem value="door_holder">Door Holder</SelectItem>
+                          <SelectItem value="training_door_holder">Training</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
+                      <Button type="button" variant="ghost" size="sm" className="h-7 w-full text-xs"
+                        onClick={() => { setFilterDate("any"); setFilterLocation("any"); setFilterRole("any"); }}>
+                        <X className="size-3" /> Clear filters
+                      </Button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {visibleOpenJobs.length} available
+                </span>
+              </>
             }
           />
-          <div className="flex items-center justify-between gap-3 -mt-2">
-            <span className="text-sm text-muted-foreground tabular-nums">
-              {visibleOpenJobs.length} available
-            </span>
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
-                    <Filter className="size-3.5" /> Filter
-                    {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
-                      <span className="size-1.5 rounded-full bg-primary" />
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Date</label>
-                    <Select value={filterDate} onValueChange={(v) => setFilterDate(v as DateFilter)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any date</SelectItem>
-                        <SelectItem value="next7">Next 7 days</SelectItem>
-                        <SelectItem value="next30">Next 30 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Location</label>
-                    <Select value={filterLocation} onValueChange={setFilterLocation}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">All locations</SelectItem>
-                        {Array.from(new Set(openJobs.map((j) => j.event_location).filter(Boolean) as string[])).map((loc) => (
-                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Role</label>
-                    <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any role</SelectItem>
-                        <SelectItem value="point">Point</SelectItem>
-                        <SelectItem value="door_holder">Door Holder</SelectItem>
-                        <SelectItem value="training_door_holder">Training</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
-                    <Button type="button" variant="ghost" size="sm" className="h-7 w-full text-xs"
-                      onClick={() => { setFilterDate("any"); setFilterLocation("any"); setFilterRole("any"); }}>
-                      <X className="size-3" /> Clear filters
-                    </Button>
-                  )}
-                </PopoverContent>
-              </Popover>
-              <span className="text-sm text-muted-foreground tabular-nums">
-                {visibleOpenJobs.length} available
-              </span>
-            </div>
-          </div>
+
 
           {loadingJobs ? <ListSkeleton rows={2} /> : groupedOpen.length === 0 ? (
             <Card className="p-10 text-center">
