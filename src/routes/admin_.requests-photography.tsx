@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Camera,
+  Check,
   Inbox,
   Mail,
   Phone,
@@ -15,8 +16,14 @@ import {
   Settings,
   History,
   Users as UsersIcon,
+  Undo2,
+  X,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { DateBlock } from "@/components/ui/date-block";
+import { FillBar } from "@/components/ui/fill-bar";
+import { LocationPill } from "@/components/ui/location-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -385,95 +392,134 @@ function RequestRow({
     (roster?.openDoor ?? 0);
   const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
 
-  const showCornerChip = req.status === "new" || req.status === "pending";
+  const isApproved =
+    req.status === "approved_job_board" ||
+    req.status === "approved_shot_list" ||
+    req.status === "scheduled" ||
+    req.status === "completed";
+  const isDenied = req.status === "denied" || req.status === "declined";
+  const isDecided = isApproved || isDenied;
+  const eventDate = req.event_date ? parseISO(req.event_date) : null;
 
   return (
     <Card
-      className="relative p-4 hover:border-foreground/30 transition-colors cursor-pointer"
+      className="relative p-4 sm:p-5 hover:border-foreground/30 transition-colors cursor-pointer"
       onClick={onOpen}
     >
-      {showCornerChip && (
-        <span
-          className={cn(
-            "absolute top-2 right-2 text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full border shadow-sm",
-            statusBadgeClasses(req.status),
+      <div className="flex items-stretch gap-4 sm:gap-6">
+        {/* Date block */}
+        <div className="flex flex-col items-center justify-center shrink-0 w-14 sm:w-16">
+          {eventDate ? (
+            <DateBlock date={eventDate} showMonth size="lg" />
+          ) : (
+            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground text-center">
+              NO DATE
+            </div>
           )}
-        >
-          {req.status === "new" ? "New" : "Pending"}
-        </span>
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        </div>
+
+        {/* Title + meta */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            {!showCornerChip && (
-              <span
-                className={cn(
-                  "text-xs font-medium px-2 py-0.5 rounded-full border",
-                  statusBadgeClasses(req.status),
-                )}
-              >
-                {statusLabel(req.status)}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h3 className="font-display text-xl sm:text-2xl leading-tight truncate">
+              {req.event_name || `${req.first_name} ${req.last_name}`}
+            </h3>
+            <span className="text-xs text-muted-foreground">· {types}</span>
+          </div>
+          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+            {(req.start_time || req.end_time) && (
+              <span className="flex items-center gap-1">
+                <Clock className="size-3.5" />
+                {req.start_time}{req.end_time ? ` – ${req.end_time}` : ""}
               </span>
             )}
-            {totalOpenings > 0 && (
-              <RosterPills roster={roster!} totalFilled={totalFilled} totalOpenings={totalOpenings} />
-            )}
-            <span className="text-xs text-muted-foreground">{types}</span>
-          </div>
-          <div className="mt-1.5 font-semibold truncate">
-            {req.event_name || `${req.first_name} ${req.last_name} — ${types}`}
-          </div>
-          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+            {req.event_location && <LocationPill location={req.event_location} />}
+            <span className="text-muted-foreground/60">·</span>
             <span className="flex items-center gap-1">
               <UserIcon className="size-3.5" />
               {req.first_name} {req.last_name}
             </span>
             <span className="text-muted-foreground/60">·</span>
-            <span>{req.company}{req.team ? ` / ${req.team}` : ""}</span>
-            {req.event_date && (
-              <>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="flex items-center gap-1">
-                  <CalendarIcon className="size-3.5" />
-                  {format(parseISO(req.event_date), "MMM d, yyyy")}
-                </span>
-              </>
-            )}
-            {req.event_location && (
-              <>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="size-3.5" />
-                  {req.event_location}
-                </span>
-              </>
-            )}
+            <span className="truncate">{req.company}{req.team ? ` / ${req.team}` : ""}</span>
           </div>
         </div>
+
+        {/* Fill bar */}
+        <div className="hidden md:flex flex-col justify-center w-56 shrink-0">
+          {totalOpenings > 0 ? (
+            <FillBar
+              filled={totalFilled}
+              total={totalOpenings}
+              label={
+                <span className="text-sm">
+                  {totalFilled}/{totalOpenings} filled
+                </span>
+              }
+            />
+          ) : (
+            <div className="text-xs text-muted-foreground">No openings yet</div>
+          )}
+        </div>
+
+        {/* Action cluster */}
         <div
-          className="flex items-center gap-2 shrink-0 mt-1 sm:mt-0 sm:mr-20"
+          className="flex items-center gap-2 shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
-          <Button
-            size="sm"
-            onClick={() => onSetStatus("approved_job_board")}
-            className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            Approve
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onSetStatus("denied")}
-            className="h-8 text-rose-600 border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950"
-          >
-            Decline
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onOpen} className="h-8">
+          {!isDecided ? (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onSetStatus("approved_job_board")}
+                className="h-9 rounded-full px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Check className="size-4" /> Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onSetStatus("denied")}
+                className="h-9 rounded-full px-4"
+              >
+                <X className="size-4" /> Decline
+              </Button>
+            </>
+          ) : (
+            <>
+              <StatusPill variant={isApproved ? "onit" : "neutral"} className="px-3 py-1.5">
+                {isApproved ? "Approved" : "Declined"}
+              </StatusPill>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onSetStatus("pending")}
+                className="h-9 rounded-full px-3 text-muted-foreground"
+                title="Revert to pending"
+              >
+                <Undo2 className="size-4" /> Undo
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="ghost" onClick={onOpen} className="h-9 rounded-full">
             View
           </Button>
         </div>
       </div>
+
+      {/* Mobile fill bar */}
+      {totalOpenings > 0 && (
+        <div className="md:hidden mt-3">
+          <FillBar
+            filled={totalFilled}
+            total={totalOpenings}
+            label={
+              <span className="text-sm">
+                {totalFilled}/{totalOpenings} filled
+              </span>
+            }
+          />
+        </div>
+      )}
     </Card>
   );
 }
