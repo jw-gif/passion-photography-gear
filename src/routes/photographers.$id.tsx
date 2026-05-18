@@ -481,13 +481,14 @@ function PhotographerPage() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-12">
         {/* Greeting */}
-        <section>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isOwner ? `Welcome back, ${firstName}` : me.name}
+        <section className="space-y-3">
+          <span className="eyebrow">{isOwner ? `Welcome back · ${format(new Date(), "EEEE")}` : "Photographer hub"}</span>
+          <h1 className="display-xl text-foreground">
+            {isOwner ? <>Hey, <em className="italic">{firstName}</em></> : me.name}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground max-w-xl">
             {isOwner ? (
               <>
                 You have <strong className="text-foreground">{thisWeekCount}</strong> {thisWeekCount === 1 ? "shoot" : "shoots"} this week
@@ -501,8 +502,18 @@ function PhotographerPage() {
 
         {/* Open opportunities */}
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Open opportunities</h2>
+          <SectionHeading
+            eyebrow="Need a photographer · Claim one"
+            title="Open opportunities"
+            accent="opportunities"
+            actions={
+              <></>
+            }
+          />
+          <div className="flex items-center justify-between gap-3 -mt-2">
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {visibleOpenJobs.length} available
+            </span>
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
