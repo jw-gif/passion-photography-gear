@@ -406,13 +406,13 @@ function RequestRow({
       className="relative p-4 sm:p-5 hover:border-foreground/30 transition-colors cursor-pointer"
       onClick={onOpen}
     >
-      <div className="flex items-stretch gap-4 sm:gap-6">
+      <div className="flex items-start gap-4 sm:gap-6">
         {/* Date block */}
-        <div className="flex flex-col items-center justify-center shrink-0 w-14 sm:w-16">
+        <div className="flex flex-col shrink-0 w-14 sm:w-16">
           {eventDate ? (
             <DateBlock date={eventDate} showMonth size="lg" />
           ) : (
-            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground text-center">
+            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
               NO DATE
             </div>
           )}
