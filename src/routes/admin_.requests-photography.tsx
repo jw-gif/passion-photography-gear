@@ -24,6 +24,7 @@ import { DateBlock } from "@/components/ui/date-block";
 import { FillBar } from "@/components/ui/fill-bar";
 import { LocationPill } from "@/components/ui/location-pill";
 import { StatusPill } from "@/components/ui/status-pill";
+import { AvatarStack } from "@/components/ui/avatar-stack";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,16 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
 
   const [requests, setRequests] = useState<PhotoRequest[]>([]);
   const [rosterByRequest, setRosterByRequest] = useState<
-    Record<string, { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }>
+    Record<
+      string,
+      {
+        filledPoint: number;
+        filledDoor: number;
+        openPoint: number;
+        openDoor: number;
+        assigned: { id: string; name: string }[];
+      }
+    >
   >({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -135,20 +145,32 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
 
   async function loadAll() {
     setLoading(true);
-    const [reqRes, opRes, asgRes] = await Promise.all([
+    const [reqRes, opRes, asgRes, phRes] = await Promise.all([
       supabase.from("photo_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("photo_request_openings").select("id, request_id, role"),
-      supabase.from("photo_request_assignments").select("opening_id").is("released_at", null),
+      supabase
+        .from("photo_request_assignments")
+        .select("opening_id, photographer_id")
+        .is("released_at", null),
+      supabase.from("photographers").select("id, name"),
     ]);
     if (reqRes.error) toast.error(`Couldn't load requests: ${reqRes.error.message}`);
     setRequests((reqRes.data ?? []) as PhotoRequest[]);
 
-    const claimedSet = new Set(
-      ((asgRes.data ?? []) as { opening_id: string }[]).map((a) => a.opening_id),
-    );
+    const assignments = (asgRes.data ?? []) as { opening_id: string; photographer_id: string }[];
+    const photographers = (phRes.data ?? []) as { id: string; name: string }[];
+    const photoById = new Map(photographers.map((p) => [p.id, p.name]));
+    const claimedByOpening = new Map(assignments.map((a) => [a.opening_id, a.photographer_id]));
+
     const map: Record<
       string,
-      { filledPoint: number; filledDoor: number; openPoint: number; openDoor: number }
+      {
+        filledPoint: number;
+        filledDoor: number;
+        openPoint: number;
+        openDoor: number;
+        assigned: { id: string; name: string }[];
+      }
     > = {};
     for (const op of (opRes.data ?? []) as { id: string; request_id: string; role: string }[]) {
       const entry = map[op.request_id] ?? {
@@ -156,15 +178,23 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
         filledDoor: 0,
         openPoint: 0,
         openDoor: 0,
+        assigned: [],
       };
       const isPoint = op.role === "point";
-      const claimed = claimedSet.has(op.id);
+      const photographerId = claimedByOpening.get(op.id);
+      const claimed = photographerId != null;
       if (isPoint) {
         if (claimed) entry.filledPoint += 1;
         else entry.openPoint += 1;
       } else {
         if (claimed) entry.filledDoor += 1;
         else entry.openDoor += 1;
+      }
+      if (photographerId) {
+        entry.assigned.push({
+          id: photographerId,
+          name: photoById.get(photographerId) ?? "Unknown",
+        });
       }
       map[op.request_id] = entry;
     }
@@ -368,6 +398,7 @@ interface RosterCounts {
   filledDoor: number;
   openPoint: number;
   openDoor: number;
+  assigned: { id: string; name: string }[];
 }
 
 function RequestRow({
@@ -391,6 +422,7 @@ function RequestRow({
     (roster?.openPoint ?? 0) +
     (roster?.openDoor ?? 0);
   const totalFilled = (roster?.filledPoint ?? 0) + (roster?.filledDoor ?? 0);
+  const assigned = roster?.assigned ?? [];
 
   const isApproved =
     req.status === "approved_job_board" ||
@@ -406,27 +438,29 @@ function RequestRow({
       className="relative p-4 sm:p-5 hover:border-foreground/30 transition-colors cursor-pointer"
       onClick={onOpen}
     >
-      <div className="flex items-start gap-4 sm:gap-6">
-        {/* Date block */}
-        <div className="flex flex-col shrink-0 w-14 sm:w-16">
+      <div className="grid grid-cols-[auto_1fr_auto] lg:grid-cols-[auto_1fr_minmax(180px,220px)_auto] items-center gap-x-5 sm:gap-x-6 gap-y-3">
+        {/* Date */}
+        <div className="shrink-0">
           {eventDate ? (
             <DateBlock date={eventDate} showMonth size="lg" />
           ) : (
-            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
+            <div className="w-14 text-[10px] tracking-[0.15em] font-semibold text-muted-foreground">
               NO DATE
             </div>
           )}
         </div>
 
         {/* Title + meta */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="font-semibold text-lg sm:text-xl leading-tight truncate">
-              {req.event_name || `${req.first_name} ${req.last_name}`}
-            </h3>
-            <span className="text-xs text-muted-foreground">· {types}</span>
-          </div>
-          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+        <div className="min-w-0">
+          {types && (
+            <div className="text-[10px] tracking-[0.15em] font-semibold text-muted-foreground uppercase mb-1">
+              {types}
+            </div>
+          )}
+          <h3 className="font-semibold text-lg sm:text-xl leading-tight truncate">
+            {req.event_name || `${req.first_name} ${req.last_name}`}
+          </h3>
+          <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
             {(req.start_time || req.end_time) && (
               <span className="flex items-center gap-1">
                 <Clock className="size-3.5" />
@@ -434,36 +468,36 @@ function RequestRow({
               </span>
             )}
             {req.event_location && <LocationPill location={req.event_location} />}
-            <span className="text-muted-foreground/60">·</span>
             <span className="flex items-center gap-1">
               <UserIcon className="size-3.5" />
               {req.first_name} {req.last_name}
             </span>
-            <span className="text-muted-foreground/60">·</span>
             <span className="truncate">{req.company}{req.team ? ` / ${req.team}` : ""}</span>
           </div>
         </div>
 
-        {/* Fill bar */}
-        <div className="hidden md:flex flex-col justify-center w-56 shrink-0">
+        {/* Coverage column — fill bar + avatars */}
+        <div className="hidden lg:flex flex-col gap-2 min-w-0">
           {totalOpenings > 0 ? (
-            <FillBar
-              filled={totalFilled}
-              total={totalOpenings}
-              label={
-                <span className="text-sm">
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-foreground/80">
                   {totalFilled}/{totalOpenings} filled
                 </span>
-              }
-            />
+                {assigned.length > 0 && (
+                  <AvatarStack items={assigned} max={4} size="sm" />
+                )}
+              </div>
+              <FillBar filled={totalFilled} total={totalOpenings} />
+            </>
           ) : (
-            <div className="text-xs text-muted-foreground">No openings yet</div>
+            <span className="text-xs text-muted-foreground">No openings yet</span>
           )}
         </div>
 
-        {/* Action cluster */}
+        {/* Actions */}
         <div
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center gap-2 shrink-0 justify-self-end"
           onClick={(e) => e.stopPropagation()}
         >
           {!isDecided ? (
@@ -504,25 +538,26 @@ function RequestRow({
             View
           </Button>
         </div>
-      </div>
 
-      {/* Mobile fill bar */}
-      {totalOpenings > 0 && (
-        <div className="md:hidden mt-3">
-          <FillBar
-            filled={totalFilled}
-            total={totalOpenings}
-            label={
-              <span className="text-sm">
+        {/* Coverage row on smaller screens — spans full width */}
+        {totalOpenings > 0 && (
+          <div className="lg:hidden col-span-full">
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <span className="text-sm font-medium text-foreground/80">
                 {totalFilled}/{totalOpenings} filled
               </span>
-            }
-          />
-        </div>
-      )}
+              {assigned.length > 0 && (
+                <AvatarStack items={assigned} max={4} size="sm" />
+              )}
+            </div>
+            <FillBar filled={totalFilled} total={totalOpenings} />
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
+
 
 function RosterPills({
   roster,
