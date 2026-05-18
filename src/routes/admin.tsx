@@ -301,7 +301,7 @@ function HubView({ onLogout }: { onLogout: () => void }) {
         />
 
         {/* Calendar */}
-        <section>
+        <section className="rounded-2xl bg-card border border-border shadow-sm p-4 sm:p-6">
           {loading ? (
             <CalendarSkeleton />
           ) : (
