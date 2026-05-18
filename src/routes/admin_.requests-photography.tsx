@@ -24,6 +24,7 @@ import { DateBlock } from "@/components/ui/date-block";
 import { FillBar } from "@/components/ui/fill-bar";
 import { LocationPill } from "@/components/ui/location-pill";
 import { StatusPill } from "@/components/ui/status-pill";
+import { AvatarStack } from "@/components/ui/avatar-stack";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
