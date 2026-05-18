@@ -421,7 +421,7 @@ function RequestRow({
         {/* Title + meta */}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="font-display text-xl sm:text-2xl leading-tight truncate">
+            <h3 className="font-semibold text-lg sm:text-xl leading-tight truncate">
               {req.event_name || `${req.first_name} ${req.last_name}`}
             </h3>
             <span className="text-xs text-muted-foreground">· {types}</span>
