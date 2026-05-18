@@ -58,6 +58,10 @@ import {
 } from "@/lib/shot-list";
 import { shortRelative } from "@/lib/relative-date";
 import { EventGearPanel } from "@/components/event-gear-panel";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { DateBlock } from "@/components/ui/date-block";
+import { LocationPill } from "@/components/ui/location-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 
 const searchSchema = z.object({
   t: z.string().min(1).optional(),
@@ -477,13 +481,14 @@ function PhotographerPage() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-12">
         {/* Greeting */}
-        <section>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isOwner ? `Welcome back, ${firstName}` : me.name}
+        <section className="space-y-3">
+          <span className="eyebrow">{isOwner ? `Welcome back · ${format(new Date(), "EEEE")}` : "Photographer hub"}</span>
+          <h1 className="display-xl text-foreground">
+            {isOwner ? <>Hey, <em className="italic">{firstName}</em></> : me.name}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground max-w-xl">
             {isOwner ? (
               <>
                 You have <strong className="text-foreground">{thisWeekCount}</strong> {thisWeekCount === 1 ? "shoot" : "shoots"} this week
@@ -497,67 +502,72 @@ function PhotographerPage() {
 
         {/* Open opportunities */}
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Open opportunities</h2>
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
-                    <Filter className="size-3.5" /> Filter
-                    {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
-                      <span className="size-1.5 rounded-full bg-primary" />
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Date</label>
-                    <Select value={filterDate} onValueChange={(v) => setFilterDate(v as DateFilter)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any date</SelectItem>
-                        <SelectItem value="next7">Next 7 days</SelectItem>
-                        <SelectItem value="next30">Next 30 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Location</label>
-                    <Select value={filterLocation} onValueChange={setFilterLocation}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">All locations</SelectItem>
-                        {Array.from(new Set(openJobs.map((j) => j.event_location).filter(Boolean) as string[])).map((loc) => (
-                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Role</label>
-                    <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any role</SelectItem>
-                        <SelectItem value="point">Point</SelectItem>
-                        <SelectItem value="door_holder">Door Holder</SelectItem>
-                        <SelectItem value="training_door_holder">Training</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
-                    <Button type="button" variant="ghost" size="sm" className="h-7 w-full text-xs"
-                      onClick={() => { setFilterDate("any"); setFilterLocation("any"); setFilterRole("any"); }}>
-                      <X className="size-3" /> Clear filters
+          <SectionHeading
+            eyebrow="Need a photographer · Claim one"
+            title="Open opportunities"
+            accent="opportunities"
+            actions={
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 rounded-full text-xs gap-1.5">
+                      <Filter className="size-3.5" /> Filter
+                      {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
+                        <span className="size-1.5 rounded-full bg-primary" />
+                      )}
                     </Button>
-                  )}
-                </PopoverContent>
-              </Popover>
-              <span className="text-sm text-muted-foreground tabular-nums">
-                {visibleOpenJobs.length} available
-              </span>
-            </div>
-          </div>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Date</label>
+                      <Select value={filterDate} onValueChange={(v) => setFilterDate(v as DateFilter)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any date</SelectItem>
+                          <SelectItem value="next7">Next 7 days</SelectItem>
+                          <SelectItem value="next30">Next 30 days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Location</label>
+                      <Select value={filterLocation} onValueChange={setFilterLocation}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">All locations</SelectItem>
+                          {Array.from(new Set(openJobs.map((j) => j.event_location).filter(Boolean) as string[])).map((loc) => (
+                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Role</label>
+                      <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any role</SelectItem>
+                          <SelectItem value="point">Point</SelectItem>
+                          <SelectItem value="door_holder">Door Holder</SelectItem>
+                          <SelectItem value="training_door_holder">Training</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {(filterDate !== "any" || filterLocation !== "any" || filterRole !== "any") && (
+                      <Button type="button" variant="ghost" size="sm" className="h-7 w-full text-xs"
+                        onClick={() => { setFilterDate("any"); setFilterLocation("any"); setFilterRole("any"); }}>
+                        <X className="size-3" /> Clear filters
+                      </Button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {visibleOpenJobs.length} available
+                </span>
+              </>
+            }
+          />
+
 
           {loadingJobs ? <ListSkeleton rows={2} /> : groupedOpen.length === 0 ? (
             <Card className="p-10 text-center">
@@ -587,13 +597,17 @@ function PhotographerPage() {
 
         {/* Your upcoming opportunities */}
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Your upcoming opportunities</h2>
-            <span className="text-sm text-muted-foreground">
-              {next7Count} in next 7 days
-            </span>
-          </div>
-          <Card className="overflow-hidden">
+          <SectionHeading
+            eyebrow="Your schedule"
+            title="Upcoming shoots"
+            accent="shoots"
+            actions={
+              <span className="text-sm text-muted-foreground">
+                {next7Count} in next 7 days
+              </span>
+            }
+          />
+          <Card className="overflow-hidden rounded-2xl">
             {upcomingMine.length === 0 ? (
               <div className="p-10 text-center">
                 <CheckCircle2 className="size-8 mx-auto text-muted-foreground mb-3" />
@@ -617,7 +631,12 @@ function PhotographerPage() {
 
         {/* Team & resources */}
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">Team &amp; resources</h2>
+          <SectionHeading
+            eyebrow="Heads up"
+            title="Team & resources"
+            accent="resources"
+          />
+
 
           {/* Team events */}
           <Card className="p-5">
@@ -877,28 +896,35 @@ function OpportunityCard({
   const hours = computeHours(first.start_time, first.end_time);
 
   return (
-    <Card className="p-5 flex flex-col gap-3 hover:border-primary/40 transition-colors">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold leading-tight truncate">{first.event_name || "Untitled shoot"}</h3>
-        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0", tierBadgeClasses(target.role))}>
-          {tierLabel(target.role)}
-        </span>
-      </div>
-      <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
-        {first.event_location && <span>{first.event_location}</span>}
-        {first.event_location && first.event_date && <span>·</span>}
-        {first.event_date && <span>{format(parseISO(first.event_date), "EEE, MMM d")}</span>}
-      </div>
-      <div className="text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
-        {hours && <span>{hours}</span>}
-        {paid && first.budget_cents != null && (
-          <>
-            {hours && <span className="text-muted-foreground">·</span>}
-            <span className="font-medium">{formatBudget(first.budget_cents)}</span>
-          </>
+    <Card className="p-5 flex flex-col gap-4 rounded-2xl border-border/70 hover:border-primary/50 transition-colors">
+      <div className="flex items-start gap-4">
+        {first.event_date && (
+          <DateBlock date={parseISO(first.event_date)} showMonth />
         )}
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{photographerCount} {photographerCount === 1 ? "photographer" : "photographers"}</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold leading-tight truncate text-base">{first.event_name || "Untitled shoot"}</h3>
+          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {hours && <span>{hours}</span>}
+            {paid && first.budget_cents != null && (
+              <>
+                {hours && <span>·</span>}
+                <span className="font-semibold text-foreground">{formatBudget(first.budget_cents)}</span>
+              </>
+            )}
+            {photographerCount > 0 && (
+              <>
+                <span>·</span>
+                <span>{photographerCount} {photographerCount === 1 ? "spot" : "spots"} open</span>
+              </>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <LocationPill location={first.event_location} />
+            <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap", tierBadgeClasses(target.role))}>
+              {tierLabel(target.role)}
+            </span>
+          </div>
+        </div>
       </div>
       {showPointTaken && (
         <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-md border bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
@@ -906,23 +932,22 @@ function OpportunityCard({
           <span>Point spot is taken — Door Holder coverage only.</span>
         </div>
       )}
-      <div className="flex gap-2 mt-auto pt-1">
+      <div className="flex gap-2 mt-auto">
         {canClaim && (
           <Button
-            variant="outline"
-            className="flex-1"
+            className="flex-1 rounded-full"
             onClick={() => onClaim(target.opening_id)}
             disabled={isClaiming}
           >
-            {isClaiming ? "Claiming…" : "Claim opportunity"}
+            {isClaiming ? "Claiming…" : <>Claim <ArrowUpRight className="size-3.5" /></>}
           </Button>
         )}
         <Button
           variant={canClaim ? "ghost" : "outline"}
-          className={canClaim ? "" : "flex-1"}
+          className={cn("rounded-full", canClaim ? "" : "flex-1")}
           onClick={() => onDetails(target)}
         >
-          Details
+          Brief
         </Button>
       </div>
     </Card>
@@ -942,12 +967,7 @@ function UpcomingRow({
   return (
     <li className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors">
       <button type="button" onClick={onOpen} className="flex items-center gap-4 flex-1 min-w-0 text-left">
-        {date && (
-          <div className="size-12 rounded-md bg-primary/10 text-primary flex flex-col items-center justify-center shrink-0">
-            <span className="text-[10px] font-semibold uppercase leading-none">{format(date, "MMM")}</span>
-            <span className="text-base font-bold leading-tight">{format(date, "d")}</span>
-          </div>
-        )}
+        {date && <DateBlock date={date} showMonth />}
         <div className="min-w-0 flex-1">
           <div className="font-semibold truncate">{job.event_name || "Untitled shoot"}</div>
           <div className="text-xs text-muted-foreground truncate">
@@ -960,23 +980,20 @@ function UpcomingRow({
         </div>
       </button>
       <div className="flex items-center gap-3 shrink-0">
-        <span className={cn(
-          "hidden sm:inline-flex text-xs font-medium px-2 py-0.5 rounded-full border whitespace-nowrap",
-          gearStatus === "confirmed"
-            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-            : gearStatus === "pending"
-              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-              : "bg-muted text-muted-foreground border-border",
-        )}>
-          {gearStatus === "confirmed" ? "Confirmed" : gearStatus === "pending" ? "Gear pending" : "No gear yet"}
-        </span>
+        <StatusPill
+          variant={gearStatus === "confirmed" ? "onit" : gearStatus === "pending" ? "pending" : "neutral"}
+          showDefaultIcon={gearStatus === "confirmed"}
+          className="hidden sm:inline-flex"
+        >
+          {gearStatus === "confirmed" ? "On it" : gearStatus === "pending" ? "Gear pending" : "No gear yet"}
+        </StatusPill>
         {canRequestGear && (
           <button
             type="button"
             onClick={onOpen}
             className="text-sm text-primary hover:underline inline-flex items-center gap-0.5 whitespace-nowrap"
           >
-            Request gear <ArrowUpRight className="size-3.5" />
+            Open <ArrowUpRight className="size-3.5" />
           </button>
         )}
       </div>
