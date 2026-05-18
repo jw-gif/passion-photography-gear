@@ -980,23 +980,20 @@ function UpcomingRow({
         </div>
       </button>
       <div className="flex items-center gap-3 shrink-0">
-        <span className={cn(
-          "hidden sm:inline-flex text-xs font-medium px-2 py-0.5 rounded-full border whitespace-nowrap",
-          gearStatus === "confirmed"
-            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-            : gearStatus === "pending"
-              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-              : "bg-muted text-muted-foreground border-border",
-        )}>
-          {gearStatus === "confirmed" ? "Confirmed" : gearStatus === "pending" ? "Gear pending" : "No gear yet"}
-        </span>
+        <StatusPill
+          variant={gearStatus === "confirmed" ? "onit" : gearStatus === "pending" ? "pending" : "neutral"}
+          showDefaultIcon={gearStatus === "confirmed"}
+          className="hidden sm:inline-flex"
+        >
+          {gearStatus === "confirmed" ? "On it" : gearStatus === "pending" ? "Gear pending" : "No gear yet"}
+        </StatusPill>
         {canRequestGear && (
           <button
             type="button"
             onClick={onOpen}
             className="text-sm text-primary hover:underline inline-flex items-center gap-0.5 whitespace-nowrap"
           >
-            Request gear <ArrowUpRight className="size-3.5" />
+            Open <ArrowUpRight className="size-3.5" />
           </button>
         )}
       </div>
