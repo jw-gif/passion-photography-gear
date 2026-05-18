@@ -30,7 +30,12 @@ export function AvatarStack({ items, max = 4, size = "md", className }: AvatarSt
   const sizeClass = size === "sm" ? "size-6 text-[10px]" : "size-7 text-xs";
   return (
     <TooltipProvider delayDuration={150}>
-      <div className={cn("flex items-center -space-x-0.5", className)}>
+      <div
+        className={cn(
+          "group flex items-center -space-x-0.5 [&>*]:transition-[margin] [&>*]:duration-200 hover:[&>*+*]:ml-1.5",
+          className,
+        )}
+      >
         {visible.map((item) => (
           <Tooltip key={item.id}>
             <TooltipTrigger asChild>
