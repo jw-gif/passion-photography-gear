@@ -6,7 +6,7 @@
 
 @theme inline {
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Inter", system-ui, sans-serif;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -42,29 +42,40 @@
   --color-loc-cumberland-foreground: var(--loc-cumberland-foreground);
   --color-loc-trilith: var(--loc-trilith);
   --color-loc-trilith-foreground: var(--loc-trilith-foreground);
+
+  --color-status-onit: var(--status-onit);
+  --color-status-onit-foreground: var(--status-onit-foreground);
+  --color-status-hot: var(--status-hot);
+  --color-status-hot-foreground: var(--status-hot-foreground);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-new: var(--status-new);
+  --color-status-new-foreground: var(--status-new-foreground);
+  --color-status-done: var(--status-done);
+  --color-status-done-foreground: var(--status-done-foreground);
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  /* Passion City Church inspired: warm light gray bg, near-black text, bright cyan accent */
-  --background: oklch(0.97 0.003 80);
+  /* Warm cream background, near-black text, bright cyan accent */
+  --background: oklch(0.965 0.012 80);
   --foreground: oklch(0.16 0 0);
 
-  --card: oklch(1 0 0);
+  --card: oklch(0.995 0.003 80);
   --card-foreground: oklch(0.16 0 0);
 
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.995 0.003 80);
   --popover-foreground: oklch(0.16 0 0);
 
   /* Bright cyan brand */
   --primary: oklch(0.78 0.15 220);
   --primary-foreground: oklch(0.16 0 0);
 
-  --secondary: oklch(0.93 0.005 80);
+  --secondary: oklch(0.92 0.006 80);
   --secondary-foreground: oklch(0.16 0 0);
 
-  --muted: oklch(0.93 0.005 80);
+  --muted: oklch(0.93 0.006 80);
   --muted-foreground: oklch(0.45 0.005 80);
 
   --accent: oklch(0.78 0.15 220);
@@ -73,17 +84,29 @@
   --destructive: oklch(0.6 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.88 0.005 80);
-  --input: oklch(0.88 0.005 80);
+  --border: oklch(0.87 0.006 80);
+  --input: oklch(0.87 0.006 80);
   --ring: oklch(0.78 0.15 220);
 
-  /* Location badge colors — distinct hues */
-  --loc-515: oklch(0.78 0.15 220);          /* cyan */
-  --loc-515-foreground: oklch(0.16 0 0);
-  --loc-cumberland: oklch(0.7 0.18 50);     /* warm orange */
-  --loc-cumberland-foreground: oklch(0.16 0 0);
-  --loc-trilith: oklch(0.65 0.18 145);      /* green */
-  --loc-trilith-foreground: oklch(0.99 0 0);
+  /* Location badge colors */
+  --loc-515: oklch(0.82 0.13 220);
+  --loc-515-foreground: oklch(0.25 0.05 220);
+  --loc-cumberland: oklch(0.78 0.15 55);
+  --loc-cumberland-foreground: oklch(0.32 0.08 55);
+  --loc-trilith: oklch(0.72 0.16 150);
+  --loc-trilith-foreground: oklch(0.25 0.07 150);
+
+  /* Status pills */
+  --status-onit: oklch(0.88 0.12 155);
+  --status-onit-foreground: oklch(0.32 0.1 155);
+  --status-hot: oklch(0.88 0.07 25);
+  --status-hot-foreground: oklch(0.42 0.18 25);
+  --status-pending: oklch(0.9 0.12 80);
+  --status-pending-foreground: oklch(0.4 0.12 60);
+  --status-new: oklch(0.88 0.1 230);
+  --status-new-foreground: oklch(0.32 0.12 230);
+  --status-done: oklch(0.9 0.005 80);
+  --status-done-foreground: oklch(0.45 0.005 80);
 }
 
 @layer base {
@@ -96,5 +119,58 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  .display-xl {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .display-lg {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(1.875rem, 3.5vw, 2.75rem);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+  }
+
+  .display-md {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 9999px;
+    background-color: var(--primary);
+  }
+  .eyebrow.no-dot::before {
+    display: none;
   }
 }
