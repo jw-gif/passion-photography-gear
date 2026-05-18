@@ -40,6 +40,7 @@ import { Route as AdminGearManageRouteImport } from './routes/admin_.gear-manage
 import { Route as AdminGearHistoryRouteImport } from './routes/admin_.gear-history'
 import { Route as AdminGearRouteImport } from './routes/admin_.gear'
 import { Route as AdminEventsRouteImport } from './routes/admin_.events'
+import { Route as AdminContentRouteImport } from './routes/admin_.content'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin_.announcements'
 import { Route as AdminAdminsRouteImport } from './routes/admin_.admins'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -205,6 +206,11 @@ const AdminEventsRoute = AdminEventsRouteImport.update({
   path: '/admin/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/admin_/content',
+  path: '/admin/content',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
   id: '/admin_/announcements',
   path: '/admin/announcements',
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/gear': typeof AdminGearRoute
   '/admin/gear-history': typeof AdminGearHistoryRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/gear': typeof AdminGearRoute
   '/admin/gear-history': typeof AdminGearHistoryRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/admin_/admins': typeof AdminAdminsRoute
   '/admin_/announcements': typeof AdminAnnouncementsRoute
+  '/admin_/content': typeof AdminContentRoute
   '/admin_/events': typeof AdminEventsRoute
   '/admin_/gear': typeof AdminGearRoute
   '/admin_/gear-history': typeof AdminGearHistoryRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/admins'
     | '/admin/announcements'
+    | '/admin/content'
     | '/admin/events'
     | '/admin/gear'
     | '/admin/gear-history'
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/admins'
     | '/admin/announcements'
+    | '/admin/content'
     | '/admin/events'
     | '/admin/gear'
     | '/admin/gear-history'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin_/admins'
     | '/admin_/announcements'
+    | '/admin_/content'
     | '/admin_/events'
     | '/admin_/gear'
     | '/admin_/gear-history'
@@ -514,6 +526,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdminAdminsRoute: typeof AdminAdminsRoute
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
+  AdminContentRoute: typeof AdminContentRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminGearRoute: typeof AdminGearRoute
   AdminGearHistoryRoute: typeof AdminGearHistoryRoute
@@ -761,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/content': {
+      id: '/admin_/content'
+      path: '/admin/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin_/announcements': {
       id: '/admin_/announcements'
       path: '/admin/announcements'
@@ -834,6 +854,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   AdminAdminsRoute: AdminAdminsRoute,
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
+  AdminContentRoute: AdminContentRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminGearRoute: AdminGearRoute,
   AdminGearHistoryRoute: AdminGearHistoryRoute,
@@ -865,12 +886,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

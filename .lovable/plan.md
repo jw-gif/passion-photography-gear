@@ -1,74 +1,110 @@
-## Goal
+# Sitemap cleanup — option B (no legacy redirects)
 
-Replace the current tabbed `/photographers/$id` page with a single-page, scroll-friendly dashboard inspired by the reference mockup: a compact org header, a personal greeting with weekly summary, an "Open opportunities" card grid, an "Your upcoming opportunities" list, and a "Team & resources" zone with Team events, Workshop library, and Announcements side-by-side.
+Consolidate sibling pages into tabbed hubs and delete the legacy redirect routes outright. Old bookmarks/emails will hit the 404 page.
 
-## Layout
+## Final sitemap
 
 ```text
-┌───────────────────────────────────────────────────────────────┐
-│ [logo] Lens & Light Studio                  [bell]  [avatar]  │
-│        Photographer dashboard                                 │
-├───────────────────────────────────────────────────────────────┤
-│ Welcome back, {name}                                          │
-│ You have N opportunities this week and M new ones to claim.   │
-├───────────────────────────────────────────────────────────────┤
-│ Open opportunities                              N available   │
-│ ┌─ card ──────────┐  ┌─ card ──────────┐                      │
-│ │ Title    [tag]  │  │ Title    [tag]  │   (2-col grid;       │
-│ │ Place · Date    │  │ Place · Date    │    1-col on mobile)  │
-│ │ hrs · $ · #ph   │  │ hrs · $ · #ph   │                      │
-│ │ [Claim] [Det.]  │  │ [Claim] [Det.]  │                      │
-│ └─────────────────┘  └─────────────────┘                      │
-├───────────────────────────────────────────────────────────────┤
-│ Your upcoming opportunities                  X in next 7 days │
-│ ┌─────────────────────────────────────────────────────────┐   │
-│ │ [MAY 12] Title · time · place · hrs   [status][gear ↗] │   │
-│ │ [MAY 14] Title · …                    [status][gear ↗] │   │
-│ └─────────────────────────────────────────────────────────┘   │
-├───────────────────────────────────────────────────────────────┤
-│ Team & resources                                              │
-│ ┌─ Team events ─────────────────────────────────────────┐     │
-│ │ [date] Title · day · time · N going  [RSVP][Maybe]   │     │
-│ └───────────────────────────────────────────────────────┘     │
-│ ┌─ Workshop library ─────────┐  ┌─ Announcements ─────┐      │
-│ │ [▶] Title · min · level    │  │ • Title             │      │
-│ │ [▶] Title · min · level    │  │   sub · time        │      │
-│ └────────────────────────────┘  └─────────────────────┘      │
-└───────────────────────────────────────────────────────────────┘
+Public / auth
+  /                          sign in + public gear lookup
+  /login
+  /reset-password
+  /onboarding
+  /photographer-link
+
+Photographer
+  /photographers/$id         unified hub (canonical)
+  /jobs                      KEPT as smart redirect (external magic-link emails)
+
+Public request forms
+  /request                   tabs: Gear | Photography  (?tab=gear|photography)
+
+Admin
+  /admin                              hub
+  /admin/requests                     tabs: Gear | Photography
+  /admin/gear                         tabs: Board | Inventory | History
+  /admin/team                         tabs: Team | Photographers | Admins
+  /admin/content                      tabs: Announcements | Events | Training | Landing photos
+  /admin/shot-list                    tabs: Blocks | Generator
+  /admin/onboarding (+ nested editors unchanged)
 ```
 
-## What changes
+Exception to the "delete redirects" rule: `/jobs` is kept because it is the URL hard-coded into magic-link emails already sent to photographers. Everything else gets deleted.
 
-- **Drop the tabbed shell.** Replace with a single scrollable page using the sections above.
-- **New compact header**: small logo tile + org name + "Photographer dashboard" subtitle on the left; bell + avatar (initials) on the right. Sign-out and admin-view banner move into the avatar menu / a thin bar above the header.
-- **Greeting block** computes the week's confirmed shoots count and the open-jobs count to fill the sentence.
-- **Open opportunities**: 2-column card grid (1-col on mobile). Each card shows title, segment tag (right-aligned, colored pill), location · date, then `hours · budget · photographers needed`, and two buttons (`Claim opportunity`, `Details`). "N available" counter in the section header. Keeps existing filter logic but condenses it into a single "Filter" popover button next to the counter (so the cleaner look is preserved). Reuses `claim_job` RPC.
-- **Your upcoming opportunities**: condensed list rows (date chip on left, title + meta in middle, status pill + "Request gear ↗" link on the right). Sourced from existing "my shoots" data. Status pill derives from gear request state (`Confirmed` / `Gear pending`). Clicking a row opens the existing brief/EventGearPanel in a Dialog (instead of inline expand).
-- **Team & resources**:
-  - **Team events** card: rows with date chip, title, "day · time · N going", RSVP yes/maybe buttons (uses existing `event_rsvps` write).
-  - **Workshop library** card: list of training videos with colored play tile, title, "min · level". Click opens the existing video dialog.
-  - **Announcements** card: bulleted list (dot color = unread/pinned), title, sub + relative time. Click opens the existing announcement dialog.
-- **Read-only/admin view**: same data, but Claim / RSVP / Request-gear buttons hidden; an "Admin view" strip sits above the header.
-- **Token + login auth**: unchanged. Both modes still resolve to this page.
+## Routes deleted
+
+- `/dashboard` — post-login resolver moves into `login.tsx` / `auth.tsx`.
+- `/request` (old redirect) — replaced by a real tabbed page at the same URL.
+- `/request-gear`, `/request-photography` — content moves into `/request` tabs.
+- `/admin/requests` (old redirect), `/admin/photo-requests` — replaced by real tabbed page at `/admin/requests`.
+- `/admin/requests-gear`, `/admin/requests-photography` — content moves into `/admin/requests` tabs.
+- `/admin/gear-manage`, `/admin/gear-history` — content moves into `/admin/gear` tabs.
+- `/admin/manage`, `/admin/history` — redirect files removed.
+- `/admin/photographers`, `/admin/admins` — redirect files removed.
+- `/admin/announcements`, `/admin/events`, `/admin/training`, `/admin/landing-photos` — content moves into `/admin/content` tabs.
+- `/admin/shot-list-blocks`, `/admin/shot-list-generator` — content moves into `/admin/shot-list` tabs.
+
+## How tabs are wired
+
+Each consolidated route gets a `tab` search param (zod-validated, default to the first tab). The tab state is in the URL so deep-links work (`/admin/gear?tab=history`). Each tab renders the existing page body, lifted into a section component (e.g. `GearBoardSection`, `GearInventorySection`, `GearHistorySection`) inside `src/components/admin/`. No data-fetching or RPC changes — just extracting JSX + state from each existing route file into a component.
 
 ## Files
 
-- **Rewrite** `src/routes/photographers.$id.tsx` — new layout, same data fetching and RPC calls. Keep all existing query logic; only the presentation changes. Pull section JSX into local components (`OpportunityCard`, `UpcomingRow`, `TeamEventRow`, `WorkshopRow`, `AnnouncementRow`) inside the same file to keep the diff scoped.
-- **No** changes to `jobs.tsx`, `dashboard.tsx`, RPCs, tables, or admin pages.
-- **No** changes to `EventGearPanel`, `ConfirmDialog`, `IcsExportButton`, `event-detail-dialog`, or training/announcement dialogs — they're reused.
+**New tabbed routes (rewrites)**
+- `src/routes/request.tsx` — tabbed shell, default Gear.
+- `src/routes/admin_.requests.tsx` — tabbed shell, default Gear.
+- `src/routes/admin_.gear.tsx` — tabbed shell, default Board.
+- `src/routes/admin_.content.tsx` — new, tabs: Announcements / Events / Training / Landing photos.
+- `src/routes/admin_.shot-list.tsx` — new, tabs: Blocks / Generator.
 
-## Visual details
+**New section components** (extracted bodies; one per old route)
+- `src/components/admin/gear-board-section.tsx`
+- `src/components/admin/gear-inventory-section.tsx`
+- `src/components/admin/gear-history-section.tsx`
+- `src/components/admin/requests-gear-section.tsx`
+- `src/components/admin/requests-photography-section.tsx`
+- `src/components/admin/announcements-section.tsx`
+- `src/components/admin/events-section.tsx`
+- `src/components/admin/training-section.tsx`
+- `src/components/admin/landing-photos-section.tsx`
+- `src/components/admin/shot-list-blocks-section.tsx`
+- `src/components/admin/shot-list-generator-section.tsx`
+- `src/components/request/gear-request-section.tsx` (wraps existing `GearRequestForm`)
+- `src/components/request/photography-request-section.tsx` (bodies from `request-photography.tsx`)
 
-- Wider container `max-w-5xl`, generous vertical spacing (`space-y-10`), section headers as `flex justify-between` with title + small right-side meta.
-- Cards: `rounded-xl border bg-card p-5` with subtle shadow on hover for clickable cards.
-- Segment tags reuse the existing colored pill component.
-- Date chips: small rounded square with two lines (`MAY` / `12`) tinted by segment.
-- Mobile: header collapses, grids drop to 1 column, buttons stack full-width.
-- Tokens only — no hardcoded colors.
+**Deleted route files** (12)
+- `src/routes/dashboard.tsx`
+- `src/routes/request-gear.tsx`
+- `src/routes/request-photography.tsx`
+- `src/routes/admin_.photo-requests.tsx`
+- `src/routes/admin_.requests-gear.tsx`
+- `src/routes/admin_.requests-photography.tsx`
+- `src/routes/admin_.gear-manage.tsx`
+- `src/routes/admin_.gear-history.tsx`
+- `src/routes/admin_.manage.tsx`
+- `src/routes/admin_.history.tsx`
+- `src/routes/admin_.photographers.tsx`
+- `src/routes/admin_.admins.tsx`
+- `src/routes/admin_.announcements.tsx`
+- `src/routes/admin_.events.tsx`
+- `src/routes/admin_.training.tsx`
+- `src/routes/admin_.landing-photos.tsx`
+- `src/routes/admin_.shot-list-blocks.tsx`
+- `src/routes/admin_.shot-list-generator.tsx`
+
+**Updated** (link rewrites only)
+- `src/components/hub-header.tsx` — admin dropdown points at new URLs (`/admin/content?tab=…`, `/admin/gear?tab=…`, etc.).
+- `src/routes/admin.tsx` — quick links point at `/admin/requests?tab=…` and `/admin/gear`.
+- `src/routes/login.tsx` — post-login resolver (logic copied from `dashboard.tsx`): staff → `/admin`, photographer → `/photographers/$id`.
+- `src/lib/auth.tsx` — if a `redirectAfterLogin` helper lives here, update it; otherwise leave alone.
+- Any `<Link>` in the consolidated section components that pointed at a sibling page (e.g. `/admin/gear-manage` → `/admin/gear?tab=inventory`).
+- `src/routes/jobs.tsx` — unchanged (kept as the one legacy redirect).
+
+`src/routeTree.gen.ts` regenerates automatically.
 
 ## Out of scope
 
-- Notifications bell behavior (render a static bell icon for now; wire later).
-- Reordering or DB changes.
-- Replacing the gear/photo request forms.
-- Changing onboarding, admin pages, or email templates.
+- No database, RPC, RLS, or business-logic changes.
+- No visual redesign of individual pages — just regrouping under tabs.
+- Onboarding editor routes stay as-is.
+- No new sitemap.xml (none exists today; not requested).
