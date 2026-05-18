@@ -18,6 +18,7 @@ import {
   Users as UsersIcon,
   Undo2,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { DateBlock } from "@/components/ui/date-block";
