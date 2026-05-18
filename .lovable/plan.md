@@ -1,110 +1,98 @@
-# Sitemap cleanup — option B (no legacy redirects)
+# Visual refresh + interleaved consolidation
 
-Consolidate sibling pages into tabbed hubs and delete the legacy redirect routes outright. Old bookmarks/emails will hit the 404 page.
+Inspiration: the three Claude mockups (upcoming/calendar, gear-out + announcements/activity, admin events list). We adopt the *vibe* — warm cream surfaces, large serif display headings with italic accents, soft rounded cards, bright cyan primary, location-coded dots — not the copy or exact pixels.
 
-## Final sitemap
+## 1. Design tokens (foundation, do first)
 
-```text
-Public / auth
-  /                          sign in + public gear lookup
-  /login
-  /reset-password
-  /onboarding
-  /photographer-link
+Edit `src/styles.css`:
+- **Surfaces:** add a warm off-white app background (`--background` ~ `oklch(0.97 0.012 80)`), keep card surface near-white, lift border contrast slightly.
+- **Primary:** swap to a bright cyan (`--primary` ~ `oklch(0.78 0.13 220)`) with a dark `--primary-foreground`. Re-tint focus rings and link colors.
+- **Status pills:** introduce `--status-onit` (mint), `--status-hot` (soft rose), `--status-pending` (amber) with matching `-foreground` tokens. Keep the existing emerald/amber/rose calendar legend mapped to these.
+- **Location stripes** already exist (`bg-loc-515`, etc.) — keep, but bump saturation slightly so the dot-pills read at small sizes.
+- **Radius:** raise `--radius` to ~14px so cards and pills feel pillowy.
+- **Type:**
+  - Add a display serif (Instrument Serif or Fraunces — free Google Fonts) loaded in `__root.tsx` next to Inter.
+  - New utility classes in `styles.css`: `.font-display` (serif), `.display-xl` (~64px, tight tracking), `.display-lg` (~44px). Italic variant used for the accent word ("you have **out**", "What's *happening*").
+  - Keep Inter as body.
+- **Section eyebrow:** `.eyebrow` — small uppercase, tracked, with a leading cyan dot (matches "• INVENTORY", "• HEADS UP", "• RECENT ACTIVITY").
 
-Photographer
-  /photographers/$id         unified hub (canonical)
-  /jobs                      KEPT as smart redirect (external magic-link emails)
+Everything below uses these tokens — no raw hex in components.
 
-Public request forms
-  /request                   tabs: Gear | Photography  (?tab=gear|photography)
+## 2. Shared building blocks (new components)
 
-Admin
-  /admin                              hub
-  /admin/requests                     tabs: Gear | Photography
-  /admin/gear                         tabs: Board | Inventory | History
-  /admin/team                         tabs: Team | Photographers | Admins
-  /admin/content                      tabs: Announcements | Events | Training | Landing photos
-  /admin/shot-list                    tabs: Blocks | Generator
-  /admin/onboarding (+ nested editors unchanged)
-```
+Created once, reused across all three surfaces:
 
-Exception to the "delete redirects" rule: `/jobs` is kept because it is the URL hard-coded into magic-link emails already sent to photographers. Everything else gets deleted.
+- `src/components/ui/section-heading.tsx` — eyebrow + serif display title with italic span support.
+- `src/components/ui/fill-bar.tsx` — slim progress bar (green/amber/grey by ratio) used for "1/2 filled" rows and the coverage strip.
+- `src/components/ui/avatar-stack.tsx` — overlapping initials chips for assigned photographers.
+- `src/components/ui/status-pill.tsx` — variants: `onit`, `hot`, `new`, `pending`, `done`, `claim`.
+- `src/components/ui/date-block.tsx` — big day number + tiny weekday/month stack used on every event row.
+- `src/components/ui/location-pill.tsx` — colored-dot + label (515 / Cumberland / Trilith), reads from existing `LOCATION_STRIPES`.
 
-## Routes deleted
+## 3. Photographer hub — `/jobs` (screenshot 1)
 
-- `/dashboard` — post-login resolver moves into `login.tsx` / `auth.tsx`.
-- `/request` (old redirect) — replaced by a real tabbed page at the same URL.
-- `/request-gear`, `/request-photography` — content moves into `/request` tabs.
-- `/admin/requests` (old redirect), `/admin/photo-requests` — replaced by real tabbed page at `/admin/requests`.
-- `/admin/requests-gear`, `/admin/requests-photography` — content moves into `/admin/requests` tabs.
-- `/admin/gear-manage`, `/admin/gear-history` — content moves into `/admin/gear` tabs.
-- `/admin/manage`, `/admin/history` — redirect files removed.
-- `/admin/photographers`, `/admin/admins` — redirect files removed.
-- `/admin/announcements`, `/admin/events`, `/admin/training`, `/admin/landing-photos` — content moves into `/admin/content` tabs.
-- `/admin/shot-list-blocks`, `/admin/shot-list-generator` — content moves into `/admin/shot-list` tabs.
+Restyle the existing route; no data/RPC changes.
 
-## How tabs are wired
+- Two-column layout (lg+): left = Upcoming list, right = compact calendar stack. Single column on mobile.
+- **Header:** "Upcoming" in serif display + a Yours / Open / All segmented filter (existing data already supports this — just a client-side filter on the events array).
+- **Event rows:** date-block · title + meta · location-pill · right-side action area (`StatusPill` "On it" for claimed, `Claim →` button for open). "Need a photographer · Claim one" group header (uses `eyebrow`) separates claimed from open jobs.
+- **Right column:**
+  - Reuse `HubCalendar` but force `defaultDensity="month"` and render in a compact card; selecting a day shows that day's event chips below (already supported by `eventsByDay`).
+  - New "Coverage at a glance" card: list of upcoming events with `FillBar` (data already in event/assignment queries).
 
-Each consolidated route gets a `tab` search param (zod-validated, default to the first tab). The tab state is in the URL so deep-links work (`/admin/gear?tab=history`). Each tab renders the existing page body, lifted into a section component (e.g. `GearBoardSection`, `GearInventorySection`, `GearHistorySection`) inside `src/components/admin/`. No data-fetching or RPC changes — just extracting JSX + state from each existing route file into a component.
+## 4. Photographer gear + activity zone (screenshot 2)
 
-## Files
+Lives on the same `/jobs` page below the upcoming/calendar block (or its own tab — TBD with you during build; default = same page, two stacked sections).
 
-**New tabbed routes (rewrites)**
-- `src/routes/request.tsx` — tabbed shell, default Gear.
-- `src/routes/admin_.requests.tsx` — tabbed shell, default Gear.
-- `src/routes/admin_.gear.tsx` — tabbed shell, default Board.
-- `src/routes/admin_.content.tsx` — new, tabs: Announcements / Events / Training / Landing photos.
-- `src/routes/admin_.shot-list.tsx` — new, tabs: Blocks / Generator.
+- **"Gear you have out"** card grid (3-col lg, 2-col md, 1-col sm):
+  - Each card: gear icon tile · location pill · name · sublocation (locker) · optional note row · footer with "Updated Xh ago" + "Move →".
+  - "Scan to log" + "Request gear" buttons in the section header (Request gear routes to `/request?tab=gear`).
+- **Announcements** (left) + **What's happening** activity (right) two-column block:
+  - Announcement cards: eyebrow tag (EDITING / HEADS UP / NEW) + timestamp + title + body line.
+  - Activity feed: avatar initials + verb sentence with bolded nouns + timestamp. Reuse `activity-feed.tsx` data, restyle rows.
 
-**New section components** (extracted bodies; one per old route)
-- `src/components/admin/gear-board-section.tsx`
-- `src/components/admin/gear-inventory-section.tsx`
-- `src/components/admin/gear-history-section.tsx`
-- `src/components/admin/requests-gear-section.tsx`
-- `src/components/admin/requests-photography-section.tsx`
-- `src/components/admin/announcements-section.tsx`
-- `src/components/admin/events-section.tsx`
-- `src/components/admin/training-section.tsx`
-- `src/components/admin/landing-photos-section.tsx`
-- `src/components/admin/shot-list-blocks-section.tsx`
-- `src/components/admin/shot-list-generator-section.tsx`
-- `src/components/request/gear-request-section.tsx` (wraps existing `GearRequestForm`)
-- `src/components/request/photography-request-section.tsx` (bodies from `request-photography.tsx`)
+## 5. Admin events list (screenshot 3) — interleaved with consolidation
 
-**Deleted route files** (12)
-- `src/routes/dashboard.tsx`
-- `src/routes/request-gear.tsx`
-- `src/routes/request-photography.tsx`
-- `src/routes/admin_.photo-requests.tsx`
-- `src/routes/admin_.requests-gear.tsx`
-- `src/routes/admin_.requests-photography.tsx`
-- `src/routes/admin_.gear-manage.tsx`
-- `src/routes/admin_.gear-history.tsx`
-- `src/routes/admin_.manage.tsx`
-- `src/routes/admin_.history.tsx`
-- `src/routes/admin_.photographers.tsx`
-- `src/routes/admin_.admins.tsx`
-- `src/routes/admin_.announcements.tsx`
-- `src/routes/admin_.events.tsx`
-- `src/routes/admin_.training.tsx`
-- `src/routes/admin_.landing-photos.tsx`
-- `src/routes/admin_.shot-list-blocks.tsx`
-- `src/routes/admin_.shot-list-generator.tsx`
+This is the visual half of the `/admin/requests` + events consolidation already planned.
 
-**Updated** (link rewrites only)
-- `src/components/hub-header.tsx` — admin dropdown points at new URLs (`/admin/content?tab=…`, `/admin/gear?tab=…`, etc.).
-- `src/routes/admin.tsx` — quick links point at `/admin/requests?tab=…` and `/admin/gear`.
-- `src/routes/login.tsx` — post-login resolver (logic copied from `dashboard.tsx`): staff → `/admin`, photographer → `/photographers/$id`.
-- `src/lib/auth.tsx` — if a `redirectAfterLogin` helper lives here, update it; otherwise leave alone.
-- Any `<Link>` in the consolidated section components that pointed at a sibling page (e.g. `/admin/gear-manage` → `/admin/gear?tab=inventory`).
-- `src/routes/jobs.tsx` — unchanged (kept as the one legacy redirect).
+- New shared **TopTabBar** at the top of admin hubs: pill row with icon + label + count badge (Events / Gear / Photo requests / Team / Activity). Active tab = dark pill, inactive = ghost. Right-aligned location filter pills (All locations / 515 / Cumberland / Trilith).
+- **Event rows:** date-block · title + meta + location-pill · `FillBar` with "X/Y filled" and "open: …" sublabel · `AvatarStack` of assigned photographers · action cluster (`Hot` badge when understaffed + soon, `Brief` outline button, `Assign` primary button).
+- Apply this row pattern to:
+  - `admin_.requests-photography.tsx` (becomes the Events + Photo requests tabs of the consolidated hub).
+  - `admin_.requests-gear.tsx` (Gear tab).
+  - Existing `admin.tsx` overview where event rows render today.
+- "Hot" is derived (not stored): event within N days AND fill < 100%.
 
-`src/routeTree.gen.ts` regenerates automatically.
+## 6. Pairing with the consolidation work in flight
 
-## Out of scope
+Per your "interleave" choice:
 
-- No database, RPC, RLS, or business-logic changes.
-- No visual redesign of individual pages — just regrouping under tabs.
-- Onboarding editor routes stay as-is.
-- No new sitemap.xml (none exists today; not requested).
+| Hub | Consolidation status | Visual pass |
+|---|---|---|
+| `/admin/content` | Done (tabbed shell exists) | Restyle sections + apply TopTabBar styling |
+| `/admin/gear` | Board section extracted, inventory/history pending | Finish extraction, then style board + inventory cards |
+| `/admin/requests` | Pending | Build tabbed shell using the new TopTabBar + restyled rows in one pass |
+| `/admin/shot-list` | Pending | Build shell first, restyle after (lower priority — internal tool) |
+| `/jobs` | Stays a single route | Pure restyle (sections 3 + 4) |
+
+## 7. Out of scope (this plan)
+
+- No DB / RLS / RPC changes.
+- No new business logic — "Hot", "On it", and fill % are derived from existing fields.
+- No changes to auth, email templates, or onboarding.
+- Marketing/landing routes (`/`, `/login`) untouched.
+
+## Technical notes
+
+- Fonts load via `__root.tsx` `<link>` (Google Fonts), preconnect already there.
+- Display serif applied via a `.font-display` utility, not as global `body` font — keeps Inter for dense UI.
+- All new colors go through CSS variables in `src/styles.css`; components reference them via Tailwind semantic classes (`bg-background`, `text-primary`, etc.) or short bridge classes (`bg-status-onit`).
+- Layout uses CSS Grid for the hub two-column split; collapses to single column under `lg`.
+- No new dependencies.
+
+## Suggested build order
+
+1. Tokens + fonts + shared primitives (sections 1–2).
+2. `/jobs` restyle — upcoming + calendar (section 3).
+3. `/jobs` gear-out + announcements + activity (section 4).
+4. Admin TopTabBar + event-row pattern, applied as each admin hub gets consolidated (section 5/6).
