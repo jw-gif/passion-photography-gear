@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-interface SectionHeadingProps extends React.HTMLAttributes<HTMLDivElement> {
+interface SectionHeadingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   eyebrow?: string;
   title: React.ReactNode;
   /** Word(s) inside the title to render in italic serif accent */
