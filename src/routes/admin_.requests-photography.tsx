@@ -753,7 +753,7 @@ function RequestDetailDialog({
               <DetailItem label="Name">
                 {request.first_name} {request.last_name}
               </DetailItem>
-              <DetailItem label="Company">
+              <DetailItem label="Team">
                 {request.company}
                 {request.team && <span className="text-muted-foreground"> / {request.team}</span>}
               </DetailItem>
@@ -837,7 +837,7 @@ function RequestDetailDialog({
                   <DetailItem label="Approver">{request.concur_budget_approver}</DetailItem>
                 )}
                 {request.concur_company && (
-                  <DetailItem label="Company">{request.concur_company}</DetailItem>
+                  <DetailItem label="Team">{request.concur_company}</DetailItem>
                 )}
                 {request.concur_class && <DetailItem label="Class">{request.concur_class}</DetailItem>}
                 {request.concur_department && (
