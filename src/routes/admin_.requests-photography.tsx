@@ -343,7 +343,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name, event, company…"
+              placeholder="Search name, event, location…"
               className="pl-9"
             />
           </div>
@@ -549,7 +549,7 @@ function RequestRow({
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={() => onSetStatus("approved_job_board")}>
-                    <Check className="size-4" /> Approve instead
+                    <Check className="size-4" /> Approve
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => onSetStatus("pending")}>
