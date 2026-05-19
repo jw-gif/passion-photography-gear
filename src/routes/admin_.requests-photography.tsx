@@ -335,7 +335,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Photography Requests</h1>
             <p className="text-sm text-muted-foreground">
-              Triage incoming requests, assign coverage, and track status.
+              Incoming requests, coverage, and status.
             </p>
           </div>
           <div className="relative w-full sm:w-72">
@@ -343,7 +343,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name, event, company…"
+              placeholder="Search name, event, location…"
               className="pl-9"
             />
           </div>
@@ -549,7 +549,7 @@ function RequestRow({
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={() => onSetStatus("approved_job_board")}>
-                    <Check className="size-4" /> Approve instead
+                    <Check className="size-4" /> Approve
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => onSetStatus("pending")}>
