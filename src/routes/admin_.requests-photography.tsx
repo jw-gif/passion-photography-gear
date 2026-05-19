@@ -119,6 +119,17 @@ interface PhotoRequest {
   created_at: string;
 }
 
+function formatTime(t: string | null | undefined): string {
+  if (!t) return "";
+  const [hStr, mStr] = t.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  if (Number.isNaN(h)) return t;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
 function PhotoRequestsRoute() {
   const { signOut } = useAuth();
   return (
@@ -471,7 +482,7 @@ function RequestRow({
             {(req.start_time || req.end_time) && (
               <span className="flex items-center gap-1">
                 <Clock className="size-3.5" />
-                {req.start_time}{req.end_time ? ` – ${req.end_time}` : ""}
+                {formatTime(req.start_time)}{req.end_time ? ` – ${formatTime(req.end_time)}` : ""}
               </span>
             )}
             {req.event_location && <LocationPill location={req.event_location} />}
@@ -781,7 +792,7 @@ function RequestDetailDialog({
                   <DetailItem label="Time">
                     <span className="inline-flex items-center gap-1">
                       <Clock className="size-3.5" />
-                      {request.start_time?.slice(0, 5)} – {request.end_time?.slice(0, 5)}
+                      {formatTime(request.start_time)} – {formatTime(request.end_time)}
                     </span>
                   </DetailItem>
                 )}
