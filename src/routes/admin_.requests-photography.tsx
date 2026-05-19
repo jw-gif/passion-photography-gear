@@ -335,7 +335,7 @@ function PhotoRequestsView({ onLogout }: { onLogout: () => void }) {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Photography Requests</h1>
             <p className="text-sm text-muted-foreground">
-              Triage incoming requests, assign coverage, and track status.
+              Incoming requests, coverage, and status.
             </p>
           </div>
           <div className="relative w-full sm:w-72">
