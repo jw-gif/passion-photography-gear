@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.auto_archive_past_photo_requests() FROM PUBLIC, anon, authenticated;

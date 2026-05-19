@@ -1124,6 +1124,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_archive_past_photo_requests: { Args: never; Returns: undefined }
       claim_job: {
         Args: { _opening_id: string; _token: string }
         Returns: Json
